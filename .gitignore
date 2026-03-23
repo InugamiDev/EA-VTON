@@ -1,0 +1,81 @@
+# ── Python ──
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# ── Model weights & large binaries ──
+backend/weights/
+backend/models/*.task
+backend/models/*.onnx
+backend/models/*.pt
+backend/models/*.bin
+*.ckpt
+*.safetensors
+*.pkl
+
+# ── Large datasets (use Git LFS or download scripts) ──
+ea-vton/datasets/raw/rtr_raw.json
+ea-vton/datasets/raw/rtr_raw.json.gz
+ea-vton/datasets/processed/*.parquet
+ea-vton/datasets/processed/*.csv
+
+# ── Vendor (cloned repos, large) ──
+backend/vendor/
+
+# ── Playwright MCP logs ──
+.playwright-mcp/
+
+# ── Hook event logs ──
+hook-events.jsonl
+
+# ── Node / Frontend ──
+node_modules/
+.next/
+out/
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+
+# ── IDE ──
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+
+# ── Environment & secrets ──
+.env
+.env.*
+!.env.example
+*.pem
+credentials.json
+
+# ── Test / temp artifacts ──
+.pytest_cache/
+.coverage
+htmlcov/
+/tmp/
+*.log
+
+# ── Results (generated at runtime) ──
+/tmp/fitview_*
+
+# ── Jupyter ──
+.ipynb_checkpoints/
+
+# ── HuggingFace cache ──
+.cache/
