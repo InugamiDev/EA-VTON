@@ -1,0 +1,36 @@
+# Backend dependencies
+fastapi>=0.135.0
+uvicorn>=0.41.0
+python-multipart>=0.0.22
+httpx>=0.28.0
+pydantic>=2.12.0
+
+# Image processing
+pillow>=12.0.0
+numpy>=2.4.0
+opencv-contrib-python>=4.13.0
+scikit-image>=0.26.0
+
+# ML base
+torch>=2.10.0
+torchvision>=0.25.0
+safetensors>=0.7.0
+huggingface_hub>=0.20.0
+einops>=0.6.0
+
+# FASHN VTON v1.5 — install separately:
+#   git clone https://github.com/fashn-AI/fashn-vton-1.5.git
+#   pip install -e ./fashn-vton-1.5
+# Also needs: onnxruntime-gpu (CUDA) or onnxruntime (CPU/MPS)
+
+# Body pose detection (for face restoration postprocessing)
+mediapipe>=0.10.30
+
+# Size recommendation
+scipy>=1.17.0
+
+# Replicate API (optional — only if using replicate backend)
+replicate>=1.0.0
+
+# Video pipeline (optional — faster video decode)
+# av>=14.0.0
