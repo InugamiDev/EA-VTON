@@ -1,0 +1,15 @@
+FASHN VTON v1.5 — Step Comparison
+Device: cpu
+Person: 00034_00.jpg
+Garment: 04469_00.jpg
+Seed: 42, Category: tops, Guidance: 1.5
+
+ Steps |  Inference |  Face SSIM |  Sharpness | Garment Detail | Skin Delta
+-------+------------+------------+------------+----------------+-----------
+    10 |     625.5s |     0.9344 |       41.2 |           55.2 |      19.34
+    20 |     953.0s |     0.9345 |       44.1 |           57.6 |      18.91
+    30 |    1511.5s |     0.9344 |       45.6 |           58.3 |       18.9
+
+Higher sharpness = more detail. Higher garment_detail = more texture variation.
+Face SSIM closer to 1.0 = better face preservation.
+Lower skin delta = less color correction needed = better raw output.
