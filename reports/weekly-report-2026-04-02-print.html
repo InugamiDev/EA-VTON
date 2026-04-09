@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>EA-VTON Weekly Report | Print Version</title>
+        <style>
+            :root {
+                --page-w: 297mm;
+                --page-h: 210mm;
+                --bg: #ece7db;
+                --paper: #fffdf8;
+                --ink: #1c2521;
+                --muted: #5d6661;
+                --line: #d7cfbf;
+                --brand: #0f6b5c;
+                --brand-dark: #093b33;
+                --accent: #c97b2d;
+                --panel: #f7f2e8;
+                --display:
+                    "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+                --body: "Aptos", "Segoe UI", sans-serif;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            html {
+                scroll-behavior: smooth;
+            }
+
+            body {
+                margin: 0;
+                background:
+                    radial-gradient(
+                        circle at top left,
+                        rgba(15, 107, 92, 0.14),
+                        transparent 24%
+                    ),
+                    radial-gradient(
+                        circle at bottom right,
+                        rgba(201, 123, 45, 0.12),
+                        transparent 22%
+                    ),
+                    var(--bg);
+                color: var(--ink);
+                font-family: var(--body);
+            }
+
+            .toolbar {
+                position: fixed;
+                right: 18px;
+                bottom: 18px;
+                z-index: 20;
+                display: flex;
+                gap: 10px;
+            }
+
+            .toolbar button,
+            .toolbar a {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 96px;
+                padding: 10px 14px;
+                border: 0;
+                border-radius: 999px;
+                background: rgba(9, 59, 51, 0.95);
+                color: #fff;
+                text-decoration: none;
+                font: inherit;
+                cursor: pointer;
+                box-shadow: 0 8px 22px rgba(9, 59, 51, 0.2);
+            }
+
+            .deck {
+                padding: 16px 0 40px;
+            }
+
+            .slide {
+                position: relative;
+                width: var(--page-w);
+                height: var(--page-h);
+                margin: 0 auto 18px;
+                background: var(--paper);
+                border: 1px solid var(--line);
+                box-shadow: 0 16px 40px rgba(28, 37, 33, 0.14);
+                overflow: hidden;
+                page-break-after: always;
+                break-after: page;
+            }
+
+            .slide:last-child {
+                page-break-after: auto;
+                break-after: auto;
+            }
+
+            .slide::before {
+                content: "";
+                position: absolute;
+                inset: 0 0 auto 0;
+                height: 7mm;
+                background: linear-gradient(
+                    90deg,
+                    var(--brand-dark),
+                    var(--brand),
+                    var(--accent)
+                );
+            }
+
+            .pad {
+                padding: 16mm 16mm 12mm;
+                height: 100%;
+            }
+
+            .number {
+                position: absolute;
+                top: 10mm;
+                right: 14mm;
+                font-size: 10pt;
+                font-weight: 700;
+                color: var(--muted);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+            }
+
+            .eyebrow {
+                margin: 0 0 4mm;
+                font-size: 9pt;
+                font-weight: 700;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--brand);
+            }
+
+            h1,
+            h2,
+            h3 {
+                margin: 0;
+                font-family: var(--display);
+                letter-spacing: -0.03em;
+            }
+
+            h1 {
+                font-size: 31pt;
+                line-height: 1.04;
+            }
+
+            h2 {
+                font-size: 22pt;
+                line-height: 1.08;
+            }
+
+            h3 {
+                font-size: 13pt;
+                line-height: 1.15;
+            }
+
+            p,
+            li,
+            table {
+                font-size: 10pt;
+                line-height: 1.35;
+            }
+
+            p {
+                margin: 0;
+                color: var(--muted);
+            }
+
+            ul {
+                margin: 3mm 0 0;
+                padding-left: 5mm;
+            }
+
+            li {
+                margin: 1.2mm 0;
+            }
+
+            .cover {
+                display: grid;
+                grid-template-columns: 1.15fr 0.85fr;
+                gap: 10mm;
+                align-items: center;
+            }
+
+            .chips,
+            .stats,
+            .cards,
+            .visuals,
+            .steps {
+                display: grid;
+                gap: 3mm;
+            }
+
+            .chips {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 3mm;
+                margin-top: 5mm;
+            }
+
+            .chip {
+                padding: 1.8mm 3.4mm;
+                border-radius: 999px;
+                background: rgba(15, 107, 92, 0.1);
+                color: var(--brand-dark);
+                font-size: 9pt;
+                font-weight: 600;
+            }
+
+            .names {
+                margin-top: 6mm;
+                display: grid;
+                gap: 3mm;
+            }
+
+            .card,
+            .stat,
+            .panel,
+            .image-card,
+            .step,
+            .table-wrap {
+                border: 1px solid var(--line);
+                border-radius: 5mm;
+                background: rgba(255, 255, 255, 0.88);
+            }
+
+            .card,
+            .stat,
+            .panel,
+            .step,
+            .table-wrap {
+                padding: 3.5mm 4mm;
+            }
+
+            .name {
+                padding: 4mm;
+                border: 1px solid var(--line);
+                border-radius: 5mm;
+                background: rgba(255, 255, 255, 0.86);
+            }
+
+            .name strong {
+                display: block;
+                font-size: 13pt;
+            }
+
+            .logo-box {
+                padding: 9mm 7mm;
+                border-radius: 7mm;
+                text-align: center;
+            }
+
+            .logo-box img {
+                width: 60mm;
+                height: auto;
+            }
+
+            .logo-box p {
+                margin-top: 3mm;
+            }
+
+            .two-col {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 5mm;
+            }
+
+            .three-col {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 4mm;
+            }
+
+            .stats {
+                grid-template-columns: repeat(4, 1fr);
+                margin-top: 5mm;
+            }
+
+            .stat .label {
+                display: block;
+                margin-bottom: 1.5mm;
+                font-size: 8pt;
+                font-weight: 700;
+                color: var(--muted);
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+
+            .stat .value {
+                display: block;
+                font-size: 20pt;
+                line-height: 1;
+                color: var(--brand-dark);
+                font-family: var(--display);
+            }
+
+            .panel strong,
+            .card strong,
+            .name strong,
+            .step strong,
+            .table-wrap strong,
+            .image-card strong {
+                color: var(--ink);
+            }
+
+            .image-card {
+                overflow: hidden;
+            }
+
+            .image-card img {
+                display: block;
+                width: 100%;
+                height: 41mm;
+                object-fit: cover;
+                background: #f4f0e7;
+            }
+
+            .image-card.portrait img {
+                height: 76mm;
+                object-position: top center;
+            }
+
+            .image-card.contain img {
+                object-fit: contain;
+            }
+
+            .caption {
+                padding: 2.6mm 3mm 3mm;
+            }
+
+            .steps {
+                grid-template-columns: repeat(4, 1fr);
+                margin-top: 4mm;
+            }
+
+            .step .tag {
+                display: inline-block;
+                margin-bottom: 2mm;
+                padding: 1mm 2.4mm;
+                border-radius: 999px;
+                background: rgba(15, 107, 92, 0.1);
+                color: var(--brand);
+                font-size: 8pt;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+
+            .formula {
+                margin-top: 3mm;
+                padding: 3mm 4mm;
+                border-radius: 4mm;
+                background: rgba(9, 59, 51, 0.06);
+                color: var(--brand-dark);
+                font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+                font-size: 9pt;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 2.5mm;
+            }
+
+            th,
+            td {
+                padding: 1.9mm 1.8mm;
+                border-bottom: 1px solid var(--line);
+                text-align: left;
+                vertical-align: top;
+            }
+
+            th {
+                font-size: 8pt;
+                color: var(--muted);
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+
+            tr:last-child td {
+                border-bottom: 0;
+            }
+
+            .footer {
+                position: absolute;
+                left: 16mm;
+                right: 16mm;
+                bottom: 7mm;
+                display: flex;
+                justify-content: space-between;
+                gap: 8mm;
+                font-size: 8pt;
+                color: var(--muted);
+            }
+
+            @media print {
+                @page {
+                    size: A4 landscape;
+                    margin: 0;
+                }
+
+                body {
+                    margin: 0;
+                    background: #fff;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+
+                .toolbar {
+                    display: none !important;
+                }
+
+                .deck {
+                    padding: 0;
+                }
+
+                .slide {
+                    margin: 0;
+                    border: 0;
+                    box-shadow: none;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="toolbar" aria-hidden="true">
+            <a href="./weekly-report-2026-04-02.html">Screen Version</a>
+            <button type="button" onclick="goSlide(-1)">Prev</button>
+            <button type="button" onclick="goSlide(1)">Next</button>
+            <button type="button" onclick="window.print()">Print / PDF</button>
+        </div>
+
+        <main class="deck">
+            <section class="slide" id="slide-1">
+                <div class="pad cover">
+                    <div class="number">01 / 06</div>
+                    <div>
+                        <p class="eyebrow">Weekly Progress Report</p>
+                        <h1>
+                            EA-VTON: Ethnicity-Aware Virtual Try-On with
+                            Population-Adaptive Size Recommendation
+                        </h1>
+                        <p style="margin-top: 4mm; font-size: 12pt">
+                            Progress report for March 26, 2026 to April 2, 2026
+                        </p>
+                        <div class="names">
+                            <div class="name">
+                                <strong>Nguyễn Thị Anh Thơ</strong>
+                            </div>
+                            <div class="name">
+                                <strong>Lê Thành Danh</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="logo-box">
+                            <img
+                                src="https://hcmiu.edu.vn/wp-content/uploads/2017/08/logo-vector-IU-01.png"
+                                alt="International University logo"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide" id="slide-2">
+                <div class="pad">
+                    <div class="number">02 / 06</div>
+                    <p class="eyebrow">Summary</p>
+                    <h2>Main progress this week</h2>
+                    <div class="stats">
+                        <div class="stat">
+                            <span class="label">Pages</span>
+                            <span class="value">5+</span>
+                            <p>Main user flow pages are ready.</p>
+                        </div>
+                        <div class="stat">
+                            <span class="label">APIs</span>
+                            <span class="value">4</span>
+                            <p>Upload, try-on, garments, sizing.</p>
+                        </div>
+                        <div class="stat">
+                            <span class="label">Quick run</span>
+                            <span class="value">3-step</span>
+                            <p>Fast preview on Mac CPU.</p>
+                        </div>
+                        <div class="stat">
+                            <span class="label">Benchmark</span>
+                            <span class="value">10/20/30</span>
+                            <p>Runtime and quality comparison.</p>
+                        </div>
+                    </div>
+
+                    <div class="two-col" style="margin-top: 5mm">
+                        <div class="panel">
+                            <strong>Completed</strong>
+                            <ul>
+                                <li>Built the FitView interface in Next.js.</li>
+                                <li>
+                                    Connected backend stages from upload to
+                                    result.
+                                </li>
+                                <li>
+                                    Generated test outputs in
+                                    <strong>backend/test_results</strong>.
+                                </li>
+                                <li>
+                                    Added Vietnamese vs universal size
+                                    comparison.
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="panel">
+                            <strong>Current status</strong>
+                            <ul>
+                                <li>Working interface</li>
+                                <li>Working try-on flow</li>
+                                <li>Working garment-only composite</li>
+                                <li>Initial EA sizing logic</li>
+                            </ul>
+                            <div class="formula">
+                                UI → upload → try-on job → garment composite →
+                                result
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide" id="slide-3">
+                <div class="pad">
+                    <div class="number">03 / 06</div>
+                    <p class="eyebrow">Interface</p>
+                    <h2>Web interface</h2>
+                    <div class="three-col" style="margin-top: 5mm">
+                        <figure class="image-card portrait">
+                            <img
+                                src="../fitview-homepage.png"
+                                alt="FitView homepage"
+                            />
+                            <figcaption class="caption">
+                                <strong>Landing page</strong>
+                                <p>Main entry for the system.</p>
+                            </figcaption>
+                        </figure>
+                        <figure class="image-card">
+                            <img
+                                src="../fitview-catalog.png"
+                                alt="FitView catalog"
+                            />
+                            <figcaption class="caption">
+                                <strong>Catalog</strong>
+                                <p>Garment browsing before try-on.</p>
+                            </figcaption>
+                        </figure>
+                        <figure class="image-card">
+                            <img
+                                src="../fitview-camera-oval.png"
+                                alt="FitView camera guide"
+                            />
+                            <figcaption class="caption">
+                                <strong>Camera guide</strong>
+                                <p>Guided input capture.</p>
+                            </figcaption>
+                        </figure>
+                    </div>
+                    <div class="steps">
+                        <div class="step">
+                            <span class="tag">Page</span>
+                            <strong>Upload</strong>
+                            <p>Photo upload and camera capture.</p>
+                        </div>
+                        <div class="step">
+                            <span class="tag">Page</span>
+                            <strong>Select</strong>
+                            <p>Garment selection from catalog.</p>
+                        </div>
+                        <div class="step">
+                            <span class="tag">Page</span>
+                            <strong>Process</strong>
+                            <p>Job polling and backend status.</p>
+                        </div>
+                        <div class="step">
+                            <span class="tag">Page</span>
+                            <strong>Result</strong>
+                            <p>Output image and sizing result.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide" id="slide-4">
+                <div class="pad">
+                    <div class="number">04 / 06</div>
+                    <p class="eyebrow">Pipeline</p>
+                    <h2>Current pipeline</h2>
+                    <div class="steps" style="margin-top: 5mm">
+                        <div class="step">
+                            <span class="tag">1</span>
+                            <strong>Preprocess</strong>
+                            <p>Normalize person image and garment input.</p>
+                        </div>
+                        <div class="step">
+                            <span class="tag">2</span>
+                            <strong>Infer</strong>
+                            <p>Run FASHN VTON test backend.</p>
+                        </div>
+                        <div class="step">
+                            <span class="tag">3</span>
+                            <strong>Postprocess</strong>
+                            <p>Detect garment region and enhance cloth only.</p>
+                        </div>
+                        <div class="step">
+                            <span class="tag">4</span>
+                            <strong>Compare size</strong>
+                            <p>Universal vs Vietnamese estimates.</p>
+                        </div>
+                    </div>
+
+                    <div class="two-col" style="margin-top: 5mm">
+                        <div class="table-wrap">
+                            <strong>Backend path</strong>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Stage</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Input</td>
+                                        <td>Photo, garment, body inputs</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Inference</td>
+                                        <td>FASHN v1.5 test backend</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Postprocess</td>
+                                        <td>Garment-only composite</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Recommendation</td>
+                                        <td>Universal vs Vietnamese sizing</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="panel">
+                            <strong>EA sizing logic</strong>
+                            <div class="formula">
+                                universal chest = 0.52 × height + 0.18 × weight
+                                <br />
+                                vietnamese chest = 0.485 × height + 0.22 ×
+                                weight - 2.5
+                            </div>
+                            <p style="margin-top: 3mm">
+                                The current system already supports
+                                ethnicity-aware comparison on the sizing side.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide" id="slide-5">
+                <div class="pad">
+                    <div class="number">05 / 06</div>
+                    <p class="eyebrow">Result</p>
+                    <h2>Garment-only postprocessing</h2>
+                    <div class="three-col" style="margin-top: 5mm">
+                        <figure class="image-card contain">
+                            <img
+                                src="../backend/test_results/output_raw.png"
+                                alt="Raw preview"
+                            />
+                            <figcaption class="caption">
+                                <strong>Raw preview</strong>
+                                <p>Quick 3-step Mac test.</p>
+                            </figcaption>
+                        </figure>
+                        <figure class="image-card contain">
+                            <img
+                                src="../backend/test_results/garment_mask.png"
+                                alt="Garment mask"
+                            />
+                            <figcaption class="caption">
+                                <strong>Garment mask</strong>
+                                <p>Detected after inference.</p>
+                            </figcaption>
+                        </figure>
+                        <figure class="image-card contain">
+                            <img
+                                src="../backend/test_results/output_final.png"
+                                alt="Final result"
+                            />
+                            <figcaption class="caption">
+                                <strong>Final result</strong>
+                                <p>Only the garment region is modified.</p>
+                            </figcaption>
+                        </figure>
+                    </div>
+
+                    <div class="two-col" style="margin-top: 5mm">
+                        <div class="panel">
+                            <strong>Method</strong>
+                            <p style="margin-top: 2mm">
+                                FASHN VTON is maskless at inference time. The
+                                garment mask is detected afterward and used for
+                                enhancement and compositing.
+                            </p>
+                            <div class="formula">
+                                final = original × (1 - mask) + enhanced_vton ×
+                                mask
+                            </div>
+                        </div>
+                        <div class="panel">
+                            <strong>Effect</strong>
+                            <ul>
+                                <li>
+                                    Face, skin, and background remain unchanged.
+                                </li>
+                                <li>
+                                    Sharpening is limited to the garment region.
+                                </li>
+                                <li>The result is visually more stable.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide" id="slide-6">
+                <div class="pad">
+                    <div class="number">06 / 06</div>
+                    <p class="eyebrow">Evaluation and Next Step</p>
+                    <h2>Current test results</h2>
+                    <div class="two-col" style="margin-top: 5mm">
+                        <div class="table-wrap">
+                            <strong>Step comparison on Mac CPU</strong>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Steps</th>
+                                        <th>Inference</th>
+                                        <th>Face SSIM</th>
+                                        <th>Sharpness</th>
+                                        <th>Garment detail</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>10</td>
+                                        <td>625.5s</td>
+                                        <td>0.9344</td>
+                                        <td>41.2</td>
+                                        <td>55.2</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>20</strong></td>
+                                        <td><strong>953.0s</strong></td>
+                                        <td><strong>0.9345</strong></td>
+                                        <td><strong>44.1</strong></td>
+                                        <td><strong>57.6</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td>30</td>
+                                        <td>1511.5s</td>
+                                        <td>0.9344</td>
+                                        <td>45.6</td>
+                                        <td>58.3</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <p style="margin-top: 3mm">
+                                Quick preview: 3-step. Balanced benchmark point:
+                                20-step.
+                            </p>
+                        </div>
+                        <div class="panel">
+                            <strong>Next steps</strong>
+                            <ul>
+                                <li>
+                                    Move main inference to GPU for live
+                                    demonstration.
+                                </li>
+                                <li>Integrate VN-SMPL into the try-on path.</li>
+                                <li>
+                                    Build a population-aware synthetic body
+                                    dataset.
+                                </li>
+                                <li>Expand quantitative evaluation.</li>
+                            </ul>
+                            <p style="margin-top: 4mm">
+                                Current conclusion: the project now has a
+                                working prototype with a usable interface, a
+                                functioning try-on pipeline, and concrete visual
+                                results.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="footer">
+                        <span
+                            >Print-first version: fixed A4 landscape
+                            pages.</span
+                        >
+                        <span
+                            >Prepared from the current codebase, paper draft,
+                            and test outputs.</span
+                        >
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <script>
+            const slides = Array.from(document.querySelectorAll(".slide"));
+
+            function currentSlideIndex() {
+                let best = 0;
+                let bestDistance = Number.POSITIVE_INFINITY;
+                slides.forEach((slide, index) => {
+                    const rect = slide.getBoundingClientRect();
+                    const distance = Math.abs(rect.top);
+                    if (distance < bestDistance) {
+                        bestDistance = distance;
+                        best = index;
+                    }
+                });
+                return best;
+            }
+
+            function goSlide(step) {
+                const next = Math.min(
+                    slides.length - 1,
+                    Math.max(0, currentSlideIndex() + step),
+                );
+                slides[next].scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                });
+            }
+
+            window.goSlide = goSlide;
+
+            window.addEventListener("keydown", (event) => {
+                if (event.key === "ArrowRight" || event.key === "PageDown") {
+                    event.preventDefault();
+                    goSlide(1);
+                } else if (
+                    event.key === "ArrowLeft" ||
+                    event.key === "PageUp"
+                ) {
+                    event.preventDefault();
+                    goSlide(-1);
+                } else if (event.key.toLowerCase() === "p") {
+                    window.print();
+                }
+            });
+        </script>
+    </body>
+</html>

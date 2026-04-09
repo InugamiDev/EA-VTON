@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EA-VTON Weekly Report | April 3 - April 9, 2026</title>
+    <style>
+      :root {
+        --bg: #f3efe5;
+        --paper: #fffdf8;
+        --panel: #f8f3ea;
+        --ink: #19231f;
+        --muted: #58645d;
+        --line: #d8d0c1;
+        --brand: #0f6b5c;
+        --brand-strong: #083d35;
+        --accent: #d78634;
+        --ok: #1f7a64;
+        --warn: #a45d1d;
+        --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+        --font-body: "Aptos", "Segoe UI Variable Text", "Trebuchet MS", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at top left, rgba(15, 107, 92, 0.14), transparent 28%),
+          radial-gradient(circle at right center, rgba(215, 134, 52, 0.12), transparent 24%),
+          var(--bg);
+        color: var(--ink);
+        font-family: var(--font-body);
+        line-height: 1.45;
+      }
+
+      .toolbar {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        z-index: 20;
+        display: flex;
+        gap: 10px;
+      }
+
+      .toolbar button, .toolbar a {
+        border: 0;
+        border-radius: 999px;
+        background: rgba(8, 61, 53, 0.94);
+        color: #fff;
+        padding: 12px 16px;
+        font: inherit;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        box-shadow: 0 10px 24px rgba(8, 61, 53, 0.22);
+      }
+
+      .deck {
+        padding: 28px 18px 54px;
+      }
+
+      .slide {
+        position: relative;
+        width: min(1280px, calc(100vw - 36px));
+        min-height: 720px;
+        margin: 0 auto 28px;
+        padding: 42px 48px 46px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(251, 247, 239, 0.98)),
+          var(--paper);
+        border: 1px solid rgba(216, 208, 193, 0.9);
+        border-radius: 28px;
+        box-shadow: 0 26px 60px rgba(25, 35, 31, 0.12);
+        overflow: hidden;
+      }
+
+      .slide::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto auto 0;
+        width: 100%;
+        height: 8px;
+        background: linear-gradient(90deg, var(--brand-strong), var(--brand), var(--accent));
+      }
+
+      .slide-number {
+        position: absolute;
+        right: 36px;
+        top: 26px;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .eyebrow {
+        margin: 0 0 12px;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--brand);
+      }
+
+      h1, h2, h3 {
+        margin: 0;
+        font-family: var(--font-display);
+        line-height: 1.06;
+        letter-spacing: -0.03em;
+      }
+
+      h1 { font-size: 48px; max-width: 900px; }
+      h2 { font-size: 34px; margin-bottom: 10px; }
+      h3 { font-size: 20px; margin-bottom: 8px; }
+
+      p { margin: 0; color: var(--muted); }
+
+      ul { margin: 14px 0 0; padding-left: 22px; color: var(--ink); }
+      li { margin: 6px 0; }
+
+      .cover {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 34px;
+        align-items: center;
+      }
+
+      .cover::after {
+        content: "";
+        position: absolute;
+        right: -120px;
+        bottom: -130px;
+        width: 420px;
+        height: 420px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(15, 107, 92, 0.14), rgba(15, 107, 92, 0));
+      }
+
+      .cover-copy { position: relative; z-index: 1; }
+
+      .cover-meta {
+        margin-top: 22px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(15, 107, 92, 0.08);
+        color: var(--brand-strong);
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .names { margin-top: 24px; display: grid; gap: 10px; }
+
+      .name-card, .stat-card, .note-card, .panel, .table-card {
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.82);
+      }
+
+      .name-card { padding: 18px 20px; }
+      .name-card strong { display: block; font-size: 20px; color: var(--ink); }
+      .name-card span { color: var(--muted); font-size: 14px; }
+
+      .cover-brand { position: relative; z-index: 1; display: grid; place-items: center; min-height: 100%; }
+
+      .logo-wrap {
+        width: 100%;
+        max-width: 420px;
+        padding: 34px 30px;
+        border-radius: 30px;
+        border: 1px solid rgba(216, 208, 193, 0.88);
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(241, 249, 246, 0.95));
+        box-shadow: 0 20px 44px rgba(15, 107, 92, 0.12);
+        text-align: center;
+      }
+
+      .logo-wrap img { width: 100%; max-width: 240px; height: auto; }
+      .logo-wrap .institution { margin-top: 20px; font-size: 24px; font-family: var(--font-display); color: var(--brand-strong); }
+      .logo-wrap .subtitle { margin-top: 8px; font-size: 15px; }
+
+      .two-col { display: grid; grid-template-columns: 1.08fr 0.92fr; gap: 24px; }
+      .grid-2, .grid-3, .metrics-grid, .card-grid { display: grid; gap: 18px; }
+      .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .metrics-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+      .stat-card { padding: 18px 20px; }
+      .stat-card .kicker { display: block; margin-bottom: 8px; color: var(--muted); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; }
+      .stat-card .value { display: block; font-size: 32px; line-height: 1; color: var(--brand-strong); font-family: var(--font-display); }
+      .stat-card .caption { margin-top: 10px; font-size: 14px; }
+
+      .panel, .table-card, .note-card { padding: 18px 20px; }
+      .panel strong, .table-card strong, .note-card strong { color: var(--ink); }
+
+      .flow { display: flex; align-items: stretch; gap: 14px; flex-wrap: wrap; margin-top: 18px; }
+
+      .flow-step {
+        flex: 1 1 180px;
+        min-height: 132px;
+        padding: 18px;
+        border-radius: 20px;
+        border: 1px solid var(--line);
+        background: linear-gradient(180deg, rgba(248, 243, 234, 0.85), rgba(255, 255, 255, 0.85));
+      }
+
+      .flow-step .tag {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: rgba(15, 107, 92, 0.1);
+        color: var(--brand);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .flow-step p { margin-top: 14px; font-size: 14px; }
+
+      .media-card { border-radius: 22px; overflow: hidden; border: 1px solid var(--line); background: #fff; }
+      .media-card img { display: block; width: 100%; height: 230px; object-fit: cover; object-position: top center; background: #f1ede5; }
+      .media-card.portrait img { height: 430px; }
+      .media-card .caption { padding: 12px 14px 14px; font-size: 14px; color: var(--muted); }
+      .media-card .caption strong { display: block; color: var(--ink); margin-bottom: 4px; }
+
+      .comparison-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
+      .comparison-grid .media-card img { height: 300px; object-fit: contain; background: #f5f2ea; }
+
+      .tri-visuals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+      .tri-visuals .media-card img { height: 210px; object-fit: contain; background: #f4f0e8; }
+
+      table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 14px; }
+      th, td { padding: 11px 10px; border-bottom: 1px solid rgba(216, 208, 193, 0.9); text-align: left; vertical-align: top; }
+      th { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+      tr:last-child td { border-bottom: 0; }
+
+      .highlight { color: var(--brand-strong); font-weight: 700; }
+
+      .formula { display: block; margin-top: 12px; padding: 14px 16px; border-radius: 18px; background: rgba(8, 61, 53, 0.06); color: var(--brand-strong); font-family: "SFMono-Regular", "Menlo", "Consolas", monospace; font-size: 14px; }
+
+      .status-list { display: grid; gap: 14px; margin-top: 14px; }
+      .status-item { padding: 16px 18px; border-radius: 20px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.84); }
+      .status-item.done { border-left: 8px solid var(--ok); }
+      .status-item.next { border-left: 8px solid var(--accent); }
+      .status-item strong { display: block; margin-bottom: 6px; }
+
+      .footer-note { position: absolute; left: 48px; right: 48px; bottom: 22px; display: flex; justify-content: space-between; gap: 24px; font-size: 12px; color: var(--muted); }
+      .footer-note span { max-width: 48%; }
+
+      @media (max-width: 980px) {
+        .slide, .cover, .two-col, .grid-2, .grid-3, .metrics-grid, .comparison-grid, .tri-visuals, .card-grid { display: block; }
+        .slide { width: calc(100vw - 20px); min-height: auto; padding: 34px 22px 40px; }
+        .toolbar { right: 16px; bottom: 16px; }
+        .slide > * + * { margin-top: 18px; }
+        .media-card, .stat-card, .panel, .table-card, .note-card, .status-item { margin-top: 16px; }
+        .media-card.portrait img, .comparison-grid .media-card img, .tri-visuals .media-card img, .media-card img { height: auto; max-height: 360px; }
+        .footer-note { position: static; margin-top: 20px; display: block; }
+        .footer-note span { display: block; max-width: none; margin-top: 6px; }
+      }
+
+      @media print {
+        @page { size: A4 landscape; margin: 0; }
+        html, body { margin: 0; padding: 0; width: 297mm; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .toolbar { display: none !important; }
+        .deck { padding: 0; }
+        .slide { width: 297mm; height: 210mm; min-height: 0; margin: 0; padding: 11mm 13mm 11mm; border-radius: 0; border: 0; box-shadow: none; overflow: hidden; break-inside: avoid-page; page-break-inside: avoid; break-after: page; page-break-after: always; }
+        .slide:last-child { break-after: auto; page-break-after: auto; }
+        .slide-number { top: 10mm; right: 12mm; font-size: 10pt; }
+        .eyebrow { margin-bottom: 6px; font-size: 9pt; }
+        h1 { font-size: 31pt; }
+        h2 { font-size: 22pt; margin-bottom: 6px; }
+        h3 { font-size: 14pt; }
+        p, li, .chip, .media-card .caption, .stat-card .caption, .note-card, .panel, .table-card, table, .flow-step, .status-item { font-size: 10pt; }
+        .cover-meta, .metrics-grid, .grid-2, .grid-3, .comparison-grid, .tri-visuals, .card-grid, .flow, .status-list { gap: 10px; }
+        .chip { padding: 5px 10px; }
+        .name-card, .stat-card, .note-card, .panel, .table-card, .status-item, .flow-step { padding: 10px 12px; border-radius: 14px; }
+        .media-card img { height: 44mm; }
+        .media-card.portrait img { height: 78mm; }
+        .comparison-grid .media-card img { height: 54mm; }
+        .tri-visuals .media-card img { height: 40mm; }
+        .footer-note { left: 13mm; right: 13mm; bottom: 8mm; font-size: 8.5pt; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar" aria-hidden="true">
+      <a href="./weekly-report-2026-04-09-print.html">Print Version</a>
+      <button type="button" onclick="goSlide(-1)">Prev</button>
+      <button type="button" onclick="goSlide(1)">Next</button>
+      <button type="button" onclick="window.print()">Print / PDF</button>
+    </div>
+
+    <main class="deck">
+      <!-- Slide 1: Cover -->
+      <section class="slide cover" id="slide-1">
+        <div class="slide-number">01 / 09</div>
+        <div class="cover-copy">
+          <p class="eyebrow">Weekly Progress Report</p>
+          <h1>
+            EA-VTON: Ethnicity-Aware Virtual Try-On with Population-Adaptive
+            Size Recommendation
+          </h1>
+          <p style="margin-top: 18px; max-width: 760px; font-size: 18px;">
+            Progress report for <strong>April 3, 2026 to April 9, 2026</strong>.
+          </p>
+
+          <div class="cover-meta">
+            <span class="chip">Simple try-on API</span>
+            <span class="chip">Video pipeline test</span>
+            <span class="chip">Research plan</span>
+            <span class="chip">Step comparison</span>
+          </div>
+
+          <div class="names">
+            <div class="name-card">
+              <strong>Nguy&#7877;n Th&#7883; Anh Th&#417;</strong>
+              <span>Presenter</span>
+            </div>
+            <div class="name-card">
+              <strong>L&#234; Th&#224;nh Danh</strong>
+              <span>Presenter</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="cover-brand">
+          <div class="logo-wrap">
+            <img
+              src="https://hcmiu.edu.vn/wp-content/uploads/2017/08/logo-vector-IU-01.png"
+              alt="International University logo"
+            />
+            <div class="institution">International University</div>
+            <p class="subtitle">HCMC National University</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 2: Week Summary -->
+      <section class="slide" id="slide-2">
+        <div class="slide-number">02 / 09</div>
+        <p class="eyebrow">Week Summary</p>
+        <h2>Main progress this week</h2>
+        <div class="two-col" style="margin-top: 24px;">
+          <div>
+            <div class="metrics-grid">
+              <div class="stat-card">
+                <span class="kicker">New API</span>
+                <span class="value">Simple</span>
+                <p class="caption">
+                  Upload person + garment directly. No catalog needed.
+                </p>
+              </div>
+              <div class="stat-card">
+                <span class="kicker">Video test</span>
+                <span class="value">15 fr</span>
+                <p class="caption">
+                  Real FASHN inference on 2 keyframes + 13 warped frames.
+                </p>
+              </div>
+              <div class="stat-card">
+                <span class="kicker">Research</span>
+                <span class="value">Plan</span>
+                <p class="caption">
+                  Paper contributions defined. 5 novel claims identified.
+                </p>
+              </div>
+              <div class="stat-card">
+                <span class="kicker">Quality</span>
+                <span class="value">10/20/30</span>
+                <p class="caption">
+                  Raw vs enhanced comparison at 3 step counts.
+                </p>
+              </div>
+            </div>
+
+            <div class="panel" style="margin-top: 18px;">
+              <strong>Result</strong>
+              <p style="margin-top: 8px;">
+                The project now has a simplified try-on workflow, a tested video
+                pipeline, and a clear research direction with defined paper
+                contributions.
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <div class="note-card">
+              <strong>Completed</strong>
+              <ul>
+                <li>Built <strong>simple try-on endpoint</strong> &mdash; upload 2 images, get result.</li>
+                <li>Ran real <strong>video pipeline E2E test</strong> with FASHN v1.5 on CPU.</li>
+                <li>Wrote <strong>research plan</strong> (docs/10-research-plan.md).</li>
+                <li>Updated test results with raw and enhanced step comparisons.</li>
+              </ul>
+            </div>
+
+            <div class="note-card" style="margin-top: 18px;">
+              <strong>Key insight</strong>
+              <p style="margin-top: 8px;">
+                The paper's novel contribution is <strong>fit-aware rendering</strong>
+                &mdash; making VTON output reflect actual garment fit (tight/normal/loose)
+                based on ethnicity-aware body estimation. FASHN is the backbone; EA-VTON
+                adds the sizing intelligence.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 3: Simple Try-On -->
+      <section class="slide" id="slide-3">
+        <div class="slide-number">03 / 09</div>
+        <p class="eyebrow">New Feature</p>
+        <h2>Simplified try-on workflow</h2>
+
+        <div class="flow" style="margin-top: 24px;">
+          <div class="flow-step">
+            <span class="tag">Upload</span>
+            <p>
+              User uploads a person photo and a garment image. No catalog required.
+            </p>
+          </div>
+          <div class="flow-step">
+            <span class="tag">Process</span>
+            <p>
+              Backend runs 5-stage pipeline: preprocess &rarr; inference &rarr; postprocess &rarr; composite.
+            </p>
+          </div>
+          <div class="flow-step">
+            <span class="tag">Result</span>
+            <p>
+              Shows person, garment, and try-on result side by side with confidence score.
+            </p>
+          </div>
+          <div class="flow-step">
+            <span class="tag">Download</span>
+            <p>
+              Result image can be downloaded. Pipeline stages are tracked live.
+            </p>
+          </div>
+        </div>
+
+        <div class="two-col" style="margin-top: 22px;">
+          <div class="table-card">
+            <strong>API endpoints</strong>
+            <table>
+              <thead>
+                <tr>
+                  <th>Method</th>
+                  <th>Path</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>POST</td>
+                  <td>/api/tryon/simple</td>
+                  <td>Upload person + garment, start job</td>
+                </tr>
+                <tr>
+                  <td>GET</td>
+                  <td>/api/tryon/simple/{id}</td>
+                  <td>Poll job status with stages</td>
+                </tr>
+                <tr>
+                  <td>GET</td>
+                  <td>/api/tryon/simple/{id}/image</td>
+                  <td>Download result image</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div>
+            <div class="note-card">
+              <strong>Frontend</strong>
+              <p style="margin-top: 8px;">
+                New <code>/simple</code> page with drag-and-drop zones for both
+                images, garment type selector, and live pipeline status tracking.
+              </p>
+            </div>
+            <span class="formula">
+              person.jpg + garment.jpg &rarr; POST /api/tryon/simple &rarr; result.png
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 4: Video Pipeline -->
+      <section class="slide" id="slide-4">
+        <div class="slide-number">04 / 09</div>
+        <p class="eyebrow">Video Pipeline</p>
+        <h2>Real video try-on E2E test</h2>
+
+        <div class="two-col" style="margin-top: 22px;">
+          <div class="table-card">
+            <strong>Pipeline timing (15 frames, CPU)</strong>
+            <table>
+              <thead>
+                <tr>
+                  <th>Stage</th>
+                  <th>Time</th>
+                  <th>%</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Frame extraction</td>
+                  <td>90ms</td>
+                  <td>0.0%</td>
+                </tr>
+                <tr>
+                  <td>Pose tracking</td>
+                  <td>2.3s</td>
+                  <td>0.3%</td>
+                </tr>
+                <tr>
+                  <td>Keyframe detection</td>
+                  <td>3ms</td>
+                  <td>0.0%</td>
+                </tr>
+                <tr>
+                  <td class="highlight">Keyframe VTON (2 frames)</td>
+                  <td class="highlight">13.2 min</td>
+                  <td class="highlight">95.9%</td>
+                </tr>
+                <tr>
+                  <td>Flow warping (13 frames)</td>
+                  <td>29s</td>
+                  <td>3.5%</td>
+                </tr>
+                <tr>
+                  <td>Total</td>
+                  <td>13.7 min</td>
+                  <td>100%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div>
+            <div class="note-card">
+              <strong>Observations</strong>
+              <ul>
+                <li>VTON inference is <strong>96% of total time</strong> on CPU.</li>
+                <li>On GPU this drops to ~5s per keyframe (vs 6.5 min).</li>
+                <li>Flow warping works at 0.5 FPS (CPU). GPU would be 10&ndash;20x faster.</li>
+                <li>All 7 pipeline stages completed without errors.</li>
+              </ul>
+            </div>
+
+            <div class="panel" style="margin-top: 18px;">
+              <strong>Conclusion</strong>
+              <p style="margin-top: 8px;">
+                Video try-on is a demo pipeline (Plan A). The architecture is
+                sound but requires GPU for practical use. Plan B (distilled
+                student model for 30 FPS) is documented as future work.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 5: Try-On Quality (Raw) -->
+      <section class="slide" id="slide-5">
+        <div class="slide-number">05 / 09</div>
+        <p class="eyebrow">Quality Comparison</p>
+        <h2>Raw VTON output at different step counts</h2>
+
+        <div class="comparison-grid">
+          <figure class="media-card">
+            <img src="../backend/test_results/step_comparison/raw_10steps.png" alt="Raw 10 steps" />
+            <figcaption class="caption">
+              <strong>10 steps</strong>
+              Faster (625s CPU). Slightly softer fabric detail.
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img src="../backend/test_results/step_comparison/raw_20steps.png" alt="Raw 20 steps" />
+            <figcaption class="caption">
+              <strong>20 steps</strong>
+              Best balance (953s CPU). Sharp garment, good drape.
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img src="../backend/test_results/step_comparison/raw_30steps.png" alt="Raw 30 steps" />
+            <figcaption class="caption">
+              <strong>30 steps</strong>
+              Marginally sharper (1512s CPU). Diminishing returns.
+            </figcaption>
+          </figure>
+        </div>
+
+        <h3 style="margin-top: 24px;">Enhanced output (post-processed)</h3>
+        <div class="tri-visuals">
+          <figure class="media-card">
+            <img src="../backend/test_results/step_comparison/enhanced_10steps.png" alt="Enhanced 10 steps" />
+            <figcaption class="caption">
+              <strong>10 steps enhanced</strong>
+              Sharpening + lighting transfer applied.
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img src="../backend/test_results/step_comparison/enhanced_20steps.png" alt="Enhanced 20 steps" />
+            <figcaption class="caption">
+              <strong>20 steps enhanced</strong>
+              Best overall quality.
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img src="../backend/test_results/step_comparison/enhanced_30steps.png" alt="Enhanced 30 steps" />
+            <figcaption class="caption">
+              <strong>30 steps enhanced</strong>
+              Marginal improvement over 20.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- Slide 6: Benchmark Data -->
+      <section class="slide" id="slide-6">
+        <div class="slide-number">06 / 09</div>
+        <p class="eyebrow">Evaluation</p>
+        <h2>Benchmark results</h2>
+
+        <div class="two-col" style="margin-top: 22px;">
+          <div class="table-card">
+            <strong>Step comparison on Mac CPU (M2)</strong>
+            <table>
+              <thead>
+                <tr>
+                  <th>Steps</th>
+                  <th>Inference</th>
+                  <th>A100 est.</th>
+                  <th>Sharpness</th>
+                  <th>Garment detail</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>10</td>
+                  <td>625s</td>
+                  <td>~2.5s</td>
+                  <td>41.2</td>
+                  <td>55.2</td>
+                </tr>
+                <tr>
+                  <td class="highlight">20</td>
+                  <td class="highlight">953s</td>
+                  <td class="highlight">~5s</td>
+                  <td class="highlight">44.1</td>
+                  <td class="highlight">57.6</td>
+                </tr>
+                <tr>
+                  <td>30</td>
+                  <td>1512s</td>
+                  <td>~7.5s</td>
+                  <td>45.6</td>
+                  <td>58.3</td>
+                </tr>
+              </tbody>
+            </table>
+            <p style="margin-top: 12px;">
+              <strong>20 steps is the sweet spot</strong> &mdash; 93% of
+              30-step quality at 60% of the cost.
+            </p>
+          </div>
+
+          <div>
+            <div class="panel">
+              <strong>Model details</strong>
+              <ul>
+                <li><strong>Model</strong>: FASHN VTON v1.5 (972M params, Apache 2.0)</li>
+                <li><strong>Architecture</strong>: MMDiT (maskless, no DensePose needed)</li>
+                <li><strong>Output</strong>: 576&times;864 pixels</li>
+                <li><strong>Post-processing</strong>: garment-only sharpening + lighting transfer</li>
+              </ul>
+            </div>
+
+            <div class="note-card" style="margin-top: 18px;">
+              <strong>Face preservation</strong>
+              <p style="margin-top: 8px;">
+                Face SSIM: <strong>0.9345</strong> across all step counts.
+                The compositing pipeline ensures face, skin, and background
+                are pixel-identical to the original photo.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 7: Research Direction -->
+      <section class="slide" id="slide-7">
+        <div class="slide-number">07 / 09</div>
+        <p class="eyebrow">Research Plan</p>
+        <h2>Paper contributions</h2>
+
+        <div class="card-grid" style="margin-top: 24px;">
+          <div class="status-list">
+            <div class="status-item done">
+              <strong>C1: Vietnamese anthropometric model</strong>
+              <p>Calibrated regression formulas for 5 Vietnamese body clusters. Demonstrates US model overestimates chest by ~5.8cm.</p>
+            </div>
+            <div class="status-item done">
+              <strong>C2: Importance-weighted population adaptation</strong>
+              <p>Reweight RTR (US, 192K rows) to simulate Vietnamese population. ESS: 12.6%.</p>
+            </div>
+            <div class="status-item next">
+              <strong>C3: Fit-aware VTON rendering</strong>
+              <p>Deform garment mask based on predicted fit level (tight/normal/loose). Core novel contribution.</p>
+            </div>
+          </div>
+
+          <div class="status-list">
+            <div class="status-item next">
+              <strong>C4: Photo-based body estimation</strong>
+              <p>Estimate height/weight from photo using MediaPipe landmarks. Optional enhancement.</p>
+            </div>
+            <div class="status-item next">
+              <strong>C5: Fit-accuracy evaluation metrics</strong>
+              <p>Size Accuracy (SA), Fit Visual Consistency (FVC), Population Fairness (PF).</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="two-col" style="margin-top: 20px;">
+          <div class="panel">
+            <strong>Paper positioning</strong>
+            <p style="margin-top: 8px;">
+              FASHN VTON is the backbone (cited, like SD in diffusion papers).
+              Our contribution is making VTON <strong>population-aware</strong> and
+              <strong>fit-aware</strong> &mdash; users see both how a garment looks
+              and whether it will fit.
+            </p>
+          </div>
+
+          <div class="note-card">
+            <strong>Target venues</strong>
+            <ul>
+              <li><strong>Tier 1</strong>: CVPR, ECCV, ICCV</li>
+              <li><strong>Tier 2</strong>: WACV, ACCV, ACM MM</li>
+              <li><strong>Applied</strong>: Fashion &amp; AI workshops</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 8: Future Vision -->
+      <section class="slide" id="slide-8">
+        <div class="slide-number">08 / 09</div>
+        <p class="eyebrow">Future Vision</p>
+        <h2>Not yet functional &mdash; requires further work</h2>
+
+        <div class="two-col" style="margin-top: 24px;">
+          <div>
+            <figure class="media-card">
+              <img src="./smart-mirror-reference.png" alt="Smart mirror virtual try-on kiosk" style="height: 340px; object-fit: cover;" />
+              <figcaption class="caption">
+                <strong>Smart mirror kiosk</strong>
+                In-store touchscreen where customers select garments and see try-on results in real time. Requires real-time video VTON.
+              </figcaption>
+            </figure>
+          </div>
+
+          <div>
+            <div class="note-card">
+              <strong>Smart mirror (not working)</strong>
+              <p style="margin-top: 8px;">
+                Needs real-time video VTON at 30 FPS. Current pipeline runs at
+                0.02 FPS on CPU. Requires GPU infrastructure and a distilled
+                lightweight model (Plan B) that does not exist yet.
+              </p>
+            </div>
+
+            <div class="note-card" style="margin-top: 18px;">
+              <strong>Video try-on (not working)</strong>
+              <p style="margin-top: 8px;">
+                The video pipeline architecture is built but produces poor quality
+                results. Optical flow warping creates visible artifacts. Keyframe
+                VTON takes 6+ minutes per frame on CPU. Not usable for demonstration.
+              </p>
+            </div>
+
+            <div class="panel" style="margin-top: 18px;">
+              <strong>What these need</strong>
+              <ul>
+                <li>GPU compute (A100 or equivalent)</li>
+                <li>Distilled student model (~20M params) for real-time inference</li>
+                <li>Improved temporal consistency for video</li>
+                <li>Hardware integration for smart mirror kiosk</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 9: Next Steps -->
+      <section class="slide" id="slide-9">
+        <div class="slide-number">09 / 09</div>
+        <p class="eyebrow">Next Steps</p>
+        <h2>Plan for next week</h2>
+
+        <div class="grid-2" style="margin-top: 24px;">
+          <div class="note-card">
+            <strong>Build (Phase 2)</strong>
+            <ul>
+              <li>Implement <strong>fit predictor</strong> &mdash; body measurements + size chart &rarr; fit level.</li>
+              <li>Implement <strong>fit renderer</strong> &mdash; deform garment region based on fit level.</li>
+              <li>Integrate into pipeline as new stage between inference and composite.</li>
+            </ul>
+          </div>
+
+          <div class="note-card">
+            <strong>Evaluate (Phase 3)</strong>
+            <ul>
+              <li>Build evaluation dataset with known body measurements.</li>
+              <li>Implement Size Accuracy and Fit Visual Consistency metrics.</li>
+              <li>Run ablation: with/without importance weighting, with/without fit rendering.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top: 22px;">
+          <strong>Status</strong>
+          <p style="margin-top: 10px; font-size: 18px;">
+            Image-based try-on works. Size recommendation works. Video try-on
+            and smart mirror are not functional yet. Next priority is fit-aware
+            rendering (C3) and evaluation metrics (C5).
+          </p>
+        </div>
+
+        <div class="footer-note">
+          <span>
+            Prepared from codebase and test outputs.
+          </span>
+          <span>
+            Open in a browser or print in landscape format.
+          </span>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const slides = Array.from(document.querySelectorAll(".slide"));
+
+      function currentSlideIndex() {
+        let best = 0;
+        let bestDistance = Number.POSITIVE_INFINITY;
+        slides.forEach((slide, index) => {
+          const rect = slide.getBoundingClientRect();
+          const distance = Math.abs(rect.top - 24);
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            best = index;
+          }
+        });
+        return best;
+      }
+
+      function goSlide(step) {
+        const next = Math.min(
+          slides.length - 1,
+          Math.max(0, currentSlideIndex() + step)
+        );
+        slides[next].scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      window.goSlide = goSlide;
+
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowRight" || event.key === "PageDown") {
+          event.preventDefault();
+          goSlide(1);
+        } else if (event.key === "ArrowLeft" || event.key === "PageUp") {
+          event.preventDefault();
+          goSlide(-1);
+        } else if (event.key.toLowerCase() === "p") {
+          window.print();
+        }
+      });
+    </script>
+  </body>
+</html>

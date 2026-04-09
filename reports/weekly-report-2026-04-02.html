@@ -1,0 +1,1237 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EA-VTON Weekly Report | March 26 - April 2, 2026</title>
+    <style>
+      :root {
+        --bg: #f3efe5;
+        --paper: #fffdf8;
+        --panel: #f8f3ea;
+        --ink: #19231f;
+        --muted: #58645d;
+        --line: #d8d0c1;
+        --brand: #0f6b5c;
+        --brand-strong: #083d35;
+        --accent: #d78634;
+        --ok: #1f7a64;
+        --warn: #a45d1d;
+        --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+        --font-body: "Aptos", "Segoe UI Variable Text", "Trebuchet MS", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at top left, rgba(15, 107, 92, 0.14), transparent 28%),
+          radial-gradient(circle at right center, rgba(215, 134, 52, 0.12), transparent 24%),
+          var(--bg);
+        color: var(--ink);
+        font-family: var(--font-body);
+        line-height: 1.45;
+      }
+
+      .toolbar {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        z-index: 20;
+        display: flex;
+        gap: 10px;
+      }
+
+      .toolbar button {
+        border: 0;
+        border-radius: 999px;
+        background: rgba(8, 61, 53, 0.94);
+        color: #fff;
+        padding: 12px 16px;
+        font: inherit;
+        cursor: pointer;
+        box-shadow: 0 10px 24px rgba(8, 61, 53, 0.22);
+      }
+
+      .deck {
+        padding: 28px 18px 54px;
+      }
+
+      .slide {
+        position: relative;
+        width: min(1280px, calc(100vw - 36px));
+        min-height: 720px;
+        margin: 0 auto 28px;
+        padding: 42px 48px 46px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(251, 247, 239, 0.98)),
+          var(--paper);
+        border: 1px solid rgba(216, 208, 193, 0.9);
+        border-radius: 28px;
+        box-shadow: 0 26px 60px rgba(25, 35, 31, 0.12);
+        overflow: hidden;
+      }
+
+      .slide::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto auto 0;
+        width: 100%;
+        height: 8px;
+        background: linear-gradient(90deg, var(--brand-strong), var(--brand), var(--accent));
+      }
+
+      .slide-number {
+        position: absolute;
+        right: 36px;
+        top: 26px;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .eyebrow {
+        margin: 0 0 12px;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--brand);
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        font-family: var(--font-display);
+        line-height: 1.06;
+        letter-spacing: -0.03em;
+      }
+
+      h1 {
+        font-size: 48px;
+        max-width: 900px;
+      }
+
+      h2 {
+        font-size: 34px;
+        margin-bottom: 10px;
+      }
+
+      h3 {
+        font-size: 20px;
+        margin-bottom: 8px;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      ul {
+        margin: 14px 0 0;
+        padding-left: 22px;
+        color: var(--ink);
+      }
+
+      li {
+        margin: 6px 0;
+      }
+
+      .cover {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 34px;
+        align-items: center;
+      }
+
+      .cover::after {
+        content: "";
+        position: absolute;
+        right: -120px;
+        bottom: -130px;
+        width: 420px;
+        height: 420px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(15, 107, 92, 0.14), rgba(15, 107, 92, 0));
+      }
+
+      .cover-copy {
+        position: relative;
+        z-index: 1;
+      }
+
+      .cover-meta {
+        margin-top: 22px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(15, 107, 92, 0.08);
+        color: var(--brand-strong);
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .names {
+        margin-top: 24px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .name-card,
+      .stat-card,
+      .note-card,
+      .panel,
+      .table-card {
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.82);
+      }
+
+      .name-card {
+        padding: 18px 20px;
+      }
+
+      .name-card strong {
+        display: block;
+        font-size: 20px;
+        color: var(--ink);
+      }
+
+      .name-card span {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .cover-brand {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        place-items: center;
+        min-height: 100%;
+      }
+
+      .logo-wrap {
+        width: 100%;
+        max-width: 420px;
+        padding: 34px 30px;
+        border-radius: 30px;
+        border: 1px solid rgba(216, 208, 193, 0.88);
+        background:
+          linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(241, 249, 246, 0.95));
+        box-shadow: 0 20px 44px rgba(15, 107, 92, 0.12);
+        text-align: center;
+      }
+
+      .logo-wrap img {
+        width: 100%;
+        max-width: 240px;
+        height: auto;
+      }
+
+      .logo-wrap .institution {
+        margin-top: 20px;
+        font-size: 24px;
+        font-family: var(--font-display);
+        color: var(--brand-strong);
+      }
+
+      .logo-wrap .subtitle {
+        margin-top: 8px;
+        font-size: 15px;
+      }
+
+      .two-col {
+        display: grid;
+        grid-template-columns: 1.08fr 0.92fr;
+        gap: 24px;
+      }
+
+      .grid-2,
+      .grid-3,
+      .metrics-grid,
+      .card-grid {
+        display: grid;
+        gap: 18px;
+      }
+
+      .grid-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .metrics-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .card-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .stat-card {
+        padding: 18px 20px;
+      }
+
+      .stat-card .kicker {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+
+      .stat-card .value {
+        display: block;
+        font-size: 32px;
+        line-height: 1;
+        color: var(--brand-strong);
+        font-family: var(--font-display);
+      }
+
+      .stat-card .caption {
+        margin-top: 10px;
+        font-size: 14px;
+      }
+
+      .panel,
+      .table-card,
+      .note-card {
+        padding: 18px 20px;
+      }
+
+      .panel strong,
+      .table-card strong,
+      .note-card strong {
+        color: var(--ink);
+      }
+
+      .flow {
+        display: flex;
+        align-items: stretch;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-top: 18px;
+      }
+
+      .flow-step {
+        flex: 1 1 180px;
+        min-height: 132px;
+        padding: 18px;
+        border-radius: 20px;
+        border: 1px solid var(--line);
+        background: linear-gradient(180deg, rgba(248, 243, 234, 0.85), rgba(255, 255, 255, 0.85));
+      }
+
+      .flow-step .tag {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: rgba(15, 107, 92, 0.1);
+        color: var(--brand);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .flow-step p {
+        margin-top: 14px;
+        font-size: 14px;
+      }
+
+      .media-card {
+        border-radius: 22px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        background: #fff;
+      }
+
+      .media-card img {
+        display: block;
+        width: 100%;
+        height: 230px;
+        object-fit: cover;
+        object-position: top center;
+        background: #f1ede5;
+      }
+
+      .media-card.portrait img {
+        height: 430px;
+      }
+
+      .media-card .caption {
+        padding: 12px 14px 14px;
+        font-size: 14px;
+        color: var(--muted);
+      }
+
+      .media-card .caption strong {
+        display: block;
+        color: var(--ink);
+        margin-bottom: 4px;
+      }
+
+      .comparison-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 20px;
+      }
+
+      .comparison-grid .media-card img {
+        height: 300px;
+        object-fit: contain;
+        background: #f5f2ea;
+      }
+
+      .tri-visuals {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .tri-visuals .media-card img {
+        height: 210px;
+        object-fit: contain;
+        background: #f4f0e8;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 14px;
+        font-size: 14px;
+      }
+
+      th,
+      td {
+        padding: 11px 10px;
+        border-bottom: 1px solid rgba(216, 208, 193, 0.9);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .highlight {
+        color: var(--brand-strong);
+        font-weight: 700;
+      }
+
+      .formula {
+        display: block;
+        margin-top: 12px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: rgba(8, 61, 53, 0.06);
+        color: var(--brand-strong);
+        font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+        font-size: 14px;
+      }
+
+      .status-list {
+        display: grid;
+        gap: 14px;
+        margin-top: 14px;
+      }
+
+      .status-item {
+        padding: 16px 18px;
+        border-radius: 20px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.84);
+      }
+
+      .status-item.done {
+        border-left: 8px solid var(--ok);
+      }
+
+      .status-item.next {
+        border-left: 8px solid var(--accent);
+      }
+
+      .status-item strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .footer-note {
+        position: absolute;
+        left: 48px;
+        right: 48px;
+        bottom: 22px;
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .footer-note span {
+        max-width: 48%;
+      }
+
+      @media (max-width: 980px) {
+        .slide,
+        .cover,
+        .two-col,
+        .grid-2,
+        .grid-3,
+        .metrics-grid,
+        .comparison-grid,
+        .tri-visuals,
+        .card-grid {
+          display: block;
+        }
+
+        .slide {
+          width: calc(100vw - 20px);
+          min-height: auto;
+          padding: 34px 22px 40px;
+        }
+
+        .toolbar {
+          right: 16px;
+          bottom: 16px;
+        }
+
+        .slide > * + * {
+          margin-top: 18px;
+        }
+
+        .media-card,
+        .stat-card,
+        .panel,
+        .table-card,
+        .note-card,
+        .status-item {
+          margin-top: 16px;
+        }
+
+        .media-card.portrait img,
+        .comparison-grid .media-card img,
+        .tri-visuals .media-card img,
+        .media-card img {
+          height: auto;
+          max-height: 360px;
+        }
+
+        .footer-note {
+          position: static;
+          margin-top: 20px;
+          display: block;
+        }
+
+        .footer-note span {
+          display: block;
+          max-width: none;
+          margin-top: 6px;
+        }
+      }
+
+      @media print {
+        @page {
+          size: A4 landscape;
+          margin: 0;
+        }
+
+        html,
+        body {
+          margin: 0;
+          padding: 0;
+          width: 297mm;
+          background: #fff;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+
+        .toolbar {
+          display: none !important;
+        }
+
+        .deck {
+          padding: 0;
+        }
+
+        .slide {
+          width: 297mm;
+          height: 210mm;
+          min-height: 0;
+          margin: 0;
+          padding: 11mm 13mm 11mm;
+          border-radius: 0;
+          border: 0;
+          box-shadow: none;
+          overflow: hidden;
+          break-inside: avoid-page;
+          page-break-inside: avoid;
+          break-after: page;
+          page-break-after: always;
+        }
+
+        .slide:last-child {
+          break-after: auto;
+          page-break-after: auto;
+        }
+
+        .slide-number {
+          top: 10mm;
+          right: 12mm;
+          font-size: 10pt;
+        }
+
+        .eyebrow {
+          margin-bottom: 6px;
+          font-size: 9pt;
+        }
+
+        h1 {
+          font-size: 31pt;
+        }
+
+        h2 {
+          font-size: 22pt;
+          margin-bottom: 6px;
+        }
+
+        h3 {
+          font-size: 14pt;
+        }
+
+        p,
+        li,
+        .chip,
+        .media-card .caption,
+        .stat-card .caption,
+        .note-card,
+        .panel,
+        .table-card,
+        table,
+        .flow-step,
+        .status-item {
+          font-size: 10pt;
+        }
+
+        .cover-meta,
+        .metrics-grid,
+        .grid-2,
+        .grid-3,
+        .comparison-grid,
+        .tri-visuals,
+        .card-grid,
+        .flow,
+        .status-list {
+          gap: 10px;
+        }
+
+        .chip {
+          padding: 5px 10px;
+        }
+
+        .name-card,
+        .stat-card,
+        .note-card,
+        .panel,
+        .table-card,
+        .status-item,
+        .flow-step {
+          padding: 10px 12px;
+          border-radius: 14px;
+        }
+
+        .media-card img {
+          height: 44mm;
+        }
+
+        .media-card.portrait img {
+          height: 78mm;
+        }
+
+        .comparison-grid .media-card img {
+          height: 54mm;
+        }
+
+        .tri-visuals .media-card img {
+          height: 40mm;
+        }
+
+        .footer-note {
+          left: 13mm;
+          right: 13mm;
+          bottom: 8mm;
+          font-size: 8.5pt;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar" aria-hidden="true">
+      <button type="button" onclick="goSlide(-1)">Prev</button>
+      <button type="button" onclick="goSlide(1)">Next</button>
+      <button type="button" onclick="window.print()">Print / PDF</button>
+    </div>
+
+    <main class="deck">
+      <section class="slide cover" id="slide-1">
+        <div class="slide-number">01 / 08</div>
+        <div class="cover-copy">
+          <p class="eyebrow">Weekly Progress Report</p>
+          <h1>
+            EA-VTON: Ethnicity-Aware Virtual Try-On with Population-Adaptive
+            Size Recommendation
+          </h1>
+          <p style="margin-top: 18px; max-width: 760px; font-size: 18px;">
+            Progress report for <strong>March 26, 2026 to April 2, 2026</strong>.
+          </p>
+
+          <div class="cover-meta">
+            <span class="chip">Web interface</span>
+            <span class="chip">Try-on pipeline</span>
+            <span class="chip">Mac test run</span>
+            <span class="chip">EA sizing</span>
+          </div>
+
+          <div class="names">
+            <div class="name-card">
+              <strong>Nguyễn Thị Anh Thơ</strong>
+              <span>Presenter</span>
+            </div>
+            <div class="name-card">
+              <strong>Lê Thành Danh</strong>
+              <span>Presenter</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="cover-brand">
+          <div class="logo-wrap">
+            <img
+              src="https://hcmiu.edu.vn/wp-content/uploads/2017/08/logo-vector-IU-01.png"
+              alt="International University logo"
+            />
+            <div class="institution">International University</div>
+            <p class="subtitle">
+              HCMC National University
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-2">
+        <div class="slide-number">02 / 08</div>
+        <p class="eyebrow">Week Summary</p>
+        <h2>Main progress this week</h2>
+        <div class="two-col" style="margin-top: 24px;">
+          <div>
+            <div class="metrics-grid">
+              <div class="stat-card">
+                <span class="kicker">Pages</span>
+                <span class="value">5+</span>
+                <p class="caption">
+                  Landing, catalog, try-on, product, and result flows.
+                </p>
+              </div>
+              <div class="stat-card">
+                <span class="kicker">APIs</span>
+                <span class="value">4</span>
+                <p class="caption">
+                  Upload, garments, try-on, and size recommendation.
+                </p>
+              </div>
+              <div class="stat-card">
+                <span class="kicker">Quick run</span>
+                <span class="value">3-step</span>
+                <p class="caption">
+                  Fast preview path that can run on a Mac CPU.
+                </p>
+              </div>
+              <div class="stat-card">
+                <span class="kicker">Benchmark</span>
+                <span class="value">10 / 20 / 30</span>
+                <p class="caption">
+                  Step comparison for image quality and runtime.
+                </p>
+              </div>
+            </div>
+
+            <div class="panel" style="margin-top: 18px;">
+              <strong>Result</strong>
+              <p style="margin-top: 8px;">
+                The project now has a working interface, a complete try-on
+                flow, and reportable visual results.
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <div class="note-card">
+              <strong>Completed</strong>
+              <ul>
+                <li>Built the FitView web interface in <strong>Next.js</strong>.</li>
+                <li>Connected backend stages from upload to final result.</li>
+                <li>Generated test outputs in <strong>backend/test_results</strong>.</li>
+                <li>Added Vietnamese vs universal size comparison.</li>
+              </ul>
+            </div>
+
+            <div class="note-card" style="margin-top: 18px;">
+              <strong>Current scope</strong>
+              <p style="margin-top: 8px;">
+                The interface and pipeline are implemented. Full
+                population-specific body modeling remains the next stage.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-3">
+        <div class="slide-number">03 / 08</div>
+        <p class="eyebrow">Frontend Progress</p>
+        <h2>Web interface</h2>
+        <div class="grid-3" style="margin-top: 24px;">
+          <figure class="media-card portrait">
+            <img src="../fitview-homepage.png" alt="FitView homepage" />
+            <figcaption class="caption">
+              <strong>Landing page</strong>
+              Main entry for the system.
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img src="../fitview-catalog.png" alt="FitView catalog page" />
+            <figcaption class="caption">
+              <strong>Catalog flow</strong>
+              Garment browsing before try-on.
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img src="../fitview-camera-oval.png" alt="FitView camera guide" />
+            <figcaption class="caption">
+              <strong>Camera guidance</strong>
+              Guided photo capture for input quality.
+            </figcaption>
+          </figure>
+        </div>
+
+        <div class="flow">
+          <div class="flow-step">
+            <span class="tag">Implemented</span>
+            <p>
+              Multi-step flow for upload, selection, and result display.
+            </p>
+          </div>
+          <div class="flow-step">
+            <span class="tag">Implemented</span>
+            <p>
+              Quality checks for brightness, blur, and resolution.
+            </p>
+          </div>
+          <div class="flow-step">
+            <span class="tag">Implemented</span>
+            <p>
+              Job polling and backend health display.
+            </p>
+          </div>
+          <div class="flow-step">
+            <span class="tag">Outcome</span>
+            <p>
+              The system is ready for demonstration.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-4">
+        <div class="slide-number">04 / 08</div>
+        <p class="eyebrow">System Wiring</p>
+        <h2>System overview</h2>
+
+        <div class="flow" style="margin-top: 24px;">
+          <div class="flow-step">
+            <span class="tag">Frontend</span>
+            <p>
+              Next.js interface for upload, selection, and results.
+            </p>
+          </div>
+          <div class="flow-step">
+            <span class="tag">Backend API</span>
+            <p>
+              FastAPI endpoints for upload, try-on, garments, and sizing.
+            </p>
+          </div>
+          <div class="flow-step">
+            <span class="tag">Pipeline</span>
+            <p>
+              Preprocess → inference → postprocess → composite.
+            </p>
+          </div>
+          <div class="flow-step">
+            <span class="tag">EA layer</span>
+            <p>
+              Vietnamese-aware size comparison is already available.
+            </p>
+          </div>
+        </div>
+
+        <div class="two-col" style="margin-top: 22px;">
+          <div class="table-card">
+            <strong>Current path</strong>
+            <table>
+              <thead>
+                <tr>
+                  <th>Stage</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Input</td>
+                  <td>Photo, garment, and body inputs</td>
+                </tr>
+                <tr>
+                  <td>Inference</td>
+                  <td>FASHN v1.5 test backend</td>
+                </tr>
+                <tr>
+                  <td>Postprocess</td>
+                  <td>Garment-only composite and enhancement</td>
+                </tr>
+                <tr>
+                  <td>Recommendation</td>
+                  <td>Universal vs Vietnamese estimation</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div>
+            <div class="note-card">
+              <strong>Summary</strong>
+              <ul>
+                <li>The main user flow is connected end to end.</li>
+                <li>The current backend already supports a live demo.</li>
+                <li>The next step is deeper body-model integration.</li>
+              </ul>
+            </div>
+
+            <span class="formula">
+              UI → upload → try-on job → garment composite → result
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-5">
+        <div class="slide-number">05 / 08</div>
+        <p class="eyebrow">Try-On Result Logic</p>
+        <h2>Garment-only postprocessing</h2>
+
+        <div class="comparison-grid">
+          <figure class="media-card">
+            <img src="../backend/test_results/output_raw.png" alt="Raw VTON output" />
+            <figcaption class="caption">
+              <strong>Raw preview</strong>
+              Quick 3-step Mac test.
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img src="../backend/test_results/garment_mask.png" alt="Garment mask" />
+            <figcaption class="caption">
+              <strong>Garment mask</strong>
+              Detected after inference.
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img src="../backend/test_results/output_final.png" alt="Final composited result" />
+            <figcaption class="caption">
+              <strong>Final result</strong>
+              Changes are limited to the garment area.
+            </figcaption>
+          </figure>
+        </div>
+
+        <div class="two-col" style="margin-top: 20px;">
+          <div class="panel">
+            <strong>Method</strong>
+            <p style="margin-top: 8px;">
+              FASHN VTON is maskless at inference time. The garment mask is
+              detected afterward and used only for enhancement and compositing.
+            </p>
+          </div>
+
+          <div>
+            <span class="formula">
+              final = original × (1 - mask) + enhanced_vton × mask
+            </span>
+            <div class="note-card" style="margin-top: 14px;">
+              <strong>Effect</strong>
+              <ul>
+                <li>Face, skin, and background remain unchanged.</li>
+                <li>Sharpening is applied only to the garment region.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-6">
+        <div class="slide-number">06 / 08</div>
+        <p class="eyebrow">Evaluation Snapshot</p>
+        <h2>Current test results</h2>
+
+        <div class="two-col" style="margin-top: 22px;">
+          <div class="table-card">
+            <strong>Step comparison on Mac CPU</strong>
+            <table>
+              <thead>
+                <tr>
+                  <th>Steps</th>
+                  <th>Inference</th>
+                  <th>Face SSIM</th>
+                  <th>Sharpness</th>
+                  <th>Garment detail</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>10</td>
+                  <td>625.5s</td>
+                  <td>0.9344</td>
+                  <td>41.2</td>
+                  <td>55.2</td>
+                </tr>
+                <tr>
+                  <td class="highlight">20</td>
+                  <td class="highlight">953.0s</td>
+                  <td class="highlight">0.9345</td>
+                  <td class="highlight">44.1</td>
+                  <td class="highlight">57.6</td>
+                </tr>
+                <tr>
+                  <td>30</td>
+                  <td>1511.5s</td>
+                  <td>0.9344</td>
+                  <td>45.6</td>
+                  <td>58.3</td>
+                </tr>
+              </tbody>
+            </table>
+            <p style="margin-top: 12px;">
+              Quick preview: <strong>3-step</strong>. Quality comparison:
+              <strong>10 / 20 / 30-step</strong>.
+            </p>
+          </div>
+
+          <div>
+            <div class="panel">
+              <strong>Observation</strong>
+              <ul>
+                <li>10 steps is faster but softer.</li>
+                <li>20 steps gives a good balance of quality and cost.</li>
+                <li>30 steps improves slightly but takes longer.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="tri-visuals">
+          <figure class="media-card">
+            <img src="../backend/test_results/step_comparison/final_10steps.png" alt="10-step result" />
+            <figcaption class="caption">
+              <strong>10 steps</strong>
+              Faster, softer.
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img src="../backend/test_results/step_comparison/final_20steps.png" alt="20-step result" />
+            <figcaption class="caption">
+              <strong>20 steps</strong>
+              Best overall balance.
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img src="../backend/test_results/step_comparison/final_30steps.png" alt="30-step result" />
+            <figcaption class="caption">
+              <strong>30 steps</strong>
+              Slightly better, slower.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-7">
+        <div class="slide-number">07 / 08</div>
+        <p class="eyebrow">Paper Alignment</p>
+        <h2>Relation to the EA-VTON direction</h2>
+
+        <div class="card-grid" style="margin-top: 24px;">
+          <div class="status-list">
+            <div class="status-item done">
+              <strong>Implemented</strong>
+              <p>Web interface and try-on flow.</p>
+            </div>
+            <div class="status-item done">
+              <strong>Implemented</strong>
+              <p>Vietnamese-aware size comparison.</p>
+            </div>
+            <div class="status-item done">
+              <strong>Implemented</strong>
+              <p>Reproducible visual test outputs.</p>
+            </div>
+          </div>
+
+          <div class="status-list">
+            <div class="status-item next">
+              <strong>Next</strong>
+              <p>Integrate VN-SMPL into the try-on path.</p>
+            </div>
+            <div class="status-item next">
+              <strong>Next</strong>
+              <p>Build a population-aware synthetic body dataset.</p>
+            </div>
+            <div class="status-item next">
+              <strong>Next</strong>
+              <p>Expand quantitative evaluation.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="two-col" style="margin-top: 20px;">
+          <div class="panel">
+            <strong>Current EA sizing logic</strong>
+            <span class="formula">
+              universal chest = 0.52 × height + 0.18 × weight
+              <br />
+              vietnamese chest = 0.485 × height + 0.22 × weight - 2.5
+            </span>
+          </div>
+
+          <div class="note-card">
+            <strong>Positioning</strong>
+            <p style="margin-top: 8px;">
+              The current system supports the project direction. Full
+              population-specific body modeling is the next milestone.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-8">
+        <div class="slide-number">08 / 08</div>
+        <p class="eyebrow">Next Step</p>
+        <h2>Next steps</h2>
+
+        <div class="grid-2" style="margin-top: 24px;">
+          <div class="note-card">
+            <strong>Technical</strong>
+            <ul>
+              <li>Move main inference to GPU for live demonstration.</li>
+              <li>Integrate Vietnamese body priors more deeply.</li>
+              <li>Extend benchmark images and metrics.</li>
+            </ul>
+          </div>
+
+          <div class="note-card">
+            <strong>Research value</strong>
+            <ul>
+              <li>The interface demonstrates a complete prototype.</li>
+              <li>The garment-mask result improves result trustworthiness.</li>
+              <li>The EA sizing path already supports the paper theme.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top: 22px;">
+          <strong>Closing</strong>
+          <p style="margin-top: 10px; font-size: 18px;">
+            During this period, the project advanced from concept to a working
+            prototype with a usable interface, a functioning try-on pipeline,
+            and concrete visual results.
+          </p>
+        </div>
+
+        <div class="footer-note">
+          <span>
+            Prepared from the current project codebase, paper draft, and test
+            outputs.
+          </span>
+          <span>
+            Open in a browser or print in landscape format.
+          </span>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const slides = Array.from(document.querySelectorAll(".slide"));
+
+      function currentSlideIndex() {
+        let best = 0;
+        let bestDistance = Number.POSITIVE_INFINITY;
+        slides.forEach((slide, index) => {
+          const rect = slide.getBoundingClientRect();
+          const distance = Math.abs(rect.top - 24);
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            best = index;
+          }
+        });
+        return best;
+      }
+
+      function goSlide(step) {
+        const next = Math.min(
+          slides.length - 1,
+          Math.max(0, currentSlideIndex() + step)
+        );
+        slides[next].scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      window.goSlide = goSlide;
+
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowRight" || event.key === "PageDown") {
+          event.preventDefault();
+          goSlide(1);
+        } else if (event.key === "ArrowLeft" || event.key === "PageUp") {
+          event.preventDefault();
+          goSlide(-1);
+        } else if (event.key.toLowerCase() === "p") {
+          window.print();
+        }
+      });
+    </script>
+  </body>
+</html>
