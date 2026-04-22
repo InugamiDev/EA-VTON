@@ -11,7 +11,7 @@ model:
   normalization: layer_norm
 
 data:
-  dataset: data/processed/rtr_body_fit.parquet
+  dataset: research/datasets/processed/rtr_body_fit.parquet
   features:
     - height_cm
     - weight_kg

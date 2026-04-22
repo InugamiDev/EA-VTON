@@ -112,7 +112,7 @@ $$n_{\text{eff}} = \frac{\left(\sum_{i=1}^N \tilde{r}_i\right)^2}{\sum_{i=1}^N \
 - When one weight dominates: $n_{\text{eff}} \to 1$
 - High weight variance → low ESS → less reliable estimates
 
-**Observed**: ESS ≈ 24,313 out of 192,311 total (~12.6%), computed by `ea-vton/datasets/scripts/adapt_rtr_to_vn.py` on our current snapshot of the RTR parquet. This means the adapted dataset has roughly the statistical power of ~24K independent Vietnamese-like samples — adequate for training but indicating significant distribution shift. The number will move if the RTR snapshot or the Gaussian population parameters are updated; it is a property of our pipeline output, not a fixed external constant.
+**Observed**: ESS ≈ 24,313 out of 192,311 total (~12.6%), computed by `research/datasets/scripts/adapt_rtr_to_vn.py` on our current snapshot of the RTR parquet. This means the adapted dataset has roughly the statistical power of ~24K independent Vietnamese-like samples — adequate for training but indicating significant distribution shift. The number will move if the RTR snapshot or the Gaussian population parameters are updated; it is a property of our pipeline output, not a fixed external constant.
 
 ## Resampling
 

@@ -194,7 +194,7 @@ The pipeline below has been designed and individual components exist, but an end
 ### File Structure
 
 ```
-backend/services/video_pipeline/
+services/video_pipeline/
 ├── __init__.py              # VideoPipelineConfig, run_video_pipeline()
 ├── frame_extractor.py       # cv2.VideoCapture → frame generator
 ├── pose_tracker.py          # MediaPipe PoseLandmarker → 33 landmarks
@@ -205,7 +205,7 @@ backend/services/video_pipeline/
 ├── async_vton_worker.py     # Background VTON on keyframes
 ├── video_assembler.py       # Frames → MP4 (cv2/ffmpeg)
 
-backend/routers/
+apps/api/src/routes/
 ├── video_tryon.py           # POST/GET endpoints
 
 backend/tests/
@@ -306,7 +306,7 @@ This is a novel contribution: **the demo pipeline generates its own training dat
 ### File Structure (Future)
 
 ```
-backend/services/distillation/
+services/distillation/
 ├── __init__.py
 ├── teacher_generator.py      # Generate training pairs from Plan A
 ├── student_model.py          # MobileNetV3 + TPS + fusion decoder + ConvGRU

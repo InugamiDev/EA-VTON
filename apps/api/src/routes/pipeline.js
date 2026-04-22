@@ -116,19 +116,15 @@ router.post("/quick", async (req, res) => {
 
   const result = { body_measurements: null, size_recommendation: null };
 
-  try {
-    // Step 1: Quick body measurements (no photo)
-    const measResp = await fetch(`${FEATURE_SERVICE_URL}/extract`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ height_cm, weight_kg }),
-    });
-
-    if (measResp.ok) {
-      result.body_measurements = await measResp.json();
-    }
-  } catch {
-    // Feature service unavailable — continue without measurements
+  // No photo in quick mode — estimate body measurements from height/weight
+  if (weight_kg) {
+    const heightM = height_cm / 100;
+    const bmi = weight_kg / (heightM * heightM);
+    result.body_measurements = {
+      bmi: Math.round(bmi * 10) / 10,
+      method: "height_weight_only",
+      warnings: ["No photo — measurements estimated from height/weight only"],
+    };
   }
 
   try {

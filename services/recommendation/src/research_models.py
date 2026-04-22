@@ -35,7 +35,13 @@ SIZE_MAP = {0: "XXS", 1: "XS", 2: "S", 3: "M", 4: "L", 5: "XL", 6: "XXL"}
 SIZE_ORDER = {"XXS": 0, "XS": 1, "S": 2, "M": 3, "L": 4, "XL": 5, "XXL": 6}
 
 # GBM variant names that have .pkl files
-GBM_VARIANTS = ["gbm_uniform", "gbm_indep", "gbm_copula"]
+GBM_VARIANTS = [
+    "gbm_uniform",
+    "gbm_indep",
+    "gbm_copula",
+    "gbm_indep_tempered_a05",
+    "gbm_copula_tempered_a075",
+]
 
 # MLP variant names that have .pt files (require torch)
 MLP_VARIANTS = ["mlp_ce_uniform", "mlp_ce_copula", "mlp_corn_copula"]

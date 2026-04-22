@@ -50,7 +50,7 @@ Like how Stable Diffusion papers cite U-Net and CLIP but contribute the diffusio
 - Density ratio estimation via Gaussian PDF ratio
 - ESS analysis showing 12.6% effective sample retention
 
-**Status**: DONE (docs/03, ea-vton/models/train_size_rec.py)
+**Status**: DONE (docs/03, research/models/train_size_rec.py)
 
 ### C3: Fit-Aware Virtual Try-On Rendering
 - Given: person photo + garment + predicted fit (tight/normal/loose)
@@ -150,7 +150,7 @@ Input: Person Photo (I_p) + Garment Image (I_g) + Body Info (h, w)
   if chest_diff < -2cm  → loose
   if chest_diff < -4cm  → very_loose
   ```
-- File: `backend/services/fit_predictor.py`
+- File: `services/fit_predictor.py`
 
 #### 2b. Garment Mask Deformation
 - Extract garment mask from VTON output (FashnHumanParser)
@@ -159,13 +159,13 @@ Input: Person Photo (I_p) + Garment Image (I_g) + Body Info (h, w)
   - **Loose**: dilate mask by N pixels, apply slight outward warp, soften edges for drape effect
   - **Normal**: no deformation
 - Deformation magnitude proportional to |chest_diff|
-- File: `backend/services/pipeline/postprocessing/fit_renderer.py`
+- File: `services/pipeline/postprocessing/fit_renderer.py`
 
 #### 2c. Integration
 - Wire fit_predictor into pipeline (after Stage 3 inference, before Stage 5 composite)
 - Pass fit_level to garment_composite
 - Return fit info in API response
-- File: modify `backend/services/pipeline/__init__.py`
+- File: modify `services/pipeline/__init__.py`
 
 ### Phase 3: Evaluation Framework (TODO)
 
@@ -175,7 +175,7 @@ Input: Person Photo (I_p) + Garment Image (I_g) + Body Info (h, w)
   - BodyM dataset (Amazon) — ships silhouettes and anthropometric measurements (not raw photos), and has no VTON ground truth
   - Manually annotate a small set (50-100 person-garment pairs with fit labels)
   - Synthetic: generate pairs using FASHN at different "person sizes" and compare
-- File: `ea-vton/evaluation/build_eval_set.py`
+- File: `research/evaluation/build_eval_set.py`
 
 #### 3b. Implement Metrics
 - **Size Accuracy (SA)**: `correct_predictions / total_predictions`
@@ -187,14 +187,14 @@ Input: Person Photo (I_p) + Garment Image (I_g) + Body Info (h, w)
   - Automated: `garment_mask_area(tight) < garment_mask_area(normal) < garment_mask_area(loose)`
 - **Population Fairness (PF)**: `|SA_us - SA_vn|` (lower = more fair)
 - **Standard VTON metrics**: FID, SSIM, LPIPS (for visual quality — should not degrade vs. baseline FASHN)
-- File: `ea-vton/evaluation/metrics.py`
+- File: `research/evaluation/metrics.py`
 
 #### 3c. Run Experiments
 - Experiment 1: Size accuracy — EA-VTON vs. US-only baseline on Vietnamese subjects
 - Experiment 2: Visual quality — EA-VTON fit rendering vs. vanilla FASHN (FID, SSIM)
 - Experiment 3: Fit consistency — does tight/loose rendering produce visually distinguishable results?
 - Experiment 4: Ablation — remove importance weighting, remove fit rendering, measure degradation
-- File: `ea-vton/evaluation/run_experiments.py`
+- File: `research/evaluation/run_experiments.py`
 
 ### Phase 4: Paper Writing (TODO)
 

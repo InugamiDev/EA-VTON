@@ -50,7 +50,7 @@ Train gradient-boosted trees (GBM) and MLPs on the reweighted data. We evaluate 
 
 **Step 4 — Body Measurement Estimation**
 
-Ridge regression trained on Amazon BodyM (2,018 subjects) maps height + weight + gender to 6 body measurements (chest, waist, hip, shoulder, arm, leg). R² = 0.84, avg MAE = 2.10 cm.
+Ridge regression trained on Amazon BodyM (2,507 subjects; 2,018 train / 489 test) maps height + weight + gender to 6 body measurements (chest, waist, hip, shoulder, arm, leg). Mean R² = 0.85, avg MAE = 2.10 cm.
 
 ### Engineering: Virtual Try-On
 
@@ -160,11 +160,11 @@ The copula models joint P(height, weight) for US and VN populations. Key paramet
 
 | Population | Height (mean/std) | Weight (mean/std) | Correlation |
 |-----------|-------------------|-------------------|-------------|
-| US (RTR)  | 165.9 / 7.5 cm   | 68.9 / 16.6 kg   | 0.388       |
-| VN        | 156.2 / 5.5 cm   | 53.9 / 8.0 kg    | 0.388       |
+| US (RTR)  | 165.8 / 7.5 cm   | 62.3 / 16.6 kg   | 0.388       |
+| VN (Tran et al.) | 156.2 / 5.5 cm   | 53.9 / 8.0 kg    | 0.388       |
 
 Density ratio: `w(h,w) = phi_VN(h,w) / phi_US(h,w)` where phi is the copula density.
-After PSIS: ESS = 20,806 (24.1% of 86K training samples), k-hat < 0.
+After PSIS on 86K fit-only training samples: ESS = 20,806 (24.1%), k-hat = -0.001.
 
 ### 3. Model Training
 
@@ -177,14 +177,14 @@ training/scripts/train_size_mlp.py # MLP training with importance weights
 
 | Variant | Full Acc | Full W1 | VN Acc | VN W1 | VN Bias |
 |---------|----------|---------|--------|-------|---------|
-| gbm_uniform | **49.0%** | **83.4%** | 50.5% | 70.0% | -0.211 |
+| gbm_uniform | **49.0%** | **83.4%** | 50.7% | 70.1% | **-0.172** |
 | gbm_indep | 48.2% | 83.0% | 51.1% | **70.8%** | -0.190 |
 | gbm_copula | 48.5% | 83.2% | **51.4%** | 70.7% | -0.199 |
-| mlp_ce_copula | 47.8% | 83.1% | 50.4% | 69.7% | -0.232 |
-| mlp_coral_copula | 47.7% | 82.5% | 50.8% | 70.4% | **-0.203** |
-| mlp_corn_copula | 47.5% | 82.9% | 50.1% | 69.4% | -0.218 |
+| mlp_ce_uniform | 48.3% | 83.0% | 50.6% | 70.3% | -0.249 |
+| mlp_ce_copula | 47.9% | 82.7% | 50.7% | 69.8% | -0.238 |
+| mlp_corn_copula | 47.4% | 83.0% | 50.3% | 69.3% | -0.230 |
 
-GBM + copula is the best practical model. Full-set accuracy trades ~0.5pp for +0.9pp on VN-range bodies.
+GBM + copula is the best practical model. Full-set accuracy trades ~0.5pp for +0.6pp on VN-range bodies.
 
 ### 4. Body Measurement Estimation
 
@@ -230,7 +230,7 @@ graph TD
         I --> CP["Copula + PSIS<br/>ESS = 20,806 (24%)"]
     end
 
-    subgraph "Loss Function"
+    subgraph "Loss Function (ablation)"
         CE["Cross-Entropy<br/>VN W1 = 69.7%"]
         CORAL["CORAL<br/>VN W1 = 70.4%"]
         CORN["CORN<br/>VN W1 = 69.4%"]
@@ -247,8 +247,8 @@ graph TD
 ```
 
 - **Copula > Independent**: 2.2x higher ESS via height-weight correlation modeling
-- **PSIS**: Tames max weight 110 -> 57, marginal accuracy gain
-- **CORAL > CE > CORN**: CORAL best for VN ordinal prediction (W1 = 70.4%, bias = -0.203)
+- **PSIS**: Smooths tail weights (max 30.6 -> 10.2 on full data), improves stability
+- **CORAL > CE > CORN** (ablation, separate training run): CORAL best for VN ordinal prediction (W1 = 70.4%, bias = -0.203)
 - **Weight sensitivity**: Method collapses when weight target > 1 sigma from source (ESS -> 18)
 
 ---

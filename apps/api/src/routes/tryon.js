@@ -111,6 +111,41 @@ router.post(
 );
 
 /**
+ * GET /api/tryon/simple/:jobId — poll simple try-on job status.
+ */
+router.get("/simple/:jobId", (req, res) => {
+  const job = jobs.get(req.params.jobId);
+  if (!job) {
+    return res.status(404).json({ detail: "Job not found" });
+  }
+  res.json({
+    job_id: job.jobId,
+    status: job.status,
+    garment_id: job.garmentId,
+    result_url: job.resultUrl,
+    confidence_score: job.confidenceScore,
+    confidence_label: job.confidenceLabel,
+    processing_time_ms: job.processingTimeMs,
+    method: job.method,
+    error: job.error,
+    stages: job.stages,
+    result_image_base64: job.resultImageBase64 || null,
+  });
+});
+
+/**
+ * GET /api/tryon/simple/:jobId/image — get try-on result image.
+ */
+router.get("/simple/:jobId/image", (req, res) => {
+  const job = jobs.get(req.params.jobId);
+  if (!job || !job.resultImageBuf) {
+    return res.status(404).json({ detail: "Result image not available" });
+  }
+  res.set("Content-Type", "image/png");
+  res.send(job.resultImageBuf);
+});
+
+/**
  * GET /api/tryon/:jobId — poll job status.
  */
 router.get("/:jobId", (req, res) => {
@@ -130,6 +165,18 @@ router.get("/:jobId", (req, res) => {
     error: job.error,
     stages: job.stages,
   });
+});
+
+/**
+ * GET /api/tryon/:jobId/image — get try-on result image.
+ */
+router.get("/:jobId/image", (req, res) => {
+  const job = jobs.get(req.params.jobId);
+  if (!job || !job.resultImageBuf) {
+    return res.status(404).json({ detail: "Result image not available" });
+  }
+  res.set("Content-Type", "image/png");
+  res.send(job.resultImageBuf);
 });
 
 // ── Job processing ──
@@ -192,12 +239,11 @@ async function processSimpleJob(jobId, personBuf, garmentBuf, garmentType) {
   const job = jobs.get(jobId);
 
   try {
-    const FormData = (await import("node-fetch")).FormData;
     const { Blob } = await import("node:buffer");
 
     const form = new FormData();
-    form.append("person_image", new Blob([personBuf]), "person.jpg");
-    form.append("garment_image", new Blob([garmentBuf]), "garment.jpg");
+    form.append("person_image", new Blob([personBuf], { type: "image/jpeg" }), "person.jpg");
+    form.append("garment_image", new Blob([garmentBuf], { type: "image/png" }), "garment.jpg");
     form.append("garment_type", garmentType);
 
     const response = await fetch(`${VTON_SERVICE_URL}/infer`, {
@@ -209,6 +255,9 @@ async function processSimpleJob(jobId, personBuf, garmentBuf, garmentType) {
       throw new Error(`VTON service returned ${response.status}`);
     }
 
+    const resultBuf = Buffer.from(await response.arrayBuffer());
+    job.resultImageBuf = resultBuf;
+    job.resultImageBase64 = resultBuf.toString("base64");
     job.processingTimeMs = Date.now() - t0;
     job.status = "completed";
     job.method = response.headers.get("X-Backend") || "vton-service";

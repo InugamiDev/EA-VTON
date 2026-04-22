@@ -3,7 +3,7 @@
 Endpoints:
   POST /recommend-size           — predict best size (rule-based, existing)
   POST /recommend-size/research  — predict best size using trained GBM model
-  POST /compare                  — compare ALL 6 research model variants
+  POST /compare                  — compare all available research model variants
   GET  /recommend                — get personalized garment recommendations
   GET  /health                   — service health check
 """
@@ -180,9 +180,9 @@ def recommend_size(req: SizeRequest):
 
 @app.post("/recommend-size/research", response_model=ResearchSizeResponse)
 def recommend_size_research(req: ResearchSizeRequest):
-    """Predict size using the trained GBM model (best practical variant).
+    """Predict size using the tuned GBM model (best current practical variant).
 
-    Runs gbm_copula as the primary model and also returns the rule-based
+    Runs gbm_copula_tempered_a075 as the primary model and also returns the rule-based
     prediction for comparison. Gracefully falls back to rule-based only
     if the GBM model file is missing.
     """
@@ -230,20 +230,20 @@ def recommend_size_research(req: ResearchSizeRequest):
         rule_based_result["predicted_size"] = _bmi_to_size_heuristic(bmi)
         rule_based_result["confidence"] = "low"
 
-    # Research model prediction (GBM copula — best practical model)
+    # Research model prediction (tuned GBM copula — best current practical model)
     research_result = _predict_research_model(
-        "gbm_copula", req.height_cm, req.weight_kg, req.age, req.body_type, req.category
+        "gbm_copula_tempered_a075", req.height_cm, req.weight_kg, req.age, req.body_type, req.category
     )
 
     if research_result is None:
         research_result = {
             "predicted_size": rule_based_result["predicted_size"],
             "confidence": "low",
-            "model": "gbm_copula",
+            "model": "gbm_copula_tempered_a075",
             "error": "Model not loaded — falling back to rule-based",
         }
     else:
-        research_result["model"] = "gbm_copula"
+        research_result["model"] = "gbm_copula_tempered_a075"
 
     return ResearchSizeResponse(
         research_model=research_result,
@@ -252,7 +252,7 @@ def recommend_size_research(req: ResearchSizeRequest):
     )
 
 
-# intent: compare all 6 trained variants side-by-side + rule-based baseline
+# intent: compare trained research variants side-by-side + rule-based baseline
 # status: done
 # next: add latency tracking per model
 # confidence: high
@@ -260,10 +260,10 @@ def recommend_size_research(req: ResearchSizeRequest):
 
 @app.post("/compare", response_model=CompareResponse)
 def compare_models(req: CompareRequest):
-    """Compare ALL 6 research model variants + rule-based baseline.
+    """Compare all available research model variants + rule-based baseline.
 
     Returns predictions from every available variant and recommends the
-    best model (gbm_copula by default — lowest bias, best practical trade-off).
+    best model (gbm_copula_tempered_a075 by default — best tuned within-1 trade-off).
     """
     from src.size_engine import (
         estimate_chest_cm,
@@ -312,13 +312,21 @@ def compare_models(req: CompareRequest):
         "estimated_hip_cm": hip,
     }
 
-    # Recommended model: prefer gbm_copula if available, else first available GBM
+    # Recommended model: prefer tuned copula candidate, else other GBM baselines
     recommended = "rule_based"
-    if "gbm_copula" in all_results:
-        recommended = "gbm_copula"
+    if "gbm_copula_tempered_a075" in all_results:
+        recommended = "gbm_copula_tempered_a075"
     elif all_results:
         # Pick any available GBM variant first, then MLP
-        for name in ["gbm_uniform", "gbm_indep", "mlp_ce_uniform", "mlp_ce_copula", "mlp_corn_copula"]:
+        for name in [
+            "gbm_indep_tempered_a05",
+            "gbm_copula",
+            "gbm_indep",
+            "gbm_uniform",
+            "mlp_ce_uniform",
+            "mlp_ce_copula",
+            "mlp_corn_copula",
+        ]:
             if name in all_results:
                 recommended = name
                 break
