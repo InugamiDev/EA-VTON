@@ -1,0 +1,35 @@
+# Body Embedding CNN Training Configuration
+# Contrastive learning on pose heatmaps + parsing maps
+
+model:
+  name: body_embedding_cnn
+  input_channels: 38  # 18 pose + 20 parsing one-hot
+  embedding_dim: 128
+
+data:
+  dataset_dir: data/processed/vitonhd
+  pairs_file: data/processed/vitonhd/pairs.json
+  spatial_h: 64
+  spatial_w: 48
+  test_split: 0.1
+
+training:
+  epochs: 30
+  batch_size: 32
+  lr: 1.0e-3
+  weight_decay: 1.0e-4
+  scheduler: cosine
+
+  # Contrastive learning
+  loss:
+    type: triplet
+    margin: 0.3
+    mining: semi_hard
+
+  # Data augmentation for positive pairs
+  augmentation:
+    heatmap_noise_std: 0.05
+    parsing_dropout: 0.1
+
+checkpoints:
+  dir: training/checkpoints/body_embedding

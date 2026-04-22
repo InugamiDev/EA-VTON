@@ -1,0 +1,27 @@
+[project]
+name = "recommendation-service"
+version = "0.1.0"
+description = "EA-VTON size recommendation & item recommendation service"
+requires-python = ">=3.11"
+
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.34.0",
+    "python-multipart>=0.0.22",
+    "numpy>=2.0.0",
+    "torch>=2.5.0",
+    "torchvision>=0.20.0",
+    "scipy>=1.14.0",
+    "pandas>=2.2.0",
+    "scikit-learn>=1.5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.8.0",
+]
+
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"

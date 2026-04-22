@@ -2,7 +2,9 @@
 
 ## Problem Statement
 
-Given a person's height $h$ (cm) and weight $w$ (kg), estimate body circumferences (chest, waist, hip) that are accurate for their population. Standard regression models are calibrated to Western (US/EU) populations and systematically overestimate measurements for Vietnamese individuals.
+Given a person's height $h$ (cm) and weight $w$ (kg), estimate body circumferences (chest, waist, hip) that are accurate for their population. Regression models calibrated on the RTR/CAESAR distribution produce larger chest estimates than regression models calibrated on the Vietnamese cluster centroids from Tran et al. 2024; we therefore refer to the US-calibrated model as "overestimating" Vietnamese chest circumference, in the specific sense that our two regressions disagree on that population.
+
+> **Scope of the claim**: Both models below are our own fits. The "gap" is the delta between our two regressions applied to published population means — it is *not* a measured error against per-subject ground truth. Interpret numbers in this document as internal consistency checks, not external benchmarks.
 
 ## Baseline Model (US-Calibrated)
 
@@ -84,7 +86,7 @@ $$\hat{c}_{\text{VN}}(156.2, 53.9) = 0.485(156.2) + 0.22(53.9) - 2.5 = 75.8 + 11
 
 $$\Delta c = \hat{c}_{\text{US}} - \hat{c}_{\text{VN}} = 90.9 - 85.1 = 5.8 \text{ cm}$$
 
-The US model overestimates chest by ~5.8 cm for the average Vietnamese woman. This is enough to shift a size recommendation by 1-2 sizes (typical size chart has 4-5 cm between sizes).
+Our US-calibrated regression predicts a chest value ~5.8 cm larger than our Vietnamese-calibrated regression at the average Vietnamese woman's $(h, w)$. This is enough to shift a size recommendation by 1-2 sizes on a typical size chart (4-5 cm between sizes). The 5.8 cm delta is a between-model difference, not a measured error against per-subject ground truth.
 
 ### General Difference Formula
 

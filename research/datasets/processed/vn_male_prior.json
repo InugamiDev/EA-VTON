@@ -1,0 +1,83 @@
+{
+  "source": "Tran Thi Minh Kieu et al., JST-IUH, 2022",
+  "sample_size": 1106,
+  "age_range": [
+    18,
+    60
+  ],
+  "n_measurements": 34,
+  "method": "Size Stream 3D scanner + factor analysis + K-means",
+  "clusters": [
+    {
+      "id": 1,
+      "label": "thin_short_upper",
+      "description": "Thin build, shorter upper body, longer arms",
+      "proportion": 0.604,
+      "n_subjects": 668,
+      "estimated_stats": {
+        "height_cm": {
+          "mean": 166.0,
+          "std": 5.0
+        },
+        "weight_kg": {
+          "mean": 60.0,
+          "std": 7.0
+        },
+        "bmi": {
+          "mean": 21.8,
+          "std": 2.2
+        },
+        "chest_cm": {
+          "mean": 87.0,
+          "std": 4.5
+        },
+        "waist_cm": {
+          "mean": 74.0,
+          "std": 5.0
+        },
+        "hip_cm": {
+          "mean": 90.0,
+          "std": 4.0
+        }
+      }
+    },
+    {
+      "id": 2,
+      "label": "heavy_tall",
+      "description": "Taller/heavier, shorter limbs, longer torso, broader shoulders",
+      "proportion": 0.396,
+      "n_subjects": 438,
+      "estimated_stats": {
+        "height_cm": {
+          "mean": 170.0,
+          "std": 5.5
+        },
+        "weight_kg": {
+          "mean": 72.0,
+          "std": 9.0
+        },
+        "bmi": {
+          "mean": 24.9,
+          "std": 2.8
+        },
+        "chest_cm": {
+          "mean": 95.0,
+          "std": 5.0
+        },
+        "waist_cm": {
+          "mean": 83.0,
+          "std": 6.0
+        },
+        "hip_cm": {
+          "mean": 96.0,
+          "std": 4.5
+        }
+      }
+    }
+  ],
+  "population_weighted_mean": {
+    "height_cm": 167.6,
+    "weight_kg": 64.8,
+    "bmi": 23.0
+  }
+}

@@ -19,6 +19,12 @@ backend/models/*.task
 backend/models/*.onnx
 backend/models/*.pt
 backend/models/*.bin
+services/*/models/*.task
+services/*/models/*.onnx
+services/*/models/*.pt
+services/*/models/*.bin
+training/checkpoints/**/*.pt
+training/checkpoints/**/*.ckpt
 *.ckpt
 *.safetensors
 *.pkl
@@ -28,9 +34,26 @@ ea-vton/datasets/raw/rtr_raw.json
 ea-vton/datasets/raw/rtr_raw.json.gz
 ea-vton/datasets/processed/*.parquet
 ea-vton/datasets/processed/*.csv
+research/datasets/raw/rtr_raw.json
+research/datasets/raw/rtr_raw.json.gz
+research/datasets/processed/*.parquet
+research/datasets/processed/*.csv
+research/models/variants/*.pkl
+research/models/variants/*.pt
+research/models/body_regression/*.pkl
+data/raw/**
+data/processed/vitonhd/
+data/processed/dresscode/
+data/processed/deepfashion2/
+data/processed/*.parquet
+data/processed/*.csv
+!data/raw/.gitkeep
 
 # ── Vendor (cloned repos, large) ──
 backend/vendor/
+
+# ── Turbo ──
+.turbo/
 
 # ── Playwright MCP logs ──
 .playwright-mcp/

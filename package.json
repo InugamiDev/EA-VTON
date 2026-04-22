@@ -1,0 +1,17 @@
+{
+  "name": "ea-vton",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "type-check": "turbo type-check",
+    "dev:web": "pnpm --filter @ea-vton/web dev",
+    "dev:api": "pnpm --filter @ea-vton/api dev"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0"
+  },
+  "packageManager": "pnpm@9.0.0"
+}

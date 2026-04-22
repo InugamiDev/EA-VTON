@@ -30,12 +30,31 @@ where $(\mu_r, \Sigma_r)$ and $(\mu_g, \Sigma_g)$ are the mean and covariance of
 
 **Lower is better.** FID = 0 means identical distributions.
 
-| Model | VITON-HD FID↓ | DressCode FID↓ |
-|-------|--------------|----------------|
-| FitDiT (SOTA) | 4.73 | — |
-| CatVTON | 7.03 | 7.46 |
-| IDM-VTON | 5.38 | 5.42 |
-| FASHN v1.5 | ~6-7 (est.) | — |
+> **Source note.** The VITON-HD paired-setting numbers in this section are taken directly from **Table 1 of the FitDiT paper** (Jiang et al., "FitDiT: Advancing the Authentic Garment Details for High-fidelity Virtual Try-on", arXiv:2411.10499) so that all methods are compared under a single, uniform evaluation protocol. Different papers report slightly different values for the same model (e.g. the CatVTON paper reports its own FID as 5.43 paired) because of resolution, test-split, and preprocessing differences. We therefore pin the comparison table to one consistent source.
+
+VITON-HD, **paired** setting (ground truth available):
+
+| Model | SSIM ↑ | LPIPS ↓ | FID ↓ | KID ↓ |
+|-------|--------|---------|-------|-------|
+| LaDI-VTON | 0.8763 | 0.0911 | 6.6044 | 1.0672 |
+| StableVTON | 0.8665 | 0.0835 | 6.8581 | 1.2553 |
+| IDM-VTON | 0.8806 | 0.0789 | 6.3381 | 1.3224 |
+| OOTDiffusion | 0.8513 | 0.0964 | 6.5186 | 0.8961 |
+| CatVTON | 0.8694 | 0.0970 | 6.1394 | 0.9639 |
+| **FitDiT** (SOTA in this table) | **0.8985** | **0.0661** | **4.7309** | **0.1895** |
+
+VITON-HD, **unpaired** setting (FID/KID only):
+
+| Model | FID ↓ | KID ↓ |
+|-------|-------|-------|
+| LaDI-VTON | 9.4095 | 1.6866 |
+| StableVTON | 9.5868 | 1.4508 |
+| IDM-VTON | 9.6114 | 1.6387 |
+| OOTDiffusion | 9.6733 | 1.2061 |
+| CatVTON | 9.1434 | 1.2666 |
+| **FitDiT** | **8.2042** | **0.3421** |
+
+**FASHN VTON v1.5**: no peer-reviewed numbers yet — the technical report is marked "coming soon" on fashn.ai/research/vton-1-5 at time of writing. We therefore do not list it in the comparison table and instead report our own FASHN evaluation as part of the EA-VTON paper's experiments section.
 
 ### SSIM (Structural Similarity Index)
 
@@ -45,11 +64,16 @@ $$\text{SSIM}(x, y) = \frac{(2\mu_x\mu_y + C_1)(2\sigma_{xy} + C_2)}{(\mu_x^2 + 
 
 **Higher is better.** SSIM = 1.0 means identical.
 
+VITON-HD paired SSIM (source: FitDiT paper Table 1):
+
 | Model | VITON-HD SSIM↑ |
 |-------|----------------|
 | FitDiT | 0.8985 |
-| CatVTON | 0.8805 |
-| IDM-VTON | 0.8866 |
+| IDM-VTON | 0.8806 |
+| LaDI-VTON | 0.8763 |
+| CatVTON | 0.8694 |
+| StableVTON | 0.8665 |
+| OOTDiffusion | 0.8513 |
 
 ### LPIPS (Learned Perceptual Image Patch Similarity)
 
@@ -61,11 +85,16 @@ where $\hat{x}^l, \hat{y}^l$ are unit-normalized activations at layer $l$ and $w
 
 **Lower is better.** LPIPS = 0 means perceptually identical.
 
+VITON-HD paired LPIPS (source: FitDiT paper Table 1):
+
 | Model | VITON-HD LPIPS↓ |
 |-------|-----------------|
-| FitDiT | 0.0507 |
-| CatVTON | 0.0612 |
-| IDM-VTON | 0.0539 |
+| FitDiT | 0.0661 |
+| IDM-VTON | 0.0789 |
+| StableVTON | 0.0835 |
+| LaDI-VTON | 0.0911 |
+| OOTDiffusion | 0.0964 |
+| CatVTON | 0.0970 |
 
 ### KID (Kernel Inception Distance)
 
@@ -117,20 +146,25 @@ $$\text{MAE}_{\text{pop}} = \frac{1}{K} \sum_{k=1}^{K} |c_k - \hat{c}_{\text{pop
 
 | Model | MAE (cm) |
 |-------|----------|
-| Baseline (US) | ~7.9 |
-| EA-VTON (VN) | ~3.9 |
+| Baseline (US) | ~7.9 (projected) |
+| EA-VTON (VN) | ~3.9 (projected) |
 
-(Estimated from cluster centroid verification in [02-body-measurement-estimation.md](./02-body-measurement-estimation.md))
+(Projected from cluster-centroid verification in [02-body-measurement-estimation.md](./02-body-measurement-estimation.md). These are not measured against per-subject ground truth; they are the errors each regression makes against the 5 published Vietnamese cluster centroids, and will be replaced with per-subject MAE once we have a held-out evaluation set.)
 
-## SOTA Comparison Table (VITON-HD)
+## SOTA Comparison Table (VITON-HD paired — numbers from FitDiT paper Table 1)
 
 | Model | Year | Venue | FID↓ | SSIM↑ | LPIPS↓ | License |
 |-------|------|-------|------|-------|--------|---------|
-| FitDiT | 2024 | arXiv | **4.73** | **0.8985** | **0.0507** | NC |
-| IDM-VTON | 2024 | ECCV | 5.38 | 0.8866 | 0.0539 | CC-NC |
-| CatVTON | 2025 | ICLR | 7.03 | 0.8805 | 0.0612 | NC |
-| FASHN v1.5 | 2025 | — | ~6-7 | ~0.88 | ~0.06 | **Apache 2.0** |
+| FitDiT | 2024 | arXiv (2411.10499) | **4.7309** | **0.8985** | **0.0661** | Research / non-commercial |
+| CatVTON | 2024 | arXiv (2407.15886) | 6.1394 | 0.8694 | 0.0970 | Research |
+| IDM-VTON | 2024 | ECCV | 6.3381 | 0.8806 | 0.0789 | CC BY-NC-SA 4.0 |
+| OOTDiffusion | 2024 | arXiv | 6.5186 | 0.8513 | 0.0964 | CC BY-NC-SA 4.0 |
+| LaDI-VTON | 2023 | ACM MM | 6.6044 | 0.8763 | 0.0911 | CC BY-NC |
+| StableVTON | 2024 | CVPR | 6.8581 | 0.8665 | 0.0835 | CC BY-NC-SA 4.0 |
+| FASHN v1.5 | 2025 | Blog post / HF release | *not yet published* | *not yet published* | *not yet published* | **Apache 2.0** |
 | EA-VTON (ours) | 2026 | — | TBD | TBD | TBD | Apache 2.0 |
+
+Note: CatVTON's own paper reports slightly different self-measured numbers (e.g. paired FID ≈ 5.43, SSIM ≈ 0.8704, LPIPS ≈ 0.0565) due to different evaluation protocols. We use the FitDiT-reported values here for apples-to-apples comparison.
 
 **EA-VTON's angle**: We're not claiming SOTA on VITON-HD (unfair comparison — different objective). Our contribution is demonstrating that existing models fail for underrepresented populations and providing population-aware corrections.
 

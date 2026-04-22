@@ -1,0 +1,207 @@
+{
+  "source": "Tran Thi Minh Kieu et al., Fibres and Textiles, 2024",
+  "sample_size": 480,
+  "age_range": [
+    18,
+    50
+  ],
+  "regions": [
+    "North",
+    "Central",
+    "South"
+  ],
+  "n_measurements": 108,
+  "method": "3D body scanning + PCA + K-means + discriminant analysis",
+  "clusters": [
+    {
+      "id": 1,
+      "label": "short_thin",
+      "description": "Short, thin, small-shouldered; medium hip height; bust-waist > hip-waist ratio",
+      "proportion": 0.1523,
+      "n_subjects": 73,
+      "estimated_stats": {
+        "height_cm": {
+          "mean": 151.0,
+          "std": 3.5
+        },
+        "weight_kg": {
+          "mean": 46.0,
+          "std": 4.0
+        },
+        "bmi": {
+          "mean": 20.2,
+          "std": 1.5
+        },
+        "bust_cm": {
+          "mean": 79.0,
+          "std": 3.0
+        },
+        "waist_cm": {
+          "mean": 65.0,
+          "std": 3.5
+        },
+        "hip_cm": {
+          "mean": 86.0,
+          "std": 3.0
+        },
+        "shoulder_width_cm": {
+          "mean": 35.0,
+          "std": 1.5
+        }
+      }
+    },
+    {
+      "id": 2,
+      "label": "tall_slightly_fat",
+      "description": "Tall, slightly fat, large-shouldered; high stature/hip height; bust-waist < hip-waist ratio",
+      "proportion": 0.1836,
+      "n_subjects": 88,
+      "estimated_stats": {
+        "height_cm": {
+          "mean": 161.0,
+          "std": 3.5
+        },
+        "weight_kg": {
+          "mean": 58.0,
+          "std": 5.0
+        },
+        "bmi": {
+          "mean": 22.4,
+          "std": 1.8
+        },
+        "bust_cm": {
+          "mean": 86.0,
+          "std": 4.0
+        },
+        "waist_cm": {
+          "mean": 73.0,
+          "std": 4.0
+        },
+        "hip_cm": {
+          "mean": 93.0,
+          "std": 4.0
+        },
+        "shoulder_width_cm": {
+          "mean": 38.5,
+          "std": 1.5
+        }
+      }
+    },
+    {
+      "id": 3,
+      "label": "medium",
+      "description": "Medium body type (dominant); average height, fit body; bust-waist ≈ waist-to-hip ratio",
+      "proportion": 0.3594,
+      "n_subjects": 173,
+      "estimated_stats": {
+        "height_cm": {
+          "mean": 156.0,
+          "std": 4.0
+        },
+        "weight_kg": {
+          "mean": 52.0,
+          "std": 4.5
+        },
+        "bmi": {
+          "mean": 21.4,
+          "std": 1.6
+        },
+        "bust_cm": {
+          "mean": 83.0,
+          "std": 3.5
+        },
+        "waist_cm": {
+          "mean": 69.0,
+          "std": 3.5
+        },
+        "hip_cm": {
+          "mean": 89.0,
+          "std": 3.5
+        },
+        "shoulder_width_cm": {
+          "mean": 36.5,
+          "std": 1.5
+        }
+      }
+    },
+    {
+      "id": 4,
+      "label": "short_fat",
+      "description": "Short, fat, medium-shoulder; low hip height; bust-waist > hip-waist ratio",
+      "proportion": 0.2188,
+      "n_subjects": 105,
+      "estimated_stats": {
+        "height_cm": {
+          "mean": 152.0,
+          "std": 3.5
+        },
+        "weight_kg": {
+          "mean": 58.0,
+          "std": 5.5
+        },
+        "bmi": {
+          "mean": 25.1,
+          "std": 2.0
+        },
+        "bust_cm": {
+          "mean": 90.0,
+          "std": 4.5
+        },
+        "waist_cm": {
+          "mean": 78.0,
+          "std": 5.0
+        },
+        "hip_cm": {
+          "mean": 93.0,
+          "std": 4.0
+        },
+        "shoulder_width_cm": {
+          "mean": 36.5,
+          "std": 1.5
+        }
+      }
+    },
+    {
+      "id": 5,
+      "label": "obese_average_height",
+      "description": "Too fat, average height, big shoulders; low hip height; bust-waist > hip-waist ratio",
+      "proportion": 0.0859,
+      "n_subjects": 41,
+      "estimated_stats": {
+        "height_cm": {
+          "mean": 155.0,
+          "std": 4.0
+        },
+        "weight_kg": {
+          "mean": 68.0,
+          "std": 7.0
+        },
+        "bmi": {
+          "mean": 28.3,
+          "std": 2.5
+        },
+        "bust_cm": {
+          "mean": 97.0,
+          "std": 5.0
+        },
+        "waist_cm": {
+          "mean": 86.0,
+          "std": 5.5
+        },
+        "hip_cm": {
+          "mean": 100.0,
+          "std": 4.5
+        },
+        "shoulder_width_cm": {
+          "mean": 38.0,
+          "std": 1.5
+        }
+      }
+    }
+  ],
+  "population_weighted_mean": {
+    "height_cm": 155.5,
+    "weight_kg": 53.9,
+    "bmi": 22.3
+  }
+}

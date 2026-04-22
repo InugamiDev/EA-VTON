@@ -1,181 +1,425 @@
 # EA-VTON: Ethnicity-Aware Virtual Try-On
 
-**EA-VTON** takes a standard virtual try-on backbone (FASHN VTON v1.5) and makes it **population-aware and fit-aware** — so users don't just see "how it looks" but "how it fits."
+A full-stack system that combines **cross-population size recommendation** with **virtual try-on**. Given a person photo + height/weight, it predicts the best garment size using Vietnamese-adapted importance weighting on US training data, then composites the garment onto the person.
 
-> Research project for the paper: *EA-VTON: Ethnicity-Aware Virtual Try-On with Anthropometric Fit Prediction*
+> Research project exploring population-aware sizing via copula density ratio estimation and ordinal classification.
 
 ---
 
-## What This Does
+## Description
 
-| Feature | Status | Description |
-|---------|--------|-------------|
-| **Image VTON** | Working | Upload person photo + garment image → try-on result |
-| **Size Recommendation** | Working | Height + weight → predicted size (US and Vietnamese models) |
-| **Body Measurement** | Working | Webcam/photo + height/weight → chest, waist, hip, shoulder estimates |
-| **Fit-Aware Rendering** | Not built | Predict fit level (tight/normal/loose) and visually reflect it in VTON output |
-| **Video VTON** | Experimental | Keyframe + optical flow warping — needs GPU infrastructure |
+Standard size recommendation models are trained on Western body data (e.g., Rent The Runway's 192K US users). Directly applying these models to Vietnamese users produces systematic mis-sizing — the US population is taller and heavier on average, so US-trained models over-predict sizes for Vietnamese bodies.
 
-## Architecture
+EA-VTON addresses this by **reweighting** US training samples to match Vietnamese body distributions using copula-based density ratio estimation with Pareto Smoothed Importance Sampling (PSIS). Each US sample gets a weight proportional to how "Vietnamese-like" its height/weight pair is, allowing us to train on abundant US data while optimizing for Vietnamese accuracy.
+
+The system serves predictions through a microservice architecture with a Next.js frontend, Express API gateway, and three FastAPI ML services.
+
+---
+
+## Methodology
+
+### Core Research: Cross-Population Transfer
+
+The research contribution is a pipeline for adapting a size recommendation model trained on Source population S (US/RTR) to perform well on Target population T (Vietnamese):
+
+```mermaid
+graph LR
+    A["US Data<br/>(RTR, 192K)"] --> B["Density Ratio<br/>w(x) = p_T(x) / p_S(x)"]
+    C["VN Priors<br/>(Tran et al. 2024)"] --> B
+    B --> D["PSIS<br/>Stabilization"]
+    D --> E["Weighted<br/>GBM / MLP"]
+    E --> F["Size Prediction<br/>(XXS–XXL)"]
+```
+
+**Step 1 — Copula Density Ratio Estimation**
+
+Model the joint distribution of height and weight for both populations using Gaussian copulas. The density ratio `w(h, w) = p_VN(h, w) / p_US(h, w)` gives each US training sample an importance weight reflecting how likely that body shape is in the Vietnamese population.
+
+The copula captures the height-weight correlation (r = 0.388), which independent Gaussian weighting misses. This yields 2.2x higher Effective Sample Size (ESS: 24% vs 11%).
+
+**Step 2 — PSIS Stabilization**
+
+Raw importance weights have heavy tails (max weight ~110x). Pareto Smoothed Importance Sampling (Vehtari et al., JMLR 2024) fits a Generalized Pareto Distribution to the tail, capping extreme weights. This brings max weight down to ~57x and provides the k-hat diagnostic (k < 0.5 = reliable).
+
+**Step 3 — Weighted Classification**
+
+Train gradient-boosted trees (GBM) and MLPs on the reweighted data. We evaluate three loss functions:
+- **Cross-Entropy (CE)** — standard classification
+- **CORAL** — cumulative ordinal logits (Cao et al., AAAI 2020)
+- **CORN** — conditional ordinal (Shi & Raschka, PAA 2023)
+
+**Step 4 — Body Measurement Estimation**
+
+Ridge regression trained on Amazon BodyM (2,018 subjects) maps height + weight + gender to 6 body measurements (chest, waist, hip, shoulder, arm, leg). R² = 0.84, avg MAE = 2.10 cm.
+
+### Engineering: Virtual Try-On
+
+The VTON component is engineering-only (no novel contribution). It uses a local composite backend:
+1. Detect torso region via luminance variance analysis
+2. Resize garment to fit detected torso
+3. Alpha-composite with feathered edges, shadow synthesis, and color correction
+
+---
+
+## System Architecture
+
+```mermaid
+graph TB
+    subgraph Frontend["Frontend (Next.js)"]
+        UI["Try-On / Catalog / Measure Pages"]
+    end
+
+    subgraph Gateway["API Gateway (Express :3001)"]
+        R1["/api/pipeline"]
+        R2["/api/size-recommendation"]
+        R3["/api/tryon"]
+        R4["/api/body-measurement"]
+    end
+
+    subgraph Services["ML Services (FastAPI)"]
+        FS["Feature Service :8001<br/>Pose + Parsing + Body Embedding"]
+        RS["Recommendation :8003<br/>6 Model Variants + Rule Engine"]
+        VS["VTON Service :8002<br/>Local Composite Backend"]
+    end
+
+    subgraph Research["Research Artifacts"]
+        D1["RTR Dataset<br/>192K samples"]
+        D2["BodyM Dataset<br/>2.5K samples"]
+        D3["VN Priors<br/>Tran et al. 2024"]
+        M1["GBM Models<br/>(3 variants)"]
+        M2["MLP Models<br/>(3 variants)"]
+        M3["Body Regression<br/>Ridge, R²=0.84"]
+    end
+
+    UI --> Gateway
+    R1 --> FS
+    R1 --> RS
+    R1 --> VS
+    R2 --> RS
+    R3 --> VS
+    R4 --> FS
+    D1 --> M1
+    D1 --> M2
+    D2 --> M3
+    D3 --> M1
+    D3 --> M2
+    M1 --> RS
+    M2 --> RS
+    M3 --> FS
+```
+
+### Full Pipeline Flow
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as API Gateway
+    participant F as Feature Service
+    participant R as Recommendation
+    participant V as VTON Service
+
+    C->>G: POST /api/pipeline<br/>(person photo + garment + height/weight)
+    G->>G: Create job, return job_id
+
+    G->>F: POST /extract<br/>(photo + height + weight)
+    F-->>G: Body measurements<br/>(chest, waist, hip, ...)
+
+    G->>R: POST /recommend-size/research<br/>(height, weight, age, category)
+    R-->>G: GBM copula prediction + rule-based
+
+    G->>V: POST /infer<br/>(person + garment images)
+    V-->>G: Result image (PNG)
+
+    C->>G: GET /api/pipeline/:jobId
+    G-->>C: Complete result<br/>(measurements + size + try-on image)
+```
+
+---
+
+## Step-by-Step Walkthrough
+
+### 1. Data Preparation
 
 ```
-Person Photo + Garment Image + Body Info (h, w)
-        |              |              |
-        v              v              v
-  ┌──────────┐  ┌──────────┐  ┌─────────────────┐
-  │ Preprocess│  │ Preprocess│  │ Body Estimator  │
-  │ Person    │  │ Garment  │  │ (MediaPipe Pose) │
-  └─────┬─────┘  └─────┬────┘  └────────┬────────┘
-        |              |                 |
-        v              v                 v
-  ┌─────────────────────────┐   ┌────────────────┐
-  │    FASHN VTON v1.5      │   │  EA Size Engine │
-  │    (972M params, MMDiT) │   │  (US + VN model)│
-  │    20 denoise steps     │   │  → Size + Fit   │
-  └───────────┬─────────────┘   └────────┬───────┘
-              |                          |
-              v                          v
-  ┌─────────────────────────────────────────────┐
-  │           Garment Composite (Stage 5)        │
-  │                                              │
-  │  1. Auto-detect garment mask (semantic)      │
-  │  2. Sharpen garment (frequency-separated)    │
-  │  3. Transfer scene lighting onto garment     │
-  │  4. Composite: original × (1-mask) +         │
-  │     enhanced_vton × mask                     │
-  │  → Face, skin, hair, background = untouched  │
-  └──────────────────┬──────────────────────────┘
-                     v
-              Result Image + Size Recommendation
+research/datasets/raw/           # Raw data (RTR 192K, BodyM 2.5K)
+research/datasets/scripts/       # Processing + VN adaptation
+research/datasets/processed/     # Clean parquet + VN priors (JSON)
 ```
+
+- **RTR**: 192,544 self-reported body stats (height, weight, age, body type, size, fit feedback)
+- **BodyM**: 2,507 subjects with 14 precise body measurements from silhouette images
+- **VN Priors**: 5 body type clusters from Tran et al. (2024) with population percentages
+
+### 2. Importance Weighting
+
+```
+research/weighting/copula_psis.py   # Gaussian copula + PSIS
+```
+
+The copula models joint P(height, weight) for US and VN populations. Key parameters from Tran et al. (2024):
+
+| Population | Height (mean/std) | Weight (mean/std) | Correlation |
+|-----------|-------------------|-------------------|-------------|
+| US (RTR)  | 165.9 / 7.5 cm   | 68.9 / 16.6 kg   | 0.388       |
+| VN        | 156.2 / 5.5 cm   | 53.9 / 8.0 kg    | 0.388       |
+
+Density ratio: `w(h,w) = phi_VN(h,w) / phi_US(h,w)` where phi is the copula density.
+After PSIS: ESS = 20,806 (24.1% of 86K training samples), k-hat < 0.
+
+### 3. Model Training
+
+```
+research/models/variants/          # 6 trained model bundles (.pkl, .pt)
+training/scripts/train_size_mlp.py # MLP training with importance weights
+```
+
+**6 model variants** = {GBM, MLP} x {uniform, independent, copula} weighting:
+
+| Variant | Full Acc | Full W1 | VN Acc | VN W1 | VN Bias |
+|---------|----------|---------|--------|-------|---------|
+| gbm_uniform | **49.0%** | **83.4%** | 50.5% | 70.0% | -0.211 |
+| gbm_indep | 48.2% | 83.0% | 51.1% | **70.8%** | -0.190 |
+| gbm_copula | 48.5% | 83.2% | **51.4%** | 70.7% | -0.199 |
+| mlp_ce_copula | 47.8% | 83.1% | 50.4% | 69.7% | -0.232 |
+| mlp_coral_copula | 47.7% | 82.5% | 50.8% | 70.4% | **-0.203** |
+| mlp_corn_copula | 47.5% | 82.9% | 50.1% | 69.4% | -0.218 |
+
+GBM + copula is the best practical model. Full-set accuracy trades ~0.5pp for +0.9pp on VN-range bodies.
+
+### 4. Body Measurement Estimation
+
+```
+research/models/body_regression/    # Ridge regression model
+research/models/train_body_regression.py
+```
+
+Ridge regression on BodyM data: 4 features (height, weight, BMI, gender) -> 6 measurements.
+
+| Measurement | MAE (cm) | R² |
+|-------------|----------|-----|
+| Chest | 3.10 | 0.90 |
+| Waist | 3.47 | 0.90 |
+| Hip | 2.28 | 0.93 |
+| Shoulder | 0.80 | 0.88 |
+| Arm length | 1.18 | 0.71 |
+| Leg length | 1.77 | 0.71 |
+
+### 5. Service Deployment
+
+```
+services/recommendation/    # FastAPI :8003 — loads 6 model variants
+services/feature-service/   # FastAPI :8001 — pose + body estimation
+services/vton-service/      # FastAPI :8002 — garment compositing
+apps/api/                   # Express :3001 — orchestrates services
+apps/web/                   # Next.js :3000 — user interface
+```
+
+### 6. Ablation Studies
+
+```
+research/evaluation/ablation_studies.py
+research/evaluation/ablation_results.json
+```
+
+Key ablation findings:
+
+```mermaid
+graph TD
+    subgraph "Weighting Strategy"
+        U["Uniform<br/>ESS = N"] --> I["Independent Gaussian<br/>ESS = 9,458 (11%)"]
+        I --> CP["Copula + PSIS<br/>ESS = 20,806 (24%)"]
+    end
+
+    subgraph "Loss Function"
+        CE["Cross-Entropy<br/>VN W1 = 69.7%"]
+        CORAL["CORAL<br/>VN W1 = 70.4%"]
+        CORN["CORN<br/>VN W1 = 69.4%"]
+    end
+
+    subgraph "Sensitivity"
+        S1["Height +/-1sig<br/>ESS: 945 - 46K<br/>(stable)"]
+        S2["Weight +1sig<br/>ESS: 18<br/>(collapsed)"]
+    end
+
+    CP --> CE
+    CP --> CORAL
+    CP --> CORN
+```
+
+- **Copula > Independent**: 2.2x higher ESS via height-weight correlation modeling
+- **PSIS**: Tames max weight 110 -> 57, marginal accuracy gain
+- **CORAL > CE > CORN**: CORAL best for VN ordinal prediction (W1 = 70.4%, bias = -0.203)
+- **Weight sensitivity**: Method collapses when weight target > 1 sigma from source (ESS -> 18)
+
+---
 
 ## Project Structure
 
 ```
 research-try-out/
-├── backend/                    # FastAPI (Python)
-│   ├── main.py                 # App entrypoint
-│   ├── routers/
-│   │   ├── tryon.py            # Full try-on (catalog-based)
-│   │   ├── tryon_simple.py     # Simple try-on (upload 2 images)
-│   │   ├── body_measurement.py # Photo-based body estimation
-│   │   ├── size_recommendation.py
-│   │   ├── garments.py
-│   │   ├── upload.py
-│   │   └── video_tryon.py      # Experimental
-│   ├── services/
-│   │   ├── pipeline/           # 5-stage VTON pipeline
-│   │   │   ├── backends/       # FASHN HF, Replicate, local composite
-│   │   │   ├── postprocessing/ # Garment composite, detail enhance, face restore
-│   │   │   ├── preprocessor.py
-│   │   │   └── postprocessor.py
-│   │   ├── body_estimator.py   # MediaPipe Pose → measurements
-│   │   ├── ea_size_engine.py   # Ethnicity-aware sizing
-│   │   └── video_pipeline/     # Experimental video VTON
-│   └── test_results/           # FASHN inference outputs + step comparisons
+├── apps/
+│   ├── api/                    # Express gateway (:3001)
+│   │   └── src/routes/         # pipeline, size, tryon, body, features, health
+│   └── web/                    # Next.js frontend (:3000)
+│       └── src/app/            # try-on, catalog, measure, profile pages
 │
-├── frontend/                   # Next.js 15 (TypeScript)
-│   └── src/app/
-│       ├── simple/             # Upload 2 images → try-on
-│       ├── measure/            # Webcam body measurement
-│       ├── try-on/             # Full try-on wizard
-│       ├── catalog/            # Garment browse
-│       └── ...
+├── services/
+│   ├── feature-service/        # FastAPI (:8001) — pose, parsing, body embedding
+│   ├── recommendation/         # FastAPI (:8003) — 6 model variants + rule engine
+│   └── vton-service/           # FastAPI (:8002) — local composite try-on
 │
-├── ea-vton/                    # Research artifacts
-│   ├── datasets/               # BodyM, RTR, Vietnamese priors
-│   │   ├── scripts/            # Processing & adaptation scripts
-│   │   └── processed/          # Vietnamese population priors (JSON)
-│   ├── models/                 # Trained size models + training script
-│   └── paper/                  # LaTeX paper draft
+├── research/
+│   ├── datasets/               # RTR (192K), BodyM (2.5K), VN priors
+│   │   ├── raw/                # Original data files
+│   │   ├── processed/          # Clean parquet + JSON
+│   │   └── scripts/            # Processing pipelines
+│   ├── evaluation/             # Eval scripts + ablation results (JSON)
+│   ├── models/                 # Trained models + training scripts
+│   │   ├── variants/           # 6 GBM/MLP model bundles
+│   │   └── body_regression/    # Ridge regression for measurements
+│   └── weighting/              # Copula + PSIS implementation
 │
-├── docs/                       # Technical documentation
-│   ├── 01-system-architecture.md
-│   ├── 02-body-measurement-estimation.md
-│   ├── 03-importance-weighted-sampling.md
-│   ├── 04-size-recommendation.md
-│   ├── 05-virtual-tryon-pipeline.md
-│   ├── 06-quality-scoring.md
-│   ├── 07-datasets.md
-│   ├── 08-benchmarks.md
-│   ├── 09-video-tryon-pipeline.md
-│   └── 10-research-plan.md
+├── training/
+│   ├── configs/                # YAML configs (vton, size_mlp, body_embedding)
+│   ├── scripts/                # Training entry points
+│   └── checkpoints/            # Saved weights
 │
-└── reports/                    # Weekly progress reports (HTML slides)
+├── paper/                      # LaTeX paper draft
+├── docs/                       # Technical documentation (10 chapters)
+├── data/                       # Processed datasets (parquet) + download scripts
+├── packages/                   # Shared TS types + SDK
+├── docker-compose.yml          # Full stack orchestration
+├── turbo.json                  # Turborepo build config
+└── pnpm-workspace.yaml         # Monorepo workspace config
 ```
+
+---
 
 ## Quick Start
 
-### Backend
+### Prerequisites
+
+- Python 3.11+ with virtualenv
+- Node.js 18+ with pnpm
+- Trained models in `research/models/variants/` (6 `.pkl` / `.pt` files)
+
+### Run All Services
 
 ```bash
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+# 1. Install dependencies
+python3 -m venv .venv && source .venv/bin/activate
+pip install fastapi uvicorn numpy torch scikit-learn scipy pandas pillow
+
+cd apps/api && pnpm install && cd ../..
+
+# 2. Start ML services
+uvicorn src.app:app --port 8001 --app-dir services/feature-service &
+uvicorn src.app:app --port 8003 --app-dir services/recommendation &
+uvicorn src.app:app --port 8002 --app-dir services/vton-service &
+
+# 3. Start API gateway
+cd apps/api && node src/index.js &
+
+# 4. Start frontend
+cd apps/web && pnpm dev
 ```
 
-API docs at `http://localhost:8000/docs`
-
-### Frontend
+### Or via Docker
 
 ```bash
-cd frontend
-pnpm install
-pnpm dev
+docker-compose up
 ```
 
-App at `http://localhost:3000`
+### Verify
 
-### Try It
+```bash
+# Health checks
+curl http://localhost:8001/health   # Feature service
+curl http://localhost:8002/health   # VTON service
+curl http://localhost:8003/health   # Recommendation (shows 6 loaded variants)
+curl http://localhost:3001/         # API gateway
 
-1. **Simple Try-On**: `http://localhost:3000/simple` — upload person + garment → result
-2. **Body Measurement**: `http://localhost:3000/measure` — webcam + height/weight → size recommendation
-3. **API directly**: `POST http://localhost:8000/api/tryon/simple` with `person` + `garment` files
+# Quick size prediction (no photo needed)
+curl -X POST http://localhost:3001/api/pipeline/quick \
+  -H "Content-Type: application/json" \
+  -d '{"height_cm": 156.2, "weight_kg": 53.9, "population": "vietnamese"}'
 
-## Novel Research Contributions
+# Compare all 6 model variants
+curl -X POST http://localhost:3001/api/size-recommendation/all-models \
+  -H "Content-Type: application/json" \
+  -d '{"height_cm": 156.2, "weight_kg": 53.9}'
 
-| # | Contribution | Status |
-|---|-------------|--------|
-| C1 | Vietnamese anthropometric model (Tran et al. 2024, 5 body clusters) | Done |
-| C2 | Importance-weighted population adaptation (RTR → Vietnamese, ESS 12.6%) | Done |
-| C3 | Fit-aware VTON rendering (tight/normal/loose visual adjustment) | TODO |
-| C4 | Photo-based body estimation (MediaPipe + ellipse model) | Done |
-| C5 | Fit-accuracy evaluation metrics (SA, FVC, PF) | TODO |
+# Full pipeline (photo + garment + measurements + try-on)
+curl -X POST http://localhost:3001/api/pipeline \
+  -F "person=@person.jpg" \
+  -F "garment=@garment.png" \
+  -F "height_cm=156.2" \
+  -F "weight_kg=53.9"
+```
 
-### Key Finding
+---
 
-The US-calibrated model **overestimates Vietnamese chest circumference by ~5.8 cm** at population mean. This causes wrong size recommendations for ~30% of Vietnamese users. The Vietnamese-calibrated model corrects this using population-specific regression coefficients.
+## API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/pipeline` | Full pipeline: photo + garment -> measurements + size + VTON |
+| `GET` | `/api/pipeline/:id` | Poll pipeline job status |
+| `POST` | `/api/pipeline/quick` | Height + weight only -> size recommendation |
+| `POST` | `/api/size-recommendation` | Rule-based size prediction with size chart |
+| `POST` | `/api/size-recommendation/research` | GBM copula model prediction |
+| `POST` | `/api/size-recommendation/all-models` | Compare all 6 trained variants |
+| `POST` | `/api/size-recommendation/compare` | US vs VN population comparison |
+| `POST` | `/api/tryon/simple` | Upload person + garment -> try-on |
+| `POST` | `/api/body-measurement` | Photo + height/weight -> body measurements |
+| `GET` | `/api/health` | Gateway health check |
+
+---
 
 ## Tech Stack
 
-| Component | Technology |
-|-----------|-----------|
-| VTON Model | FASHN VTON v1.5 (Apache 2.0, 972M params, MMDiT) |
-| Body Estimation | MediaPipe PoseLandmarker + Ramanujan's ellipse formula |
-| Backend | FastAPI, Python 3.11+ |
+| Layer | Technology |
+|-------|-----------|
 | Frontend | Next.js 15, TypeScript, Tailwind CSS |
-| Datasets | BodyM (Amazon), RTR (192K rows), Vietnamese female clusters |
+| API Gateway | Express.js, Multer, UUID |
+| ML Services | FastAPI, Uvicorn, Python 3.11+ |
+| Size Models | scikit-learn GBM, PyTorch MLP |
+| Body Estimation | Ridge regression (BodyM-trained), MediaPipe fallback |
+| VTON | PIL-based composite with alpha blending |
+| Build System | Turborepo, pnpm workspaces |
+| Containerization | Docker Compose |
+| Datasets | RTR (192K), BodyM (2.5K), VN priors (Tran et al. 2024) |
 
-## Hardware Notes
+---
 
-| Task | CPU (Apple M2) | GPU (A100) |
-|------|----------------|------------|
-| VTON inference (20 steps) | ~16 min | ~5 sec |
-| Body estimation | ~2 sec | ~0.5 sec |
-| Garment composite | ~3 sec | ~1 sec |
-| Video VTON (Plan A) | ~5 FPS offline | ~15 FPS |
+## Key Results
 
-The image VTON pipeline runs on CPU but is slow. For practical use, a GPU is recommended.
+**Best practical model**: GBM + Copula + PSIS
+
+- Full test accuracy: 48.5% (within-1: 83.2%)
+- Vietnamese-range accuracy: 51.4% (within-1: 70.7%)
+- End-to-end pipeline latency: ~770ms (body measurement + size rec + VTON)
+
+**Honest limitation**: The GO/NO-GO evaluation showed MLP + CORN + copula does NOT improve over GBM on Vietnamese bodies. The copula weighting helps GBM more than MLP, and CORN underperforms CORAL for ordinal classification in this domain.
+
+---
 
 ## Documentation
 
-Full technical docs in `docs/`. Start with:
-- `docs/01-system-architecture.md` — system overview
-- `docs/10-research-plan.md` — paper roadmap and implementation plan
-- `docs/05-virtual-tryon-pipeline.md` — VTON pipeline details
+Detailed technical docs in `docs/`:
+
+| Doc | Topic |
+|-----|-------|
+| `01-system-architecture.md` | System overview |
+| `02-body-measurement-estimation.md` | MediaPipe + regression approach |
+| `03-importance-weighted-sampling.md` | Copula + PSIS theory |
+| `04-size-recommendation.md` | Size engine design |
+| `05-virtual-tryon-pipeline.md` | VTON pipeline details |
+| `08-benchmarks.md` | Model benchmarks |
+| `10-research-plan.md` | Research roadmap |
+
+---
 
 ## License
 
-Research project. FASHN VTON v1.5 is Apache 2.0.
+Research project. Code is provided as-is for academic purposes.

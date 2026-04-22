@@ -1,0 +1,109 @@
+{
+  "best_model": "linear",
+  "model_file": "linear_body_regression.pkl",
+  "input_features": [
+    "height_cm",
+    "weight_kg",
+    "bmi",
+    "gender_enc"
+  ],
+  "target_measurements": [
+    "chest_girth_cm",
+    "waist_girth_cm",
+    "hip_girth_cm",
+    "shoulder_breadth_cm",
+    "arm_length_cm",
+    "leg_length_cm"
+  ],
+  "avg_mae_cm": 2.101,
+  "per_target": {
+    "chest_girth_cm": {
+      "mae": 3.101,
+      "r2": 0.8993
+    },
+    "waist_girth_cm": {
+      "mae": 3.475,
+      "r2": 0.8966
+    },
+    "hip_girth_cm": {
+      "mae": 2.283,
+      "r2": 0.9246
+    },
+    "shoulder_breadth_cm": {
+      "mae": 0.8,
+      "r2": 0.8811
+    },
+    "arm_length_cm": {
+      "mae": 1.178,
+      "r2": 0.7065
+    },
+    "leg_length_cm": {
+      "mae": 1.767,
+      "r2": 0.7112
+    }
+  },
+  "train_samples": 2018,
+  "test_samples": 489,
+  "models": {
+    "linear": {
+      "file": "linear_body_regression.pkl",
+      "avg_mae": 2.101,
+      "per_target": {
+        "chest_girth_cm": {
+          "mae": 3.101,
+          "r2": 0.8993
+        },
+        "waist_girth_cm": {
+          "mae": 3.475,
+          "r2": 0.8966
+        },
+        "hip_girth_cm": {
+          "mae": 2.283,
+          "r2": 0.9246
+        },
+        "shoulder_breadth_cm": {
+          "mae": 0.8,
+          "r2": 0.8811
+        },
+        "arm_length_cm": {
+          "mae": 1.178,
+          "r2": 0.7065
+        },
+        "leg_length_cm": {
+          "mae": 1.767,
+          "r2": 0.7112
+        }
+      }
+    },
+    "mlp": {
+      "file": "mlp_body_regression.pkl",
+      "avg_mae": 2.152,
+      "per_target": {
+        "chest_girth_cm": {
+          "mae": 3.205,
+          "r2": 0.8919
+        },
+        "waist_girth_cm": {
+          "mae": 3.414,
+          "r2": 0.9019
+        },
+        "hip_girth_cm": {
+          "mae": 2.407,
+          "r2": 0.9144
+        },
+        "shoulder_breadth_cm": {
+          "mae": 0.865,
+          "r2": 0.8567
+        },
+        "arm_length_cm": {
+          "mae": 1.19,
+          "r2": 0.7041
+        },
+        "leg_length_cm": {
+          "mae": 1.834,
+          "r2": 0.6966
+        }
+      }
+    }
+  }
+}

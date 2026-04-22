@@ -1,0 +1,74 @@
+# VTON Baseline Training Configuration
+# Two-stage warping + composition model on VITON-HD
+
+model:
+  name: vton_baseline
+  tps_control_points: 25  # 5x5 grid
+  composition_channels: 24  # agnostic(3) + warped(3) + pose(18)
+  feature_encoder: resnet18
+
+data:
+  dataset: vitonhd
+  pairs_file: data/processed/vitonhd/pairs.json
+  input_size: [192, 256]  # W, H
+  max_samples: 2000  # subset for faster training on M2
+  augmentation:
+    horizontal_flip: true
+    color_jitter: 0.1
+    rotation: 5
+
+training:
+  # Stage 1: Warping only
+  stage1:
+    epochs: 30
+    lr: 1.0e-4
+    optimizer: adam
+    freeze_composition: true
+    losses:
+      l1: 1.0
+      warp_regularization: 0.01
+
+  # Stage 2: Joint warping + composition
+  stage2:
+    epochs: 50
+    lr: 2.0e-4
+    optimizer: adam
+    lr_decay_start: 50
+    losses:
+      l1: 1.0
+      perceptual: 1.0
+      warp_regularization: 0.01
+
+  # Stage 3: Add adversarial (PatchGAN)
+  stage3:
+    epochs: 40
+    lr_generator: 1.0e-4
+    lr_discriminator: 4.0e-4
+    optimizer: adam
+    losses:
+      l1: 1.0
+      perceptual: 1.0
+      adversarial: 0.1
+      warp_regularization: 0.01
+
+  batch_size: 4  # M2 16GB RAM constraint
+  num_workers: 0  # macOS fork safety
+  gradient_clip: 1.0
+  save_every: 10  # epochs
+  eval_every: 5
+
+evaluation:
+  metrics:
+    - ssim
+    - lpips
+    - fid
+    - kid
+  targets:
+    ssim: 0.85
+    lpips: 0.15
+    fid: 15.0
+    kid: 0.01
+
+checkpoints:
+  dir: training/checkpoints/vton_baseline
+  keep_last: 5

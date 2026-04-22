@@ -1,0 +1,62 @@
+{
+  "source": "General Statistics Office & National Institute of Nutrition, 2019-2020",
+  "sample_size": 22000,
+  "validated_by": "US CDC",
+  "female": {
+    "height_cm": {
+      "mean": 156.2,
+      "std": 5.5,
+      "trend_per_decade": 2.6
+    },
+    "weight_kg": {
+      "mean": 53.9,
+      "std": 8.0
+    },
+    "overweight_pct": 0.19,
+    "urban_height_bonus_cm": 2.0
+  },
+  "male": {
+    "height_cm": {
+      "mean": 168.1,
+      "std": 6.0,
+      "trend_per_decade": 3.7
+    },
+    "weight_kg": {
+      "mean": 63.0,
+      "std": 9.5
+    },
+    "overweight_pct": 0.19,
+    "urban_height_bonus_cm": 2.0
+  },
+  "size_standard": {
+    "name": "TCVN 5782:2009",
+    "body_type_codes": {
+      "A": "slim",
+      "B": "average",
+      "C": "overweight"
+    },
+    "vs_us_offset": "Vietnamese sizes run 1-2 sizes smaller than US"
+  },
+  "comparison": {
+    "korean_female": {
+      "height_cm": 160.2,
+      "weight_kg": 57.2
+    },
+    "japanese_female": {
+      "height_cm": 158.0,
+      "weight_kg": 53.0
+    },
+    "us_female": {
+      "height_cm": 162.6,
+      "weight_kg": 77.5
+    },
+    "rtr_dataset_female": {
+      "height_cm": 165.9,
+      "weight_kg": 62.3
+    },
+    "bodym_dataset_female": {
+      "height_cm": 163.2,
+      "weight_kg": 66.3
+    }
+  }
+}

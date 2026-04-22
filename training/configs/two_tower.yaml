@@ -1,0 +1,47 @@
+# Two-Tower Recommendation Model Training Configuration
+
+model:
+  name: two_tower
+  embedding_dim: 64
+  temperature: 0.07
+
+  user_tower:
+    input_dim: 192  # body_embedding(128) + behavior_embedding(64)
+    hidden_dims: [128]
+    activation: relu
+
+  item_tower:
+    input_dim: 308  # resnet(256) + category(13) + size(7) + color_hist(32)
+    hidden_dims: [128]
+    activation: relu
+
+data:
+  item_images: data/processed/deepfashion2/items.json
+  interaction_data: null  # cold-start mode until interaction data is collected
+  num_categories: 13
+  num_sizes: 7
+  color_hist_bins: 32
+
+training:
+  epochs: 50
+  batch_size: 512
+  lr: 1.0e-3
+  optimizer: adamw
+  weight_decay: 1.0e-5
+  scheduler: cosine
+
+  loss:
+    type: infonce
+    hard_negatives: 5
+    in_batch_negatives: true
+
+  batch_size_item_index: 10000
+
+serving:
+  index_type: faiss_ivf
+  nprobe: 32
+  top_k_default: 10
+
+checkpoints:
+  dir: training/checkpoints/two_tower
+  keep_last: 3

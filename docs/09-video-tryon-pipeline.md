@@ -178,16 +178,18 @@ class VideoPipelineConfig:
 | `GET` | `/api/video-tryon/{job_id}` | Poll status (7 stages tracked) |
 | `GET` | `/api/video-tryon/{job_id}/video` | Download result MP4 |
 
-### Performance Targets (M2 CPU)
+### Performance Targets (M2 CPU — projected, not measured)
 
-| Stage | FPS | Notes |
-|-------|-----|-------|
-| Frame extraction | >60 | Trivial I/O |
-| Pose tracking | ~15 | MediaPipe CPU |
-| VTON keyframe | ~0.2 | 5s per keyframe, sparse |
-| Optical flow | ~8–12 | RAFT-Small at 512×384 |
+The pipeline below has been designed and individual components exist, but an end-to-end offline run on our reference hardware has not been benchmarked. The numbers are **design targets**, derived by composing published per-component costs of the individual libraries used. Actual end-to-end throughput will be filled in once we run the benchmark in `backend/tests/test_video_pipeline.py` on the reference machine.
+
+| Stage | FPS (target) | Basis |
+|-------|--------------|-------|
+| Frame extraction | >60 | Trivial I/O, `cv2.VideoCapture` |
+| Pose tracking | ~15 | MediaPipe CPU reference |
+| VTON keyframe | ~0.2 | ~5s per keyframe observed for image pipeline |
+| Optical flow | ~8–12 | RAFT-Small torchvision reference at 512×384 |
 | Garment composite | ~30 | NumPy/cv2 ops |
-| **Overall offline** | **~5–10** | Flow is bottleneck |
+| **Overall offline** | **~5–10 (projected)** | Flow expected to dominate |
 
 ### File Structure
 
@@ -216,7 +218,7 @@ backend/tests/
 - **Flow drift**: Warping accumulates error over many frames between keyframes. Mitigated by max_interval forcing periodic keyframes.
 - **Garment tearing**: At extreme limb movement or self-occlusion, warped garment can tear. Occlusion mask zeros these out, falling back to original pixels.
 - **Single person**: Assumes one person in frame. Multi-person would require per-person tracking and masking.
-- **CPU bottleneck**: RAFT-Small on CPU limits throughput to ~10 FPS. GPU inference would reach ~21 FPS.
+- **CPU bottleneck**: RAFT-Small on CPU is the main throughput limiter. We have not yet benchmarked it end-to-end on our hardware — the FPS numbers in this document are design targets extrapolated from the torchvision RAFT-Small reference and from SEA-RAFT's published GPU numbers (SEA-RAFT is a different model). Treat them as targets, not measurements.
 
 ---
 

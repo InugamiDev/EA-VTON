@@ -12,7 +12,7 @@
 
 Current virtual try-on (VTON) systems produce visually plausible images but **ignore whether the garment actually fits the person**. A user sees "this shirt looks nice on me" but has no idea if they should order size S or M. This disconnect causes:
 
-- **High return rates** (30-40% in online fashion, primarily due to wrong size)
+- **High return rates**: industry surveys consistently put the US online-apparel return rate in the ~20-40% band (Coresight Research 2023 survey; ICSC 2024: 22% online apparel vs. 6.2% in-store; Radial 2024 guide cites ~30-40% for fashion). Size/fit is repeatedly reported as the largest controllable driver — the ShipBob / First Insight surveys put "size or fit" at roughly 53% of apparel-return reasons and ~34% of all e-commerce returns. We are not aware of an equivalent published figure for Vietnam.
 - **Population bias** — models are trained on Western body types; predictions fail for Asian populations where body proportions differ significantly
 - **Decoupled systems** — size recommendation and virtual try-on exist as separate, unconnected tools
 
@@ -41,7 +41,7 @@ Like how Stable Diffusion papers cite U-Net and CLIP but contribute the diffusio
 ### C1: Vietnamese Anthropometric Model
 - Regression formulas calibrated to Vietnamese body clusters (Tran et al. 2024)
 - 5 body type clusters with prevalence data
-- Demonstrates US model overestimates Vietnamese chest by ~5.8cm
+- Between-model gap ~5.8 cm at Vietnamese population mean (our US regression vs. our VN regression; see docs/02)
 
 **Status**: DONE (docs/02, ea_size_engine.py)
 
@@ -172,7 +172,7 @@ Input: Person Photo (I_p) + Garment Image (I_g) + Body Info (h, w)
 #### 3a. Build Evaluation Dataset
 - Need: person photos with **known body measurements** wearing **known garment sizes**
 - Options:
-  - BodyM dataset (Amazon) — has measurements but no VTON ground truth
+  - BodyM dataset (Amazon) — ships silhouettes and anthropometric measurements (not raw photos), and has no VTON ground truth
   - Manually annotate a small set (50-100 person-garment pairs with fit labels)
   - Synthetic: generate pairs using FASHN at different "person sizes" and compare
 - File: `ea-vton/evaluation/build_eval_set.py`

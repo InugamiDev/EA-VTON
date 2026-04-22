@@ -1,0 +1,80 @@
+version: "3.9"
+
+services:
+  # ── Infrastructure ──
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ── Node.js API Gateway ──
+  api:
+    build: ./apps/api
+    ports:
+      - "3001:3001"
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - VTON_SERVICE_URL=http://vton-service:8002
+      - FEATURE_SERVICE_URL=http://feature-service:8001
+      - RECOMMENDATION_SERVICE_URL=http://recommendation:8003
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./apps/api/src:/app/src
+
+  # ── Python ML Services ──
+  feature-service:
+    build: ./services/feature-service
+    ports:
+      - "8001:8001"
+    environment:
+      - MODEL_DIR=/app/models
+    volumes:
+      - ./services/feature-service/src:/app/src
+      - model-cache:/app/models
+      - ./training/checkpoints/body_embedding:/app/models/body_embedding:ro
+
+  vton-service:
+    build: ./services/vton-service
+    ports:
+      - "8002:8002"
+    environment:
+      - MODEL_DIR=/app/models
+    volumes:
+      - ./services/vton-service/src:/app/src
+      - model-cache:/app/models
+      - ./training/checkpoints/vton_baseline:/app/models/vton:ro
+
+  recommendation:
+    build: ./services/recommendation
+    ports:
+      - "8003:8003"
+    environment:
+      - MODEL_DIR=/app/models
+      - RESEARCH_MODELS_DIR=/app/research_models
+    volumes:
+      - ./services/recommendation/src:/app/src
+      - ./training/checkpoints/size_mlp:/app/models:ro
+      - ./research/models/variants:/app/research_models:ro
+
+  # ── Frontend ──
+  web:
+    build: ./apps/web
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+    depends_on:
+      - api
+
+volumes:
+  redis-data:
+  model-cache:
