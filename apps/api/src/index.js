@@ -12,8 +12,10 @@
 
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 
 const garmentRoutes = require("./routes/garments");
+const photoRoutes = require("./routes/photos");
 const tryonRoutes = require("./routes/tryon");
 const sizeRoutes = require("./routes/size");
 const bodyRoutes = require("./routes/body");
@@ -28,8 +30,12 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// ── Static files ──
+app.use("/uploads", express.static(path.resolve(__dirname, "../uploads")));
+
 // ── Routes ──
 app.use("/api/garments", garmentRoutes);
+app.use("/api/photos", photoRoutes);
 app.use("/api/tryon", tryonRoutes);
 app.use("/api/size-recommendation", sizeRoutes);
 app.use("/api/body-measurement", bodyRoutes);

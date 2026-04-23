@@ -9,10 +9,15 @@
 
 const express = require("express");
 const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
 const router = express.Router();
 
 const upload = multer({ storage: multer.memoryStorage() });
+
+const UPLOADS_DIR = path.resolve(__dirname, "../../uploads");
+const garments = require("../data/garments.json");
 
 const VTON_SERVICE_URL =
   process.env.VTON_SERVICE_URL || "http://localhost:8002";
@@ -181,34 +186,66 @@ router.get("/:jobId/image", (req, res) => {
 
 // ── Job processing ──
 
+// intent: read uploaded photo from disk, fetch garment image, send both to VTON service
+// status: done
+// next: add caching by sha256(photoHash + garmentId)
+// confidence: high
 async function processJob(jobId, photoId, garmentId) {
   const t0 = Date.now();
   const job = jobs.get(jobId);
 
   try {
-    // Step 1: Extract features from feature service
+    const { Blob } = await import("node:buffer");
+
+    // Step 1: Load person photo from disk
     job.stages.push({
-      name: "feature_extraction",
+      name: "load_photo",
       status: "running",
       duration_ms: 0,
       details: {},
     });
 
-    const featureT0 = Date.now();
-    let featureResult = null;
-    try {
-      const featureResp = await fetch(`${FEATURE_SERVICE_URL}/health`);
-      if (featureResp.ok) {
-        job.stages[0].status = "completed";
-      } else {
-        job.stages[0].status = "skipped";
-      }
-    } catch {
-      job.stages[0].status = "skipped";
-    }
-    job.stages[0].duration_ms = Date.now() - featureT0;
+    const loadT0 = Date.now();
 
-    // Step 2: Run VTON inference
+    // Find the uploaded file by photo_id (uuid prefix)
+    const files = fs.readdirSync(UPLOADS_DIR);
+    const photoFile = files.find((f) => f.startsWith(photoId));
+    if (!photoFile) {
+      throw new Error(`Uploaded photo not found for id: ${photoId}`);
+    }
+    const personBuf = fs.readFileSync(path.join(UPLOADS_DIR, photoFile));
+
+    job.stages[0].status = "completed";
+    job.stages[0].duration_ms = Date.now() - loadT0;
+
+    // Step 2: Resolve garment image
+    job.stages.push({
+      name: "resolve_garment",
+      status: "running",
+      duration_ms: 0,
+      details: {},
+    });
+
+    const garmentT0 = Date.now();
+    const garment = garments.find((g) => g.id === garmentId);
+    if (!garment) {
+      throw new Error(`Garment not found: ${garmentId}`);
+    }
+
+    // Use the tryon_input image (or fall back to first image)
+    const garmentImg =
+      garment.images.find((i) => i.type === "tryon_input") ||
+      garment.images[0];
+    const garmentResp = await fetch(garmentImg.url);
+    if (!garmentResp.ok) {
+      throw new Error(`Failed to fetch garment image: ${garmentResp.status}`);
+    }
+    const garmentBuf = Buffer.from(await garmentResp.arrayBuffer());
+
+    job.stages[1].status = "completed";
+    job.stages[1].duration_ms = Date.now() - garmentT0;
+
+    // Step 3: Send to VTON service for inference
     job.stages.push({
       name: "vton_inference",
       status: "running",
@@ -217,16 +254,46 @@ async function processJob(jobId, photoId, garmentId) {
     });
 
     const vtonT0 = Date.now();
-    const vtonResp = await fetch(`${VTON_SERVICE_URL}/health`);
-    if (!vtonResp.ok) {
-      throw new Error("VTON service unavailable");
-    }
-    job.stages[1].status = "completed";
-    job.stages[1].duration_ms = Date.now() - vtonT0;
+    const form = new FormData();
+    form.append(
+      "person_image",
+      new Blob([personBuf], { type: "image/jpeg" }),
+      "person.jpg"
+    );
+    form.append(
+      "garment_image",
+      new Blob([garmentBuf], { type: "image/png" }),
+      "garment.jpg"
+    );
+    form.append("garment_type", "upper_body");
 
+    const response = await fetch(`${VTON_SERVICE_URL}/infer`, {
+      method: "POST",
+      body: form,
+    });
+
+    if (!response.ok) {
+      throw new Error(`VTON service returned ${response.status}`);
+    }
+
+    const resultBuf = Buffer.from(await response.arrayBuffer());
+    job.resultImageBuf = resultBuf;
+    job.stages[2].status = "completed";
+    job.stages[2].duration_ms = Date.now() - vtonT0;
+
+    job.resultUrl = `/api/tryon/${jobId}/image`;
     job.processingTimeMs = Date.now() - t0;
     job.status = "completed";
-    job.method = "gateway_orchestrated";
+    job.method = response.headers.get("X-Backend") || "gateway_orchestrated";
+    job.confidenceScore = parseFloat(
+      response.headers.get("X-Confidence") || "0"
+    );
+    job.confidenceLabel =
+      job.confidenceScore > 0.8
+        ? "high"
+        : job.confidenceScore > 0.5
+          ? "medium"
+          : "low";
   } catch (err) {
     job.status = "failed";
     job.error = err.message;

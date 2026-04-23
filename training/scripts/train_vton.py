@@ -73,9 +73,14 @@ class VTONDataset(Dataset):
         }
 
     def _load_image(self, path: str) -> torch.Tensor:
+        # intent: normalize to [-1, 1] to match inference Normalize(mean=0.5, std=0.5)
+        #         and CompositionUNet tanh output range
+        # status: done
+        # confidence: high
         img = Image.open(self.data_dir / path).convert("RGB")
         img = img.resize(self.input_size, Image.LANCZOS)
-        arr = np.array(img, dtype=np.float32) / 255.0
+        arr = np.array(img, dtype=np.float32) / 255.0  # [0, 1]
+        arr = arr * 2.0 - 1.0  # [-1, 1] — matches inference _TO_TENSOR normalization
         return torch.from_numpy(arr).permute(2, 0, 1)  # (3, H, W)
 
     def _load_npy_path(self, path: Path) -> torch.Tensor | None:
@@ -93,7 +98,11 @@ class VTONDataset(Dataset):
 
 
 class PerceptualLoss(nn.Module):
-    """VGG-19 perceptual loss."""
+    """VGG-19 perceptual loss.
+
+    Accepts inputs in [-1, 1] range and internally re-normalizes to
+    ImageNet stats before passing through VGG feature blocks.
+    """
 
     def __init__(self):
         super().__init__()
@@ -110,9 +119,26 @@ class PerceptualLoss(nn.Module):
 
         self.weights = [1.0 / 32, 1.0 / 16, 1.0 / 8, 1.0 / 4]
 
+        # intent: VGG expects ImageNet-normalized input, not [-1,1];
+        #         register buffers so they move with .to(device)
+        # status: done
+        # confidence: high
+        self.register_buffer(
+            "vgg_mean", torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1)
+        )
+        self.register_buffer(
+            "vgg_std", torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1)
+        )
+
+    def _normalize_for_vgg(self, t: torch.Tensor) -> torch.Tensor:
+        """Convert [-1, 1] tensor to ImageNet-normalized [0, 1] range for VGG."""
+        t_01 = t * 0.5 + 0.5  # [-1, 1] → [0, 1]
+        return (t_01 - self.vgg_mean) / self.vgg_std
+
     def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         loss = torch.tensor(0.0, device=pred.device)
-        x, y = pred, target
+        x = self._normalize_for_vgg(pred)
+        y = self._normalize_for_vgg(target)
         for block, weight in zip(self.blocks, self.weights):
             x = block(x)
             y = block(y)
@@ -167,7 +193,10 @@ def generate_test_grid(model, dataset, device, output_path: Path, n_samples: int
             images.append(row)
 
     grid = torch.cat(images, dim=1)  # (3, N*H, 4*W)
-    grid_np = (grid.cpu().clamp(0, 1) * 255).byte().permute(1, 2, 0).numpy()
+    # intent: remap [-1, 1] → [0, 255] for image saving (matches tanh output range)
+    # status: done
+    # confidence: high
+    grid_np = (grid.cpu().clamp(-1.0, 1.0).add(1.0).div(2.0).mul(255.0)).byte().permute(1, 2, 0).numpy()
     Image.fromarray(grid_np).save(output_path)
     logger.info("Test grid saved to %s (%d samples)", output_path, len(indices))
 
@@ -274,6 +303,12 @@ def _train_stage1(model, loader, config, device, checkpoint_dir):
     optimizer = torch.optim.Adam(trainable_params, lr=stage1["lr"])
     grad_clip = config["training"].get("gradient_clip", 1.0)
 
+    # intent: add warp regularization penalizing large TPS control-point offsets
+    #         (config specifies warp_regularization but it was never applied)
+    # status: done
+    # confidence: high
+    warp_reg_weight = stage1["losses"].get("warp_regularization", 0.0)
+
     for epoch in range(1, stage1["epochs"] + 1):
         model.train()
         total_loss = 0.0
@@ -283,8 +318,14 @@ def _train_stage1(model, loader, config, device, checkpoint_dir):
             garment = batch["garment"].to(device)
             gt = batch["ground_truth"].to(device)
 
-            warped = model.warp(person, garment)
+            warped, offsets = model.warp_with_offsets(person, garment)
             loss = F.l1_loss(warped, gt) * stage1["losses"]["l1"]
+
+            # Warp regularization: penalize L2 norm of control-point offsets
+            # offsets shape: (B, N_CTRL, 2) — mean over batch and points
+            if warp_reg_weight > 0:
+                reg_loss = offsets.pow(2).sum(dim=-1).mean()
+                loss = loss + reg_loss * warp_reg_weight
 
             optimizer.zero_grad()
             loss.backward()
@@ -318,6 +359,11 @@ def _train_stage2(model, loader, config, device, checkpoint_dir, perceptual_loss
     grad_clip = config["training"].get("gradient_clip", 1.0)
     save_every = config["training"].get("save_every", 10)
 
+    # intent: apply warp regularization from config (penalize large TPS offsets)
+    # status: done
+    # confidence: high
+    warp_reg_weight = stage2["losses"].get("warp_regularization", 0.0)
+
     for epoch in range(1, stage2["epochs"] + 1):
         model.train()
         total_loss = 0.0
@@ -328,10 +374,14 @@ def _train_stage2(model, loader, config, device, checkpoint_dir, perceptual_loss
             heatmaps = batch["heatmaps"].to(device)
             gt = batch["ground_truth"].to(device)
 
-            result, mask = model(person, garment, heatmaps)
+            result, mask, offsets = model(person, garment, heatmaps, return_offsets=True)
             l1 = F.l1_loss(result, gt)
             perc = perceptual_loss(result, gt)
             loss = l1 * stage2["losses"]["l1"] + perc * stage2["losses"]["perceptual"]
+
+            if warp_reg_weight > 0:
+                reg_loss = offsets.pow(2).sum(dim=-1).mean()
+                loss = loss + reg_loss * warp_reg_weight
 
             optimizer.zero_grad()
             loss.backward()
@@ -364,6 +414,11 @@ def _train_stage3(model, loader, config, device, checkpoint_dir, perceptual_loss
     grad_clip = config["training"].get("gradient_clip", 1.0)
     save_every = config["training"].get("save_every", 10)
 
+    # intent: apply warp regularization from config (penalize large TPS offsets)
+    # status: done
+    # confidence: high
+    warp_reg_weight = stage3["losses"].get("warp_regularization", 0.0)
+
     for epoch in range(1, stage3["epochs"] + 1):
         model.train()
         discriminator.train()
@@ -376,7 +431,7 @@ def _train_stage3(model, loader, config, device, checkpoint_dir, perceptual_loss
             gt = batch["ground_truth"].to(device)
 
             # Generator step
-            result, mask = model(person, garment, heatmaps)
+            result, mask, offsets = model(person, garment, heatmaps, return_offsets=True)
             l1 = F.l1_loss(result, gt)
             perc = perceptual_loss(result, gt)
             d_fake = discriminator(result)
@@ -384,6 +439,10 @@ def _train_stage3(model, loader, config, device, checkpoint_dir, perceptual_loss
             g_loss = (l1 * stage3["losses"]["l1"] +
                       perc * stage3["losses"]["perceptual"] +
                       g_adv * stage3["losses"]["adversarial"])
+
+            if warp_reg_weight > 0:
+                reg_loss = offsets.pow(2).sum(dim=-1).mean()
+                g_loss = g_loss + reg_loss * warp_reg_weight
 
             opt_g.zero_grad()
             g_loss.backward()

@@ -1,0 +1,2767 @@
+<!doctype html>
+<html lang="vi">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>EA-VTON | Báo cáo 19/04/2026 | Bản trình bày</title>
+        <style>
+            @import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans:wght@400;500;700&display=swap");
+
+            :root {
+                --bg: #eceae4;
+                --sheet: #fcfbf8;
+                --panel: #f7f5f0;
+                --ink: #142432;
+                --muted: #5a6773;
+                --line: #d7ddd8;
+                --brand: #1d3f5e;
+                --brand-strong: #10293f;
+                --accent: #7c92aa;
+                --ok: #20594a;
+                --warn: #8b5d22;
+                --bad: #8b3d33;
+                --soft-brand: rgba(29, 63, 94, 0.08);
+                --soft-ok: rgba(32, 89, 74, 0.1);
+                --soft-warn: rgba(139, 93, 34, 0.1);
+                --soft-bad: rgba(139, 61, 51, 0.09);
+                --font-head: "Be Vietnam Pro", "Noto Sans", sans-serif;
+                --font-body: "Noto Sans", "Segoe UI", sans-serif;
+                --font-mono: "JetBrains Mono", monospace;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+            html {
+                scroll-behavior: smooth;
+            }
+
+            body {
+                margin: 0;
+                background:
+                    linear-gradient(
+                        180deg,
+                        rgba(255, 255, 255, 0.55),
+                        rgba(236, 234, 228, 0.94)
+                    ),
+                    var(--bg);
+                color: var(--ink);
+                font-family: var(--font-body);
+                line-height: 1.5;
+            }
+
+            .toolbar {
+                position: fixed;
+                right: 24px;
+                bottom: 24px;
+                z-index: 20;
+                display: flex;
+                gap: 10px;
+            }
+
+            .toolbar button,
+            .toolbar a {
+                border: 0;
+                border-radius: 999px;
+                background: rgba(16, 41, 63, 0.96);
+                color: #fff;
+                padding: 12px 16px;
+                font: inherit;
+                cursor: pointer;
+                text-decoration: none;
+                display: inline-flex;
+                align-items: center;
+                box-shadow: 0 10px 24px rgba(16, 41, 63, 0.18);
+            }
+
+            .deck {
+                padding: 26px 18px 54px;
+            }
+
+            .slide {
+                position: relative;
+                width: min(1280px, calc(100vw - 36px));
+                min-height: 720px;
+                margin: 0 auto 26px;
+                padding: 42px 50px 46px;
+                background: var(--sheet);
+                border: 1px solid var(--line);
+                border-radius: 12px;
+                box-shadow: 0 18px 48px rgba(20, 36, 50, 0.09);
+                overflow: hidden;
+            }
+
+            .slide::before {
+                content: "";
+                position: absolute;
+                inset: 0 auto auto 0;
+                width: 100%;
+                height: 4px;
+                background: linear-gradient(
+                    90deg,
+                    var(--brand-strong),
+                    var(--brand),
+                    var(--accent)
+                );
+            }
+
+            .slide-number {
+                position: absolute;
+                right: 42px;
+                top: 28px;
+                font-family: var(--font-mono);
+                font-size: 12px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--muted);
+            }
+
+            .eyebrow {
+                margin: 0 0 12px;
+                color: var(--brand);
+                font-family: var(--font-mono);
+                font-size: 12px;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                font-weight: 700;
+            }
+
+            h1,
+            h2,
+            h3 {
+                margin: 0;
+                color: var(--brand-strong);
+                font-family: var(--font-head);
+                line-height: 1.08;
+                letter-spacing: -0.03em;
+            }
+
+            h1 {
+                font-size: 48px;
+                max-width: 900px;
+                font-weight: 800;
+            }
+            h2 {
+                font-size: 34px;
+                font-weight: 800;
+            }
+            h3 {
+                font-size: 21px;
+                font-weight: 700;
+            }
+
+            p {
+                margin: 0;
+                color: var(--muted);
+            }
+            ul {
+                margin: 14px 0 0;
+                padding-left: 22px;
+            }
+            li {
+                margin: 7px 0;
+                color: var(--ink);
+            }
+
+            .cover {
+                display: grid;
+                grid-template-columns: 1.28fr 0.72fr;
+                gap: 28px;
+                align-items: stretch;
+            }
+
+            .cover-card,
+            .panel,
+            .table-card,
+            .chart-card,
+            .decision-card,
+            .summary-card,
+            .media-card {
+                border: 1px solid var(--line);
+                border-radius: 10px;
+                background: var(--panel);
+            }
+
+            .cover-card,
+            .panel,
+            .table-card,
+            .chart-card,
+            .decision-card,
+            .summary-card {
+                padding: 18px 20px;
+            }
+
+            .cover-card strong {
+                display: block;
+                margin-bottom: 10px;
+                color: var(--ink);
+                font-family: var(--font-head);
+                font-size: 18px;
+            }
+
+            .meta-strip {
+                margin-top: 20px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .chip {
+                display: inline-flex;
+                align-items: center;
+                padding: 8px 12px;
+                border-radius: 999px;
+                border: 1px solid rgba(29, 63, 94, 0.14);
+                background: rgba(29, 63, 94, 0.05);
+                color: var(--brand);
+                font-family: var(--font-mono);
+                font-size: 12px;
+                font-weight: 600;
+            }
+
+            .stats-grid,
+            .grid-2,
+            .grid-3,
+            .decision-grid,
+            .flow-grid,
+            .chart-grid {
+                display: grid;
+                gap: 16px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                margin-top: 22px;
+            }
+            .grid-2,
+            .chart-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .grid-3,
+            .decision-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+            .flow-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+
+            .summary-card {
+                padding: 16px 18px;
+            }
+            .summary-card .label {
+                display: block;
+                margin-bottom: 8px;
+                font-family: var(--font-mono);
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                color: var(--muted);
+                font-weight: 700;
+            }
+
+            .summary-card .value {
+                display: block;
+                color: var(--brand-strong);
+                font-family: var(--font-head);
+                font-size: 30px;
+                font-weight: 800;
+                line-height: 1;
+            }
+
+            .summary-card .caption {
+                margin-top: 10px;
+                font-size: 14px;
+            }
+
+            .tag {
+                display: inline-flex;
+                margin-bottom: 12px;
+                padding: 6px 10px;
+                border-radius: 999px;
+                font-family: var(--font-mono);
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+
+            .decision-card.ok .tag {
+                background: var(--soft-ok);
+                color: var(--ok);
+            }
+            .decision-card.warn .tag {
+                background: var(--soft-warn);
+                color: var(--warn);
+            }
+            .decision-card.bad .tag {
+                background: var(--soft-bad);
+                color: var(--bad);
+            }
+
+            .flow-step {
+                min-height: 176px;
+                padding: 18px;
+                border: 1px solid var(--line);
+                border-radius: 10px;
+                background: linear-gradient(
+                    180deg,
+                    rgba(255, 255, 255, 0.98),
+                    rgba(247, 245, 240, 1)
+                );
+            }
+
+            .flow-step .step-no {
+                display: inline-flex;
+                width: 28px;
+                height: 28px;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 12px;
+                border-radius: 50%;
+                background: var(--soft-brand);
+                color: var(--brand-strong);
+                font-family: var(--font-mono);
+                font-size: 12px;
+                font-weight: 700;
+            }
+
+            .viz-board {
+                display: grid;
+                gap: 12px;
+                margin-top: 14px;
+            }
+
+            .viz-row {
+                display: grid;
+                gap: 12px;
+            }
+
+            .viz-row.two {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .viz-row.three {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            .viz-bridge {
+                padding: 8px 14px;
+                border-radius: 999px;
+                border: 1px solid rgba(29, 63, 94, 0.12);
+                background: rgba(29, 63, 94, 0.06);
+                color: var(--brand-strong);
+                font-family: var(--font-mono);
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                text-align: center;
+                text-transform: uppercase;
+            }
+
+            .viz-card {
+                min-height: 102px;
+                padding: 14px 15px;
+                border: 1px solid var(--line);
+                border-radius: 12px;
+                background: linear-gradient(
+                    180deg,
+                    rgba(255, 255, 255, 0.98),
+                    rgba(247, 245, 240, 1)
+                );
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            }
+
+            .viz-card .kicker {
+                display: inline-flex;
+                margin-bottom: 10px;
+                padding: 4px 8px;
+                border-radius: 999px;
+                font-family: var(--font-mono);
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+
+            .viz-card strong {
+                display: block;
+                color: var(--brand-strong);
+                font-family: var(--font-head);
+                font-size: 17px;
+                line-height: 1.15;
+            }
+
+            .viz-card p {
+                margin-top: 8px;
+                font-size: 13px;
+                line-height: 1.45;
+            }
+
+            .viz-card.source .kicker,
+            .viz-card.target .kicker {
+                background: rgba(29, 63, 94, 0.1);
+                color: var(--brand);
+            }
+
+            .viz-card.core .kicker {
+                background: rgba(124, 146, 170, 0.14);
+                color: var(--brand-strong);
+            }
+
+            .viz-card.output .kicker,
+            .viz-card.final .kicker {
+                background: rgba(32, 89, 74, 0.12);
+                color: var(--ok);
+            }
+
+            .viz-card.target {
+                background: linear-gradient(
+                    180deg,
+                    rgba(247, 245, 240, 1),
+                    rgba(236, 240, 244, 1)
+                );
+            }
+
+            .viz-card.core {
+                background: linear-gradient(
+                    180deg,
+                    rgba(243, 246, 249, 1),
+                    rgba(247, 245, 240, 1)
+                );
+            }
+
+            .viz-card.output {
+                min-height: 86px;
+            }
+
+            .viz-card.final {
+                min-height: 74px;
+                background: linear-gradient(
+                    180deg,
+                    rgba(243, 248, 246, 1),
+                    rgba(247, 245, 240, 1)
+                );
+            }
+
+            .formula-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px;
+                margin-top: 12px;
+            }
+
+            .formula-card {
+                padding: 12px 14px;
+                border: 1px solid var(--line);
+                border-radius: 12px;
+                background: #fff;
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            }
+
+            .formula-card .kicker {
+                display: inline-flex;
+                margin-bottom: 8px;
+                padding: 4px 8px;
+                border-radius: 999px;
+                background: rgba(29, 63, 94, 0.08);
+                color: var(--brand-strong);
+                font-family: var(--font-mono);
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+
+            .formula-card strong {
+                display: block;
+                color: var(--brand-strong);
+                font-family: var(--font-head);
+                font-size: 16px;
+                line-height: 1.15;
+            }
+
+            .formula-card img {
+                display: block;
+                width: 100%;
+                height: auto;
+                margin-top: 10px;
+                border-radius: 8px;
+                background: #fff;
+            }
+
+            .formula-card p {
+                margin-top: 10px;
+                color: var(--muted);
+                font-size: 12px;
+                line-height: 1.45;
+            }
+
+            .roadmap-ladder {
+                position: relative;
+                display: grid;
+                gap: 12px;
+                margin-top: 14px;
+                padding-left: 34px;
+            }
+
+            .roadmap-ladder::before {
+                content: "";
+                position: absolute;
+                left: 14px;
+                top: 8px;
+                bottom: 8px;
+                width: 2px;
+                background: linear-gradient(
+                    180deg,
+                    var(--brand-strong),
+                    var(--accent)
+                );
+                opacity: 0.7;
+            }
+
+            .roadmap-item {
+                position: relative;
+            }
+
+            .roadmap-item::before {
+                content: "";
+                position: absolute;
+                left: -28px;
+                top: 18px;
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: var(--sheet);
+                border: 3px solid var(--accent);
+                box-shadow: 0 0 0 4px rgba(252, 251, 248, 0.9);
+            }
+
+            .roadmap-item.done::before {
+                border-color: var(--ok);
+                background: rgba(32, 89, 74, 0.12);
+            }
+
+            .roadmap-item.focus::before {
+                border-color: var(--brand-strong);
+                background: rgba(29, 63, 94, 0.12);
+            }
+
+            .roadmap-card {
+                padding: 14px 15px;
+                border: 1px solid var(--line);
+                border-radius: 12px;
+                background: linear-gradient(
+                    180deg,
+                    rgba(255, 255, 255, 0.98),
+                    rgba(247, 245, 240, 1)
+                );
+            }
+
+            .roadmap-card .state {
+                display: inline-flex;
+                margin-bottom: 10px;
+                padding: 4px 8px;
+                border-radius: 999px;
+                font-family: var(--font-mono);
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+
+            .roadmap-item.done .state {
+                background: rgba(32, 89, 74, 0.12);
+                color: var(--ok);
+            }
+
+            .roadmap-item.focus .state {
+                background: rgba(29, 63, 94, 0.12);
+                color: var(--brand-strong);
+            }
+
+            .roadmap-item.next .state {
+                background: rgba(139, 93, 34, 0.12);
+                color: var(--warn);
+            }
+
+            .roadmap-card strong {
+                display: block;
+                color: var(--brand-strong);
+                font-family: var(--font-head);
+                font-size: 17px;
+                line-height: 1.15;
+            }
+
+            .roadmap-card p {
+                margin-top: 8px;
+                font-size: 13px;
+                line-height: 1.45;
+            }
+
+            .execution-board {
+                display: grid;
+                gap: 12px;
+                margin-top: 14px;
+            }
+
+            .execution-row {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px;
+            }
+
+            .execution-card {
+                min-height: 118px;
+                padding: 14px 15px;
+                border: 1px solid var(--line);
+                border-radius: 12px;
+                background: linear-gradient(
+                    180deg,
+                    rgba(255, 255, 255, 0.98),
+                    rgba(247, 245, 240, 1)
+                );
+            }
+
+            .execution-card .state {
+                display: inline-flex;
+                margin-bottom: 10px;
+                padding: 4px 8px;
+                border-radius: 999px;
+                font-family: var(--font-mono);
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+
+            .execution-card.done .state {
+                background: rgba(32, 89, 74, 0.12);
+                color: var(--ok);
+            }
+
+            .execution-card.improved .state {
+                background: rgba(29, 63, 94, 0.12);
+                color: var(--brand-strong);
+            }
+
+            .execution-card.next .state {
+                background: rgba(139, 93, 34, 0.12);
+                color: var(--warn);
+            }
+
+            .execution-card.risk .state {
+                background: rgba(154, 71, 58, 0.12);
+                color: var(--bad);
+            }
+
+            .execution-card strong {
+                display: block;
+                color: var(--brand-strong);
+                font-family: var(--font-head);
+                font-size: 17px;
+                line-height: 1.15;
+            }
+
+            .execution-card p {
+                margin-top: 8px;
+                font-size: 13px;
+                line-height: 1.45;
+            }
+
+            .execution-card ul {
+                margin-top: 8px;
+                padding-left: 18px;
+            }
+
+            .execution-card li {
+                font-size: 13px;
+                line-height: 1.45;
+            }
+
+            .execution-card li + li {
+                margin-top: 4px;
+            }
+
+            .chart-card h3 {
+                font-size: 22px;
+            }
+
+            .chart {
+                display: grid;
+                gap: 12px;
+                margin-top: 16px;
+            }
+
+            .bar-row {
+                display: grid;
+                grid-template-columns: 158px 1fr 82px;
+                gap: 12px;
+                align-items: center;
+            }
+
+            .bar-label {
+                color: var(--ink);
+                font-size: 14px;
+                font-weight: 700;
+            }
+
+            .bar-track {
+                position: relative;
+                height: 14px;
+                border-radius: 999px;
+                background: #e4e7e5;
+                overflow: hidden;
+            }
+
+            .bar-fill {
+                height: 100%;
+                border-radius: 999px;
+                background: linear-gradient(
+                    90deg,
+                    var(--brand-strong),
+                    var(--brand)
+                );
+            }
+
+            .bar-fill.alt {
+                background: linear-gradient(90deg, #5b7896, var(--accent));
+            }
+            .bar-fill.soft {
+                background: linear-gradient(90deg, #92a0ad, #b2bdc7);
+            }
+            .bar-value {
+                text-align: right;
+                color: var(--brand-strong);
+                font-family: var(--font-mono);
+                font-size: 13px;
+                font-weight: 700;
+            }
+
+            .mermaid-card,
+            .note {
+                border: 1px solid var(--line);
+                border-radius: 10px;
+                background: rgba(255, 255, 255, 0.82);
+            }
+
+            .mermaid-card {
+                padding: 16px 18px;
+            }
+
+            .mermaid {
+                margin-top: 14px;
+                min-height: 220px;
+                padding: 10px;
+                border: 1px dashed rgba(29, 63, 94, 0.2);
+                border-radius: 8px;
+                background: #fff;
+            }
+
+            .note {
+                margin-top: 16px;
+                padding: 12px 14px;
+                background: rgba(29, 63, 94, 0.05);
+            }
+
+            .note strong {
+                display: block;
+                margin-bottom: 6px;
+                color: var(--brand-strong);
+                font-family: var(--font-head);
+                font-size: 16px;
+            }
+
+            .note p {
+                font-size: 14px;
+            }
+
+            .column-chart {
+                position: relative;
+                display: grid;
+                grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+                gap: 18px;
+                align-items: end;
+                height: 290px;
+                margin-top: 18px;
+                padding: 18px 10px 0;
+                border-radius: 10px;
+                background: linear-gradient(
+                    180deg,
+                    rgba(255, 255, 255, 0.96),
+                    rgba(247, 245, 240, 0.96)
+                );
+            }
+
+            .column-chart::before {
+                content: "";
+                position: absolute;
+                inset: 18px 10px 54px;
+                border-bottom: 1px solid rgba(29, 63, 94, 0.2);
+                border-radius: 8px;
+                background: repeating-linear-gradient(
+                    to top,
+                    rgba(20, 36, 50, 0.08) 0,
+                    rgba(20, 36, 50, 0.08) 1px,
+                    transparent 1px,
+                    transparent 25%
+                );
+            }
+
+            .column {
+                position: relative;
+                z-index: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: end;
+                height: 100%;
+            }
+
+            .column-track {
+                display: flex;
+                align-items: end;
+                justify-content: center;
+                width: 100%;
+                height: 210px;
+            }
+
+            .column-bar {
+                width: min(74px, 100%);
+                height: var(--height, 60%);
+                min-height: 14px;
+                border-radius: 14px 14px 0 0;
+                background: linear-gradient(
+                    180deg,
+                    #486887 0%,
+                    var(--brand-strong) 100%
+                );
+                box-shadow: 0 10px 24px rgba(16, 41, 63, 0.16);
+            }
+
+            .column-bar.alt {
+                background: linear-gradient(180deg, #8aa1ba 0%, #5b7896 100%);
+            }
+
+            .column-bar.soft {
+                background: linear-gradient(180deg, #bcc5cf 0%, #8f9ba8 100%);
+            }
+
+            .column-value {
+                margin-top: 10px;
+                color: var(--brand-strong);
+                font-family: var(--font-mono);
+                font-size: 12px;
+                font-weight: 700;
+            }
+
+            .column-label {
+                margin-top: 6px;
+                color: var(--ink);
+                font-size: 12px;
+                font-weight: 700;
+                text-align: center;
+            }
+
+            .small-text {
+                font-size: 14px;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 14px;
+                font-size: 14px;
+            }
+
+            th,
+            td {
+                padding: 10px 8px;
+                border-bottom: 1px solid var(--line);
+                text-align: left;
+                vertical-align: top;
+            }
+
+            th {
+                color: var(--muted);
+                font-family: var(--font-mono);
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+
+            td.highlight,
+            .highlight {
+                color: var(--brand-strong);
+                font-weight: 700;
+            }
+
+            .media-card {
+                overflow: hidden;
+            }
+
+            .media-card img {
+                display: block;
+                width: 100%;
+                height: 328px;
+                object-fit: cover;
+                background: #f0eee8;
+            }
+
+            .media-card .caption {
+                padding: 14px 16px 16px;
+            }
+
+            .footer-note {
+                position: absolute;
+                left: 50px;
+                right: 50px;
+                bottom: 20px;
+                display: flex;
+                justify-content: space-between;
+                gap: 12px;
+                color: var(--muted);
+                font-family: var(--font-mono);
+                font-size: 11px;
+            }
+
+            @page {
+                size: A4 landscape;
+                margin: 8mm;
+            }
+
+            @media print {
+                html,
+                body {
+                    width: 297mm;
+                    height: 210mm;
+                    background: #fff;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+
+                body {
+                    margin: 0;
+                    font-size: 10.5px;
+                }
+
+                .toolbar {
+                    display: none;
+                }
+                .deck {
+                    padding: 0;
+                }
+
+                h1 {
+                    font-size: 31px;
+                }
+                h2 {
+                    font-size: 23px;
+                }
+                h3 {
+                    font-size: 15px;
+                }
+                p,
+                li,
+                td,
+                th,
+                .caption,
+                .small-text {
+                    font-size: 10.5px;
+                }
+                ul {
+                    margin-top: 8px;
+                    padding-left: 16px;
+                }
+                li {
+                    margin: 3px 0;
+                }
+
+                .slide {
+                    width: 281mm;
+                    height: 194mm;
+                    min-height: 194mm;
+                    margin: 0;
+                    padding: 10mm 11mm 9mm;
+                    border: 0.2mm solid var(--line);
+                    border-radius: 0;
+                    box-shadow: none;
+                    overflow: hidden;
+                    page-break-after: always;
+                    break-after: page;
+                }
+
+                .slide:last-child {
+                    page-break-after: auto;
+                    break-after: auto;
+                }
+
+                .slide::before {
+                    height: 2mm;
+                }
+                .slide-number {
+                    right: 10mm;
+                    top: 6mm;
+                    font-size: 9px;
+                }
+                .eyebrow {
+                    margin-bottom: 6px;
+                    font-size: 9px;
+                }
+
+                .cover,
+                .stats-grid,
+                .grid-2,
+                .grid-3,
+                .decision-grid,
+                .flow-grid,
+                .chart-grid {
+                    gap: 8px;
+                }
+
+                .cover-card,
+                .panel,
+                .table-card,
+                .chart-card,
+                .decision-card,
+                .summary-card,
+                .mermaid-card,
+                .note {
+                    padding: 8px 10px;
+                }
+
+                .meta-strip {
+                    margin-top: 10px;
+                    gap: 6px;
+                }
+                .chip {
+                    padding: 4px 8px;
+                    font-size: 9px;
+                }
+
+                .summary-card .label,
+                th {
+                    font-size: 8.5px;
+                }
+
+                .summary-card .value {
+                    font-size: 21px;
+                }
+
+                .flow-step {
+                    min-height: 84px;
+                    padding: 10px;
+                }
+
+                .flow-step .step-no {
+                    width: 20px;
+                    height: 20px;
+                    margin-bottom: 6px;
+                    font-size: 9px;
+                }
+
+                .mermaid {
+                    min-height: 0;
+                    height: 42mm;
+                    margin-top: 8px;
+                    padding: 6px;
+                    overflow: hidden;
+                }
+
+                .viz-board,
+                .roadmap-ladder,
+                .formula-grid,
+                .execution-board,
+                .execution-row {
+                    gap: 6px;
+                }
+
+                .viz-row {
+                    gap: 6px;
+                }
+
+                .viz-card,
+                .roadmap-card,
+                .formula-card,
+                .execution-card {
+                    min-height: 0;
+                    padding: 8px 9px;
+                }
+
+                .viz-card strong,
+                .roadmap-card strong,
+                .formula-card strong,
+                .execution-card strong {
+                    font-size: 12px;
+                }
+
+                .viz-card p,
+                .roadmap-card p,
+                .formula-card p,
+                .execution-card p,
+                .execution-card li {
+                    margin-top: 4px;
+                    font-size: 9px;
+                    line-height: 1.35;
+                }
+
+                .viz-card .kicker,
+                .roadmap-card .state,
+                .formula-card .kicker,
+                .execution-card .state {
+                    margin-bottom: 6px;
+                    font-size: 7.5px;
+                    padding: 3px 6px;
+                }
+
+                .formula-card img {
+                    margin-top: 6px;
+                    max-height: 18mm;
+                    object-fit: contain;
+                }
+
+                .roadmap-ladder {
+                    padding-left: 22px;
+                }
+
+                .roadmap-ladder::before {
+                    left: 9px;
+                }
+
+                .roadmap-item::before {
+                    left: -18px;
+                    top: 14px;
+                    width: 12px;
+                    height: 12px;
+                    border-width: 2px;
+                    box-shadow: 0 0 0 2px rgba(252, 251, 248, 0.9);
+                }
+
+                .column-chart {
+                    height: 50mm;
+                    margin-top: 8px;
+                    padding: 8px 6px 0;
+                }
+
+                .column-chart::before {
+                    inset: 8px 6px 20px;
+                }
+
+                .column-track {
+                    height: 31mm;
+                }
+
+                .column-bar {
+                    width: min(18mm, 100%);
+                    min-height: 8px;
+                    box-shadow: none;
+                }
+
+                .column-value,
+                .column-label {
+                    font-size: 9px;
+                }
+
+                table {
+                    margin-top: 8px;
+                    font-size: 10px;
+                }
+
+                th,
+                td {
+                    padding: 4px 5px;
+                }
+
+                .media-card img {
+                    height: 50mm;
+                }
+
+                .media-card .caption {
+                    padding: 8px 10px 10px;
+                }
+
+                .note {
+                    margin-top: 8px;
+                }
+
+                .note strong {
+                    margin-bottom: 4px;
+                    font-size: 12px;
+                }
+
+                .footer-note {
+                    left: 11mm;
+                    right: 11mm;
+                    bottom: 6mm;
+                    font-size: 8.5px;
+                }
+            }
+
+            @media (max-width: 1080px) {
+                .cover,
+                .stats-grid,
+                .grid-2,
+                .grid-3,
+                .decision-grid,
+                .flow-grid,
+                .chart-grid,
+                .formula-grid,
+                .execution-row,
+                .viz-row.two,
+                .viz-row.three {
+                    grid-template-columns: 1fr;
+                }
+
+                .slide {
+                    padding: 36px 26px 42px;
+                }
+
+                .slide-number {
+                    right: 24px;
+                    top: 22px;
+                }
+
+                .footer-note {
+                    position: static;
+                    margin-top: 22px;
+                    flex-direction: column;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!--<div class="toolbar" aria-hidden="true">
+            <button type="button" onclick="goSlide(-1)">Trước</button>
+            <button type="button" onclick="goSlide(1)">Tiếp</button>
+            <button type="button" onclick="toggleFullscreen()">
+                Toàn màn hình
+            </button>
+            <a href="./weekly-report-2026-04-19-print.html?noprint=1"
+                >Bản in / PDF</a
+            >
+        </div>-->
+
+        <main class="deck">
+            <section class="slide" id="slide-1">
+                <div class="slide-number">01 / 08</div>
+                <div class="cover">
+                    <div>
+                        <p class="eyebrow">Báo cáo kỹ thuật</p>
+                        <h1>EA-VTON: Báo cáo 19/04/2026</h1>
+                        <ul
+                            style="
+                                margin-top: 18px;
+                                max-width: 760px;
+                                font-size: 17px;
+                            "
+                        >
+                            <li>
+                                Đây là một hệ thống gồm hai nhánh khác nhau: gợi
+                                ý size bằng AI và thử đồ ảo bằng xử lý hình ảnh.
+                            </li>
+                            <li>
+                                Mốc báo cáo: 19/04/2026; mã nguồn được tổng hợp
+                                tại thời điểm 22/04/2026.
+                            </li>
+                            <li>
+                                Mục tiêu: gom các thử nghiệm rời rạc thành một
+                                quy trình hoàn chỉnh, trong đó mỗi nhánh có mục
+                                tiêu, cách làm và cách đo riêng.
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="cover-card">
+                        <strong>Tóm tắt điều hành</strong>
+                        <p>
+                            Trọng tâm của tuần là dừng các claim ước lượng và
+                            thay bằng số chạy thật cho từng nhánh.
+                            <strong>Size recommendation</strong> hiện đã có kết
+                            quả train/eval và một vòng tuning ngay trong repo.
+                            <strong>Virtual try-on</strong> thì đã chạy được
+                            pipeline, nhưng chất lượng ảnh vẫn chưa đủ mạnh để
+                            khóa deck như một thành quả hoàn chỉnh.
+                        </p>
+                        <p style="margin-top: 12px">
+                            Điểm mới là: nhánh size giờ đã có một improvement
+                            nhỏ nhưng thật, với
+                            <strong>VN-range Within-1 đạt 70.97%</strong> ở cấu
+                            hình GBM tuning, còn nhánh VTON được giữ ở trạng
+                            thái <strong>working pipeline</strong> chứ không
+                            thổi phồng thành kết quả đẹp.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="note">
+                    <strong>Chú thích</strong>
+                    <p>
+                        size recommendation là nhánh nghiên cứu chính; VTON là
+                        nhánh engineering. Phần sau của deck sẽ nói rõ số nào đã
+                        chạy thật, số nào đã dùng để chốt candidate, và phần nào
+                        vẫn chưa được claim.
+                    </p>
+                </div>
+            </section>
+
+            <section class="slide" id="slide-2">
+                <div class="slide-number">02 / 08</div>
+                <p class="eyebrow">System Overview</p>
+                <h2>Hệ thống có 2 nhánh khác nhau</h2>
+
+                <div class="grid-2" style="margin-top: 22px">
+                    <div class="table-card">
+                        <strong>So sánh hai nhánh</strong>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Phần hệ thống</th>
+                                    <th>Size recommendation</th>
+                                    <th>VTON</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Bài toán</td>
+                                    <td>Dự đoán size phù hợp</td>
+                                    <td>Tạo ảnh mặc thử</td>
+                                </tr>
+                                <tr>
+                                    <td>Đầu vào chính</td>
+                                    <td>
+                                        Chiều cao, cân nặng, đặc trưng cơ thể,
+                                        loại sản phẩm
+                                    </td>
+                                    <td>Ảnh người + ảnh quần áo</td>
+                                </tr>
+                                <tr>
+                                    <td>Đầu ra</td>
+                                    <td>Size, confidence, số đo ước lượng</td>
+                                    <td>Ảnh thử đồ</td>
+                                </tr>
+                                <tr>
+                                    <td>Tính chất</td>
+                                    <td class="highlight">
+                                        Phần nghiên cứu chính
+                                    </td>
+                                    <td>Kỹ thuật triển khai / reuse CV</td>
+                                </tr>
+                                <tr>
+                                    <td>Cách đo</td>
+                                    <td>Accuracy, within-1, bias, ESS</td>
+                                    <td>
+                                        Tốc độ, chất lượng ảnh, ổn định mặt/da
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mermaid-card">
+                        <h3>Luồng tổng thể</h3>
+                        <div class="mermaid">
+graph LR
+    A["Đầu vào người dùng"]
+    B["Feature service"]
+    C["Size recommendation"]
+    D["Virtual try-on"]
+    E["Kết quả size"]
+    F["Ảnh thử đồ"]
+    A --> B
+    B --> C
+    B --> D
+    C --> E
+    D --> F
+                        </div>
+                    </div>
+                </div>
+
+                <div class="note">
+                    <strong>Chú thích</strong>
+                    <p>
+                        Hai nhánh có liên quan ở mức sản phẩm, nhưng không nên
+                        trộn thành một bài toán duy nhất. Một nhánh dự đoán, một
+                        nhánh dựng ảnh.
+                    </p>
+                </div>
+            </section>
+
+            <section class="slide" id="slide-3">
+                <div class="slide-number">03 / 08</div>
+                <p class="eyebrow">Nhánh 1</p>
+                <h2>Size recommendation là phần nghiên cứu chính</h2>
+
+                <div class="grid-2" style="margin-top: 20px">
+                    <div class="panel">
+                        <ul>
+                            <li>
+                                Bài toán chính ở đây là dữ liệu nguồn và nhóm
+                                người dùng mục tiêu không giống nhau.
+                            </li>
+                            <li>
+                                Nếu học trực tiếp từ dữ liệu hiện có, mô hình dễ
+                                gợi ý size bị lệch cho nhóm mục tiêu.
+                            </li>
+                            <li>
+                                Hướng được chọn là vẫn dùng dữ liệu hiện có,
+                                nhưng tăng trọng số cho những mẫu giống nhóm mục
+                                tiêu hơn.
+                            </li>
+                            <li>
+                                Sau đó huấn luyện và so sánh các mô hình như GBM
+                                và MLP để chọn biến thể phù hợp nhất.
+                            </li>
+                            <li>
+                                Đây là nơi chứa phần đóng góp chính về mặt
+                                phương pháp của dự án.
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="chart-card">
+                        <h3>Phương pháp cho nhánh size</h3>
+                        <div class="viz-board">
+                            <div class="viz-row two">
+                                <div class="viz-card source">
+                                    <span class="kicker">Source</span>
+                                    <strong>Dữ liệu RTR</strong>
+                                    <p>
+                                        Giữ lại height, weight, BMI, age, body
+                                        type và category từ dữ liệu nguồn để
+                                        train model size.
+                                    </p>
+                                </div>
+                                <div class="viz-card target">
+                                    <span class="kicker">Target</span>
+                                    <strong>Prior người dùng VN</strong>
+                                    <p>
+                                        Dùng thống kê chiều cao, cân nặng và
+                                        body clusters để mô tả nhóm mục tiêu
+                                        mình muốn phục vụ.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="viz-bridge">
+                                Hai nguồn cùng đi vào bước gán trọng số theo
+                                target
+                            </div>
+
+                            <div class="viz-row two">
+                                <div class="viz-card core">
+                                    <span class="kicker">Weighting</span>
+                                    <strong>Copula density ratio</strong>
+                                    <p>
+                                        Nhìn chiều cao và cân nặng như một cặp
+                                        liên quan thay vì giả sử hai biến độc
+                                        lập.
+                                    </p>
+                                </div>
+                                <div class="viz-card core">
+                                    <span class="kicker">Stabilization</span>
+                                    <strong>PSIS smoothing</strong>
+                                    <p>
+                                        Làm mềm tail của trọng số để các mẫu quá
+                                        hiếm không đẩy quá mạnh quá trình học.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="viz-bridge">
+                                Sau khi có weight, train nhiều biến thể rồi giữ
+                                model thắng ở metric mục tiêu
+                            </div>
+
+                            <div class="viz-row three">
+                                <div class="viz-card output">
+                                    <span class="kicker">Model A</span>
+                                    <strong>GBM</strong>
+                                    <p>
+                                        Baseline mạnh nhất và dễ tune nhất trên
+                                        dữ liệu bảng ở repo hiện tại.
+                                    </p>
+                                </div>
+                                <div class="viz-card output">
+                                    <span class="kicker">Model B</span>
+                                    <strong>MLP / Ordinal</strong>
+                                    <p>
+                                        Dùng để kiểm tra neural và ordinal loss
+                                        có thắng baseline thật hay không.
+                                    </p>
+                                </div>
+                                <div class="viz-card final">
+                                    <span class="kicker">Output</span>
+                                    <strong
+                                        >Size + confidence +
+                                        measurements</strong
+                                    >
+                                    <p>
+                                        Đầu ra cuối cho recommendation service.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="formula-grid">
+                            <div class="formula-card">
+                                <span class="kicker">Equation A</span>
+                                <strong>Copula density ratio</strong>
+                                <img
+                                    src="./assets/ea-vton/copula-density-ratio.png"
+                                    alt="Công thức copula density ratio"
+                                />
+                                <p>
+                                    Trọng số tăng khi một cặp chiều cao - cân
+                                    nặng giống target hơn source, nên dữ liệu
+                                    nguồn được kéo gần bài toán thật hơn.
+                                </p>
+                            </div>
+                            <div class="formula-card">
+                                <span class="kicker">Equation B</span>
+                                <strong>Weighted training loss</strong>
+                                <img
+                                    src="./assets/ea-vton/weighted-bce-loss.png"
+                                    alt="Công thức weighted binary cross entropy"
+                                />
+                                <p>
+                                    Loss được nhân theo trọng số để model ưu
+                                    tiên học đúng trên nhóm mục tiêu, thay vì
+                                    đối xử mọi mẫu như nhau.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-grid" style="margin-top: 20px">
+                    <div class="summary-card">
+                        <span class="label">Feature Input</span>
+                        <span class="value">6</span>
+                        <p class="caption">
+                            Các đặc trưng đầu vào cho mô hình size.
+                        </p>
+                    </div>
+                    <div class="summary-card">
+                        <span class="label">Biến thể mô hình</span>
+                        <span class="value">6+2</span>
+                        <p class="caption">
+                            6 biến thể gốc và 2 tuned candidates đang dùng để so
+                            sánh ở nhánh size.
+                        </p>
+                    </div>
+                    <div class="summary-card">
+                        <span class="label">Research Core</span>
+                        <span class="value">1</span>
+                        <p class="caption">
+                            Đây là nhánh mang giá trị nghiên cứu chính.
+                        </p>
+                    </div>
+                    <div class="summary-card">
+                        <span class="label">Mục tiêu</span>
+                        <span class="value">VN</span>
+                        <p class="caption">
+                            Tối ưu cho nhóm người dùng mục tiêu thay vì chỉ cho
+                            tập nguồn.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="note">
+                    <strong>Chú thích</strong>
+                    <p>
+                        Nói ngắn gọn, copula giúp mô hình nhìn chiều cao và cân
+                        nặng cùng nhau; PSIS giúp tránh để vài mẫu hiếm chi phối
+                        kết quả. Đây là phần không nên trộn lẫn với VTON.
+                    </p>
+                </div>
+            </section>
+
+            <section class="slide" id="slide-4">
+                <div class="slide-number">04 / 08</div>
+                <p class="eyebrow">Nhánh 2 Và Serving</p>
+                <h2>VTON là phần kỹ thuật phục vụ sản phẩm</h2>
+
+                <div class="grid-2" style="margin-top: 20px">
+                    <div class="table-card">
+                        <strong>Nhánh size recommendation</strong>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Giai đoạn</th>
+                                    <th>Việc thực hiện</th>
+                                    <th>Thư mục</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>
+                                        Tiền xử lý dữ liệu và lập thống kê ban
+                                        đầu
+                                    </td>
+                                    <td>`research/datasets/`</td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>Gán trọng số bằng copula + PSIS</td>
+                                    <td>`research/weighting/`</td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>Huấn luyện mô hình</td>
+                                    <td>`research/models/`</td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td>Đánh giá và so sánh từng cấu hình</td>
+                                    <td>`research/evaluation/`</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="table-card">
+                        <strong>Nhánh VTON / serving</strong>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Giai đoạn</th>
+                                    <th>Việc thực hiện</th>
+                                    <th>Thư mục</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>Nhận dữ liệu người dùng</td>
+                                    <td>`apps/web/`</td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>Điều phối request</td>
+                                    <td>`apps/api/`</td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>Ước lượng số đo và đặc trưng cơ thể</td>
+                                    <td>`services/feature-service/`</td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td>Chạy gợi ý size và dựng ảnh thử đồ</td>
+                                    <td>
+                                        `services/recommendation/`,
+                                        `services/vton-service/`
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="grid-2" style="margin-top: 18px">
+                    <div class="mermaid-card">
+                        <h3>Luồng phục vụ end-to-end</h3>
+                        <div class="mermaid">
+sequenceDiagram
+    participant U as User
+    participant W as Web
+    participant G as Gateway
+    participant F as Feature
+    participant R as Size
+    participant V as TryOn
+    U->>W: Upload input
+    W->>G: Send request
+    G->>F: Extract features
+    F-->>G: Return measurements
+    G->>R: Predict size
+    R-->>G: Return size result
+    G->>V: Run try-on
+    V-->>G: Return try-on image
+    G-->>W: Return final result
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <strong>Điểm cần phân biệt</strong>
+                        <ul>
+                            <li>
+                                Nhánh size là nơi có phần thích nghi miền và so
+                                sánh mô hình.
+                            </li>
+                            <li>
+                                Nhánh VTON chủ yếu là tích hợp kỹ thuật CV /
+                                compositing để tạo ảnh đầu ra.
+                            </li>
+                            <li>
+                                Hai nhánh gặp nhau ở API cuối, nhưng cách đo và
+                                cách cải tiến khác nhau.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="note">
+                    <strong>Chú thích</strong>
+                    <p>
+                        README hiện tại cũng tách rõ: size recommendation là
+                        core research; VTON là engineering-only và ưu tiên tái
+                        sử dụng model / backend có sẵn.
+                    </p>
+                </div>
+            </section>
+
+            <section class="slide" id="slide-5">
+                <div class="slide-number">05 / 08</div>
+                <p class="eyebrow">Khung đánh giá</p>
+                <h2>Khung đánh giá tách riêng cho 2 nhánh</h2>
+
+                <div class="grid-2" style="margin-top: 20px">
+                    <div class="panel">
+                        <strong>Phần gợi ý size</strong>
+                        <ul>
+                            <li>
+                                Mức đúng hoặc chỉ lệch tối đa 1 size trên nhóm
+                                VN tăng khoảng 2 điểm phần trăm so với mốc hiện
+                                tại.
+                            </li>
+                            <li>
+                                Độ giảm trên toàn bộ tập thử không vượt quá 1
+                                điểm phần trăm.
+                            </li>
+                            <li>
+                                Xu hướng dự đoán lệch trên nhóm VN cần tiến gần
+                                về 0.
+                            </li>
+                            <li>
+                                Số mẫu hiệu dụng của copula + PSIS phải tốt hơn
+                                cách gán trọng số độc lập.
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="panel">
+                        <strong>Phần thử đồ ảo</strong>
+                        <ul>
+                            <li>
+                                So sánh rõ giữa thời gian chạy và chất lượng ảnh
+                                đầu ra.
+                            </li>
+                            <li>
+                                Giữ khuôn mặt và vùng da ổn định giữa các cấu
+                                hình khác nhau.
+                            </li>
+                            <li>
+                                Duy trì cùng một mốc đo để tiện so sánh giữa các
+                                vòng.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="grid-2" style="margin-top: 18px">
+                    <div class="chart-card">
+                        <h3>
+                            Biểu đồ cột 1: Mức độ ưu tiên khi đánh giá phần size
+                        </h3>
+                        <div class="column-chart" style="--cols: 3">
+                            <div class="column">
+                                <div class="column-track">
+                                    <div
+                                        class="column-bar"
+                                        style="--height: 100%"
+                                    ></div>
+                                </div>
+                                <div class="column-value">100</div>
+                                <div class="column-label">
+                                    Đúng hoặc lệch 1 size
+                                </div>
+                            </div>
+                            <div class="column">
+                                <div class="column-track">
+                                    <div
+                                        class="column-bar alt"
+                                        style="--height: 90%"
+                                    ></div>
+                                </div>
+                                <div class="column-value">90</div>
+                                <div class="column-label">Bias gần 0</div>
+                            </div>
+                            <div class="column">
+                                <div class="column-track">
+                                    <div
+                                        class="column-bar soft"
+                                        style="--height: 84%"
+                                    ></div>
+                                </div>
+                                <div class="column-value">84</div>
+                                <div class="column-label">
+                                    Hiệu năng toàn tập
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <h3>
+                            Biểu đồ cột 2: Mức độ ưu tiên khi đánh giá phần thử
+                            đồ
+                        </h3>
+                        <div class="column-chart" style="--cols: 3">
+                            <div class="column">
+                                <div class="column-track">
+                                    <div
+                                        class="column-bar"
+                                        style="--height: 100%"
+                                    ></div>
+                                </div>
+                                <div class="column-value">100</div>
+                                <div class="column-label">Ổn định ảnh</div>
+                            </div>
+                            <div class="column">
+                                <div class="column-track">
+                                    <div
+                                        class="column-bar alt"
+                                        style="--height: 92%"
+                                    ></div>
+                                </div>
+                                <div class="column-value">92</div>
+                                <div class="column-label">Bảo toàn mặt/da</div>
+                            </div>
+                            <div class="column">
+                                <div class="column-track">
+                                    <div
+                                        class="column-bar soft"
+                                        style="--height: 86%"
+                                    ></div>
+                                </div>
+                                <div class="column-value">86</div>
+                                <div class="column-label">Thời gian</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="note">
+                    <strong>Chú thích</strong>
+                    <p>
+                        Slide này là khung để đọc đúng các số thật ở phần sau.
+                        Nhánh size nhìn theo within-1, bias và ESS; nhánh VTON
+                        nhìn theo chất lượng ảnh và khả năng phục vụ, không trộn
+                        hai bộ metric với nhau.
+                    </p>
+                </div>
+            </section>
+
+            <section class="slide" id="slide-6">
+                <div class="slide-number">06 / 08</div>
+                <p class="eyebrow">Nhánh 1 Kết quả thật</p>
+                <h2>
+                    Kết quả thật của size recommendation sau tuning trong repo
+                </h2>
+
+                <div class="grid-2" style="margin-top: 20px">
+                    <div class="table-card">
+                        <strong>Đọc nhanh kết quả</strong>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Điểm nhìn</th>
+                                    <th>Kết quả nổi bật</th>
+                                    <th>Ý nghĩa</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Full test</td>
+                                    <td class="small-text">
+                                        <span class="highlight"
+                                            >GBM baseline (không gán trọng
+                                            số)</span
+                                        >
+                                        giữ Within-1 tốt nhất:
+                                        <span class="highlight">83.37%</span>
+                                    </td>
+                                    <td class="small-text">
+                                        Baseline toàn tập vẫn rất mạnh và là mốc
+                                        để khống chế degradation.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Tuning thật trong repo</td>
+                                    <td class="small-text">
+                                        <span class="highlight"
+                                            >GBM copula + temper (alpha =
+                                            0.75)</span
+                                        >
+                                        nâng VN Within-1 lên
+                                        <span class="highlight">70.97%</span>
+                                    </td>
+                                    <td class="small-text">
+                                        Cải thiện nhỏ nhưng thật, vẫn nằm trong
+                                        cùng pipeline của repo.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>VN-range Top-1</td>
+                                    <td class="small-text">
+                                        <span class="highlight"
+                                            >GBM độc lập + temper (alpha =
+                                            0.5)</span
+                                        >
+                                        tốt nhất:
+                                        <span class="highlight">51.46%</span>
+                                    </td>
+                                    <td class="small-text">
+                                        Nếu ưu tiên exact size, tempering trên
+                                        independent hiện nhỉnh hơn.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>GO / NO-GO</td>
+                                    <td class="small-text">
+                                        <span class="highlight"
+                                            >MLP + CORN + copula = NO-GO</span
+                                        >
+                                    </td>
+                                    <td class="small-text">
+                                        Neural + ordinal hiện chưa vượt các
+                                        baseline GBM đã tune.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>PSIS đúng split train</td>
+                                    <td class="small-text">
+                                        <span class="highlight"
+                                            >k-hat ≈ -0.001</span
+                                        >
+                                    </td>
+                                    <td class="small-text">
+                                        Số
+                                        <span class="highlight">7.171</span>
+                                        trước đó đến từ full fit chưa lọc size
+                                        label, không nên dùng làm claim chính.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="note" style="margin-top: 12px">
+                            <strong>Cách đọc tên model</strong>
+                            <p>
+                                <span class="highlight">GBM baseline</span> là
+                                model không gán trọng số.
+                                <span class="highlight">GBM độc lập</span> là
+                                gán trọng số riêng cho chiều cao và cân nặng.
+                                <span class="highlight">GBM copula</span> là gán
+                                trọng số theo cặp chiều cao - cân nặng.
+                                <span class="highlight">Temper</span> nghĩa là
+                                làm mềm trọng số bằng lũy thừa nhỏ hơn 1 để giảm
+                                ảnh hưởng của các mẫu quá cực đoan.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <h3>Biểu đồ 1: Top-1 trên nhóm VN-range</h3>
+                        <div class="chart">
+                            <div class="bar-row">
+                                <div class="bar-label">GBM baseline</div>
+                                <div class="bar-track">
+                                    <div
+                                        class="bar-fill soft"
+                                        style="width: 98.6%"
+                                    ></div>
+                                </div>
+                                <div class="bar-value">50.74%</div>
+                            </div>
+                            <div class="bar-row">
+                                <div class="bar-label">GBM độc lập</div>
+                                <div class="bar-track">
+                                    <div
+                                        class="bar-fill alt"
+                                        style="width: 99.3%"
+                                    ></div>
+                                </div>
+                                <div class="bar-value">51.10%</div>
+                            </div>
+                            <div class="bar-row">
+                                <div class="bar-label">GBM copula</div>
+                                <div class="bar-track">
+                                    <div
+                                        class="bar-fill"
+                                        style="width: 99.8%"
+                                    ></div>
+                                </div>
+                                <div class="bar-value">51.36%</div>
+                            </div>
+                            <div class="bar-row">
+                                <div class="bar-label">Độc lập + temper</div>
+                                <div class="bar-track">
+                                    <div
+                                        class="bar-fill alt"
+                                        style="width: 100%"
+                                    ></div>
+                                </div>
+                                <div class="bar-value">51.46%</div>
+                            </div>
+                            <div class="bar-row">
+                                <div class="bar-label">Copula + temper</div>
+                                <div class="bar-track">
+                                    <div
+                                        class="bar-fill"
+                                        style="width: 99.8%"
+                                    ></div>
+                                </div>
+                                <div class="bar-value">51.36%</div>
+                            </div>
+                        </div>
+                        <p class="small-text" style="margin-top: 10px">
+                            <span class="highlight">Top-1</span> nghĩa là dự
+                            đoán đúng exact size.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid-2" style="margin-top: 18px">
+                    <div class="chart-card">
+                        <h3>Biểu đồ 2: Within-1 trên nhóm VN-range</h3>
+                        <div class="chart">
+                            <div class="bar-row">
+                                <div class="bar-label">GBM baseline</div>
+                                <div class="bar-track">
+                                    <div
+                                        class="bar-fill soft"
+                                        style="width: 98.8%"
+                                    ></div>
+                                </div>
+                                <div class="bar-value">70.15%</div>
+                            </div>
+                            <div class="bar-row">
+                                <div class="bar-label">GBM độc lập</div>
+                                <div class="bar-track">
+                                    <div
+                                        class="bar-fill alt"
+                                        style="width: 99.8%"
+                                    ></div>
+                                </div>
+                                <div class="bar-value">70.81%</div>
+                            </div>
+                            <div class="bar-row">
+                                <div class="bar-label">GBM copula</div>
+                                <div class="bar-track">
+                                    <div
+                                        class="bar-fill"
+                                        style="width: 99.6%"
+                                    ></div>
+                                </div>
+                                <div class="bar-value">70.71%</div>
+                            </div>
+                            <div class="bar-row">
+                                <div class="bar-label">Độc lập + temper</div>
+                                <div class="bar-track">
+                                    <div
+                                        class="bar-fill alt"
+                                        style="width: 99.9%"
+                                    ></div>
+                                </div>
+                                <div class="bar-value">70.92%</div>
+                            </div>
+                            <div class="bar-row">
+                                <div class="bar-label">Copula + temper</div>
+                                <div class="bar-track">
+                                    <div
+                                        class="bar-fill"
+                                        style="width: 100%"
+                                    ></div>
+                                </div>
+                                <div class="bar-value">70.97%</div>
+                            </div>
+                        </div>
+                        <p class="small-text" style="margin-top: 10px">
+                            <span class="highlight">Within-1</span> nghĩa là dự
+                            đoán đúng hoặc chỉ lệch tối đa 1 size.
+                        </p>
+                    </div>
+
+                    <div class="panel">
+                        <strong>Chẩn đoán weighting và body regression</strong>
+                        <ul>
+                            <li>
+                                <span class="highlight"
+                                    >Tuning có tác dụng thật</span
+                                >: tempering trọng số giúp nhích lên ở nhóm VN
+                                mà không làm hỏng full-test Within-1.
+                            </li>
+                            <li>
+                                <span class="highlight"
+                                    >ESS trên đúng train split</span
+                                >: independent =
+                                <span class="highlight">10.95%</span>, copula +
+                                PSIS = <span class="highlight">24.09%</span>.
+                            </li>
+                            <li>
+                                <span class="highlight"
+                                    >k-hat trên đúng train split</span
+                                >: <span class="highlight">-0.001</span>, nên
+                                câu chuyện PSIS ở nhánh size thực tế khỏe hơn số
+                                đang nằm trên deck cũ.
+                            </li>
+                            <li>
+                                <span class="highlight">Max weight</span>:
+                                independent =
+                                <span class="highlight">71.57</span>, copula +
+                                PSIS = <span class="highlight">56.88</span>.
+                            </li>
+                            <li>
+                                <span class="highlight">Body regression</span>:
+                                Ridge đạt avg MAE
+                                <span class="highlight">2.10 cm</span>, avg R²
+                                <span class="highlight">0.837</span>.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="note">
+                    <strong>Chú thích</strong>
+                    <p>
+                        Sau khi chạy thêm một vòng tuning ngay trong repo, câu
+                        chuyện không còn hoàn toàn “mixed”: GBM với tempered
+                        weighting cho ra một improvement nhỏ nhưng thật trên
+                        nhóm VN. Đây vẫn chưa phải bước nhảy lớn, nhưng là kết
+                        quả có thể bảo vệ được.
+                    </p>
+                </div>
+            </section>
+
+            <section class="slide" id="slide-7">
+                <div class="slide-number">07 / 08</div>
+                <p class="eyebrow">Nhánh 2 Visual trạng thái</p>
+                <h2>Trạng thái thật hiện tại của VTON</h2>
+
+                <div class="grid-2" style="margin-top: 20px">
+                    <figure class="media-card">
+                        <img
+                            src="./assets/vton-local-composite-rerun.png"
+                            alt="Kết quả rerun backend local composite"
+                        />
+                        <figcaption class="caption">
+                            <strong>Rerun local_composite</strong><br />
+                            Đây là output vừa chạy lại trên sample có sẵn. Chạy
+                            rất nhanh nhưng còn lộ overlay và chưa đủ tự nhiên.
+                        </figcaption>
+                    </figure>
+
+                    <figure class="media-card">
+                        <img
+                            src="../training/checkpoints/vton_baseline/demo/result.png"
+                            alt="Kết quả từ checkpoint trainable VTON"
+                        />
+                        <figcaption class="caption">
+                            <strong>Checkpoint trainable hiện tại</strong><br />
+                            Output rất nhiễu, chưa thể dùng làm ảnh demo hay
+                            benchmark chất lượng.
+                        </figcaption>
+                    </figure>
+                </div>
+
+                <div class="grid-2" style="margin-top: 18px">
+                    <div class="chart-card">
+                        <h3>
+                            Biểu đồ 3: Chỉ số thật của local_composite rerun
+                        </h3>
+                        <div class="column-chart" style="--cols: 3">
+                            <div class="column">
+                                <div class="column-track">
+                                    <div
+                                        class="column-bar soft"
+                                        style="--height: 100%"
+                                    ></div>
+                                </div>
+                                <div class="column-value">40.06 ms</div>
+                                <div class="column-label">Latency</div>
+                            </div>
+                            <div class="column">
+                                <div class="column-track">
+                                    <div
+                                        class="column-bar alt"
+                                        style="--height: 45%"
+                                    ></div>
+                                </div>
+                                <div class="column-value">0.45</div>
+                                <div class="column-label">Confidence</div>
+                            </div>
+                            <div class="column">
+                                <div class="column-track">
+                                    <div
+                                        class="column-bar"
+                                        style="--height: 25%"
+                                    ></div>
+                                </div>
+                                <div class="column-value">Low</div>
+                                <div class="column-label">Visual readiness</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <strong>Đọc nhanh trạng thái VTON</strong>
+                        <ul>
+                            <li>
+                                <span class="highlight">Có thể chạy được</span>:
+                                backend local chạy lại thành công và trả
+                                metadata thật.
+                            </li>
+                            <li>
+                                <span class="highlight"
+                                    >Chưa đạt chất lượng demo tốt</span
+                                >: ảnh local còn kiểu dán chồng, chưa ăn theo cơ
+                                thể.
+                            </li>
+                            <li>
+                                <span class="highlight"
+                                    >Checkpoint trainable chưa usable</span
+                                >: output hiện tại còn quá nhiễu.
+                            </li>
+                            <li>
+                                Ở nhánh này nên kể là
+                                <span class="highlight"
+                                    >đã có pipeline chạy</span
+                                >, nhưng
+                                <span class="highlight"
+                                    >chưa có benchmark chất lượng đủ mạnh để
+                                    khoe</span
+                                >.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="note">
+                    <strong>Chú thích</strong>
+                    <p>
+                        Nếu cần kể câu chuyện trung thực nhất: VTON hiện có demo
+                        fallback chạy nhanh, nhưng phần ảnh đẹp / học được từ
+                        checkpoint vẫn chưa đạt. Đây là chỗ cần đầu tư thêm nếu
+                        muốn đưa lên slide như một kết quả mạnh.
+                    </p>
+                </div>
+            </section>
+
+            <section class="slide" id="slide-8">
+                <div class="slide-number">08 / 08</div>
+                <p class="eyebrow">Kết luận Và Kế Hoạch</p>
+                <h2>Kết luận và cách khóa deck bằng số thật</h2>
+
+                <div class="grid-2" style="margin-top: 22px">
+                    <div class="panel">
+                        <ul>
+                            <li>
+                                Deck hiện tại không còn chỉ là kế hoạch: nhánh
+                                size đã có
+                                <span class="highlight"
+                                    >số train/eval thật</span
+                                >
+                                và một ứng viên tune tốt hơn ngay trong repo.
+                            </li>
+                            <li>
+                                Cấu hình nên giữ làm candidate chính là
+                                <span class="highlight"
+                                    >gbm_copula_tempered_a075</span
+                                >, vì nó nâng VN Within-1 lên
+                                <span class="highlight">70.97%</span> và vẫn giữ
+                                Full-test Within-1 ở
+                                <span class="highlight">83.18%</span>.
+                            </li>
+                            <li>
+                                <span class="highlight"
+                                    >GBM độc lập + temper (alpha = 0.5)</span
+                                >
+                                vẫn đáng giữ làm đối chứng vì exact Top-1 trên
+                                VN đang cao nhất:
+                                <span class="highlight">51.46%</span>.
+                            </li>
+                            <li>
+                                Research endpoint của recommendation service
+                                hiện đã được đổi sang candidate tuned, nên bước
+                                tiếp theo là đo lại luồng end-to-end chứ không
+                                còn chỉ là đổi model trên slide.
+                            </li>
+                            <li>
+                                Nhánh VTON vẫn phải nói trung thực là
+                                <span class="highlight">có pipeline chạy</span>,
+                                nhưng chưa có output đủ mạnh để coi là benchmark
+                                đẹp.
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="chart-card">
+                        <h3>Lộ trình cập nhật slide bằng số thật</h3>
+                        <div class="execution-board">
+                            <div class="execution-row">
+                                <div class="execution-card done">
+                                    <span class="state">Done</span>
+                                    <strong>Đã chạy thật nhánh size</strong>
+                                    <ul>
+                                        <li>
+                                            Rerun weighting, subset evaluation
+                                            và body regression.
+                                        </li>
+                                        <li>
+                                            Đã sửa lại cách đọc
+                                            <code>k_hat</code> theo đúng split
+                                            train thực tế.
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="execution-card improved">
+                                    <span class="state">Improved</span>
+                                    <strong
+                                        >Đã có candidate tốt hơn và đã nối vào
+                                        service</strong
+                                    >
+                                    <ul>
+                                        <li>
+                                            <code>gbm_copula_tempered_a075</code
+                                            >: VN W1 = 70.97%.
+                                        </li>
+                                        <li>
+                                            <code
+                                                >GBM độc lập + temper (alpha =
+                                                0.5)</code
+                                            >: VN Top-1 = 51.46%.
+                                        </li>
+                                        <li>
+                                            <code
+                                                >/recommend-size/research</code
+                                            >
+                                            hiện mặc định dùng candidate tuned.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="execution-row">
+                                <div class="execution-card next">
+                                    <span class="state">Next</span>
+                                    <strong
+                                        >Việc cần chạy tiếp cho pipeline</strong
+                                    >
+                                    <ul>
+                                        <li>
+                                            Rerun <code>/api/pipeline</code> để
+                                            lấy kết quả end-to-end với candidate
+                                            mới.
+                                        </li>
+                                        <li>
+                                            Lấy thêm một bộ request mẫu để chụp
+                                            output và log latency ở mức hệ
+                                            thống.
+                                        </li>
+                                        <li>
+                                            Khóa lại chart và script theo đúng
+                                            candidate đã chọn, không giữ số cũ
+                                            nữa.
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="execution-card risk">
+                                    <span class="state">Hold</span>
+                                    <strong>Điều chưa được claim</strong>
+                                    <ul>
+                                        <li>
+                                            Không dùng model ngoài repo chỉ để
+                                            có ảnh đẹp hơn.
+                                        </li>
+                                        <li>
+                                            VTON chưa đủ visual quality nên chưa
+                                            được kể như một kết quả mạnh.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cover-card" style="margin-top: 22px">
+                    <strong>Ý chính cần giữ</strong>
+                    <p>
+                        Điểm quan trọng nhất không phải là “đã có kết quả đẹp
+                        chưa”, mà là mình đã có
+                        <strong>một vòng cải thiện thật trong repo</strong> và
+                        biết rất rõ nhánh nào đang khỏe, nhánh nào vẫn chưa đủ
+                        điều kiện để claim.
+                    </p>
+                </div>
+
+                <div class="note">
+                    <strong>Chú thích</strong>
+                    <p>
+                        Nếu cần chốt một câu ngắn ở slide cuối: size
+                        recommendation đã có improvement thật và có thể tiếp tục
+                        khóa candidate; VTON thì nên giữ ở trạng thái
+                        engineering baseline cho đến khi chất lượng ảnh đủ tốt.
+                    </p>
+                </div>
+            </section>
+
+            <section class="slide" id="slide-appendix-1">
+                <div class="slide-number">Phụ lục 1</div>
+                <p class="eyebrow">Thuật Ngữ Và Lý Do Chọn Hướng</p>
+                <h2>Giải nghĩa nhanh các term chính</h2>
+
+                <div class="grid-2" style="margin-top: 20px">
+                    <div class="table-card">
+                        <strong>Thuật ngữ</strong>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Term</th>
+                                    <th>Giải nghĩa dễ hiểu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>GBM</td>
+                                    <td>
+                                        Mô hình học bằng nhiều cây quyết định
+                                        nối tiếp nhau; cây sau sửa lỗi của cây
+                                        trước. Rất hợp với dữ liệu bảng.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Copula</td>
+                                    <td>
+                                        Cách nhìn chiều cao và cân nặng cùng
+                                        nhau, thay vì tách rời từng biến.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>PSIS</td>
+                                    <td>
+                                        Bước làm mềm các trọng số quá lớn để mô
+                                        hình đỡ học lệch theo vài mẫu hiếm.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>ESS</td>
+                                    <td>
+                                        Số mẫu “thực sự còn hữu ích” sau khi gán
+                                        trọng số. ESS cao hơn nghĩa là dữ liệu
+                                        ổn định hơn khi huấn luyện.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Within-1</td>
+                                    <td>
+                                        Đúng hoặc chỉ lệch tối đa 1 size, phù
+                                        hợp hơn với cách người dùng thực tế cảm
+                                        nhận size.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div>
+                        <div class="table-card">
+                            <strong>Vì sao chọn copula + PSIS + GBM</strong>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Hướng</th>
+                                        <th>Điểm yếu chính</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Rule-based</td>
+                                        <td>
+                                            Nhanh lúc đầu nhưng rất khó tinh
+                                            chỉnh và khó đo cải thiện dài hạn.
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Chờ thêm dữ liệu</td>
+                                        <td>
+                                            Đúng về dài hạn nhưng không đáp ứng
+                                            tiến độ hiện tại.
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Trọng số độc lập</td>
+                                        <td>
+                                            Đơn giản nhưng bỏ qua mối liên hệ
+                                            giữa chiều cao và cân nặng.
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Neural-only</td>
+                                        <td>
+                                            Có tiềm năng nhưng hiện tại chưa ổn
+                                            định bằng GBM trên dữ liệu bảng.
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="highlight">
+                                            Copula + PSIS + GBM
+                                        </td>
+                                        <td class="highlight">
+                                            Cân bằng tốt nhất giữa độ chính xác,
+                                            độ ổn định, tốc độ train và khả năng
+                                            đưa vào hệ thống.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="note">
+                            <strong>Chốt ý</strong>
+                            <p>
+                                Nhóm không chọn hướng phức tạp nhất, mà chọn
+                                hướng phù hợp nhất với nút thắt hiện tại: dữ
+                                liệu nguồn và nhóm mục tiêu khác nhau, trong khi
+                                mô hình cần dễ đo và dễ đưa vào hệ thống.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide" id="slide-appendix-2">
+                <div class="slide-number">Phụ lục 2</div>
+                <p class="eyebrow">Related Work</p>
+                <h2>Các nghiên cứu gần tinh thần Lighter-X</h2>
+
+                <div class="grid-2" style="margin-top: 20px">
+                    <div class="table-card">
+                        <strong>Nhóm nghiên cứu gần liên quan</strong>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nghiên cứu</th>
+                                    <th>Ý chính</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>LightGCN</td>
+                                    <td>
+                                        Tối giản GCN cho recommender, chỉ giữ
+                                        phần lan truyền cốt lõi.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>UltraGCN</td>
+                                    <td>
+                                        Làm recommender nhẹ hơn bằng cách bỏ
+                                        message passing tường minh.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>JGCF</td>
+                                    <td>
+                                        Nhìn graph collaborative filtering theo
+                                        góc nhìn phổ để lọc tín hiệu tốt hơn.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>LightGCL</td>
+                                    <td>
+                                        Kết hợp graph recommendation với
+                                        contrastive learning để tăng độ bền và
+                                        giảm học lệch.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Less is More / SVD-GCN</td>
+                                    <td>
+                                        Giữ lại và nhấn mạnh các tín hiệu graph
+                                        quan trọng thay vì dùng mọi tín hiệu như
+                                        nhau.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="highlight">Lighter-X</td>
+                                    <td class="highlight">
+                                        Đi theo hướng plug-and-play, decoupled
+                                        propagation và giảm tham số rất mạnh
+                                        trên graph lớn.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div>
+                        <div class="panel">
+                            <strong>Điểm chung với EA-VTON</strong>
+                            <ul>
+                                <li>
+                                    Đều ưu tiên cách làm gọn hơn, nhẹ hơn và dễ
+                                    cắm vào hệ thống sẵn có.
+                                </li>
+                                <li>
+                                    Đều nhấn mạnh việc chỉ giữ phần thực sự quan
+                                    trọng thay vì làm mô hình ngày càng nặng.
+                                </li>
+                                <li>
+                                    Đều coi benchmark rõ ràng là một phần của
+                                    thiết kế, không phải phần làm sau cùng.
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="panel" style="margin-top: 16px">
+                            <strong>Khác với EA-VTON ở đâu</strong>
+                            <ul>
+                                <li>
+                                    Các paper gần Lighter-X chủ yếu xử lý bài
+                                    toán graph recommender lớn và đắt.
+                                </li>
+                                <li>
+                                    Nút thắt chính của EA-VTON hiện tại không
+                                    phải graph quá nặng, mà là dữ liệu nguồn và
+                                    nhóm mục tiêu khác nhau.
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="note">
+                            <strong>Ghi chú tham khảo</strong>
+                            <p>
+                                Lighter-X báo cáo hướng decoupled propagation và
+                                framework plug-and-play giúp giảm rất mạnh số
+                                tham số trên graph lớn. Đây là nguồn tham khảo
+                                tốt về tư duy thiết kế, nhưng không phải phương
+                                pháp mà dự án hiện tại triển khai trực tiếp.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+        <script>
+            const slides = Array.from(document.querySelectorAll(".slide"));
+
+            async function renderMermaidDiagrams() {
+                if (!window.mermaid) return;
+
+                mermaid.initialize({
+                    startOnLoad: false,
+                    securityLevel: "loose",
+                    theme: "base",
+                    themeVariables: {
+                        primaryColor: "#f7f5f0",
+                        primaryTextColor: "#142432",
+                        primaryBorderColor: "#1d3f5e",
+                        lineColor: "#587087",
+                        secondaryColor: "#eef2f5",
+                        tertiaryColor: "#ffffff",
+                        fontFamily: "Noto Sans, sans-serif",
+                    },
+                    flowchart: {
+                        curve: "basis",
+                        htmlLabels: true,
+                    },
+                });
+
+                try {
+                    await mermaid.run({
+                        querySelector: ".mermaid",
+                    });
+                } catch (error) {
+                    console.error("Mermaid render failed", error);
+                }
+            }
+
+            const mermaidReady = renderMermaidDiagrams();
+
+            function currentSlideIndex() {
+                let best = 0;
+                let bestDistance = Number.POSITIVE_INFINITY;
+                slides.forEach((slide, index) => {
+                    const rect = slide.getBoundingClientRect();
+                    const distance = Math.abs(rect.top);
+                    if (distance < bestDistance) {
+                        bestDistance = distance;
+                        best = index;
+                    }
+                });
+                return best;
+            }
+
+            function goSlide(step) {
+                const next = Math.min(
+                    slides.length - 1,
+                    Math.max(0, currentSlideIndex() + step),
+                );
+                slides[next].scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                });
+            }
+
+            window.goSlide = goSlide;
+
+            async function toggleFullscreen() {
+                const root = document.documentElement;
+                if (document.fullscreenElement) {
+                    await document.exitFullscreen();
+                    return;
+                }
+                if (root.requestFullscreen) {
+                    await root.requestFullscreen();
+                }
+            }
+
+            window.toggleFullscreen = toggleFullscreen;
+
+            window.addEventListener("keydown", (event) => {
+                if (event.key === "ArrowRight" || event.key === "PageDown") {
+                    event.preventDefault();
+                    goSlide(1);
+                } else if (
+                    event.key === "ArrowLeft" ||
+                    event.key === "PageUp"
+                ) {
+                    event.preventDefault();
+                    goSlide(-1);
+                } else if (event.key.toLowerCase() === "f") {
+                    event.preventDefault();
+                    toggleFullscreen();
+                }
+            });
+
+            function waitForImages() {
+                const images = Array.from(document.images);
+                return Promise.all(
+                    images.map((img) => {
+                        if (img.complete) return Promise.resolve();
+                        return new Promise((resolve) => {
+                            img.addEventListener("load", resolve, {
+                                once: true,
+                            });
+                            img.addEventListener("error", resolve, {
+                                once: true,
+                            });
+                        });
+                    }),
+                );
+            }
+
+            Promise.all([
+                mermaidReady,
+                waitForImages(),
+                document.fonts ? document.fonts.ready : Promise.resolve(),
+            ]).catch((error) => {
+                console.error("Presentation assets failed to settle", error);
+            });
+        </script>
+    </body>
+</html>

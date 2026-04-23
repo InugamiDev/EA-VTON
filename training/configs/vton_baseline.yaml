@@ -11,7 +11,7 @@ data:
   dataset: vitonhd
   pairs_file: data/processed/vitonhd/pairs.json
   input_size: [192, 256]  # W, H
-  max_samples: 2000  # subset for faster training on M2
+  max_samples: null  # use full dataset (11,647 pairs)
   augmentation:
     horizontal_flip: true
     color_jitter: 0.1

@@ -80,26 +80,69 @@ class TrainableVTON(nn.Module):
         f_garment = self.garment_encoder(garment)
         return self.tps_module(f_garment, f_person, garment)
 
+    def warp_with_offsets(
+        self,
+        person: torch.Tensor,
+        garment: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Stage 1 variant that also returns TPS control-point offsets.
+
+        # intent: expose offsets for warp regularization loss during training
+        # status: done
+        # confidence: high
+
+        Args:
+            person:  (B, 3, H, W) person image tensor
+            garment: (B, 3, H, W) garment image tensor
+
+        Returns:
+            warped_garment: (B, 3, H, W) TPS-warped garment
+            offsets:        (B, N_CTRL, 2) predicted control-point offsets
+        """
+        f_person = self.person_encoder(person)
+        f_garment = self.garment_encoder(garment)
+
+        concat_feats = torch.cat([f_person, f_garment], dim=1)
+        offsets = self.tps_module.control_point_net(concat_feats)  # (B, N, 2)
+
+        B = garment.size(0)
+        source = self.tps_module.source_points.unsqueeze(0).expand(B, -1, -1)
+        target = source + offsets
+
+        H, W = garment.shape[2], garment.shape[3]
+        tps_grid = self.tps_module.compute_tps_grid(source, target, (H, W))
+
+        warped = torch.nn.functional.grid_sample(
+            garment, tps_grid, mode="bilinear", padding_mode="border", align_corners=True
+        )
+        return warped, offsets
+
     def forward(
         self,
         person: torch.Tensor,
         garment: torch.Tensor,
         heatmaps: torch.Tensor,
         parsing: torch.Tensor | None = None,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+        return_offsets: bool = False,
+    ) -> tuple[torch.Tensor, torch.Tensor] | tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Full pipeline: warp + compose.
 
         Args:
-            person:   (B, 3, H, W) person image tensor
-            garment:  (B, 3, H, W) garment image tensor
-            heatmaps: (B, 18, H, W) pose heatmaps
-            parsing:  (B, 1, H, W) parsing map (optional, used for agnostic)
+            person:         (B, 3, H, W) person image tensor
+            garment:        (B, 3, H, W) garment image tensor
+            heatmaps:       (B, 18, H, W) pose heatmaps
+            parsing:        (B, 1, H, W) parsing map (optional, used for agnostic)
+            return_offsets: if True, also return TPS offsets for regularization
 
         Returns:
-            result: (B, 3, H, W) final try-on image
-            mask:   (B, 1, H, W) composition mask
+            result:  (B, 3, H, W) final try-on image
+            mask:    (B, 1, H, W) composition mask
+            offsets: (B, N_CTRL, 2) TPS offsets (only if return_offsets=True)
         """
-        warped = self.warp(person, garment)
+        if return_offsets:
+            warped, offsets = self.warp_with_offsets(person, garment)
+        else:
+            warped = self.warp(person, garment)
 
         # Generate agnostic: zero out garment region if parsing available,
         # otherwise use person image directly (paired training assumption)
@@ -122,4 +165,7 @@ class TrainableVTON(nn.Module):
             )
 
         result, mask = self.composition_net(agnostic, warped, heatmaps)
+
+        if return_offsets:
+            return result, mask, offsets
         return result, mask
