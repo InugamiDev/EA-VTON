@@ -102,3 +102,7 @@ htmlcov/
 
 # ── HuggingFace cache ──
 .cache/
+
+# ── Generated media (Manim output, regenerable) ──
+media/
+

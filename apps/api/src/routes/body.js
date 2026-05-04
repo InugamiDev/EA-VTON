@@ -13,11 +13,17 @@ const FEATURE_SERVICE_URL =
 
 router.post("/", upload.single("photo"), async (req, res) => {
   try {
-    const { Blob } = await import("node:buffer");
-    const FormData = (await import("node-fetch")).FormData;
+    if (!req.file) {
+      return res.status(400).json({ detail: "Photo is required" });
+    }
 
     const form = new FormData();
-    form.append("image", new Blob([req.file.buffer]), "photo.jpg");
+    form.append(
+      "image",
+      new File([req.file.buffer], req.file.originalname || "photo.jpg", {
+        type: req.file.mimetype || "image/jpeg",
+      })
+    );
     form.append("include_pose", "true");
     form.append("include_parsing", "false");
     form.append("include_embedding", "false");
@@ -45,27 +51,9 @@ router.post("/", upload.single("photo"), async (req, res) => {
 });
 
 router.post("/quick", async (req, res) => {
-  try {
-    const response = await fetch(`${FEATURE_SERVICE_URL}/extract`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        height_cm: req.body.height_cm,
-        weight_kg: req.body.weight_kg,
-      }),
-    });
-
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      return res
-        .status(response.status)
-        .json({ detail: err.detail || "Quick measurement failed" });
-    }
-
-    res.json(await response.json());
-  } catch (err) {
-    res.status(502).json({ detail: `Feature service error: ${err.message}` });
-  }
+  res.status(501).json({
+    detail: "Quick body measurement without photo is not implemented in feature-service yet",
+  });
 });
 
 module.exports = router;

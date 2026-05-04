@@ -72,6 +72,21 @@ class ResearchSizeResponse(BaseModel):
     input_summary: dict
 
 
+class VisualSizeRequest(BaseModel):
+    """Request for visual (webcam) size prediction — height + body ratios, no weight needed."""
+    height_cm: float = Field(gt=100, lt=250)
+    shoulder_to_hip: float = Field(ge=0.5, le=2.0, description="Shoulder width / hip width")
+    waist_to_hip: float = Field(ge=0.3, le=1.5, description="Waist width / hip width")
+    shoulder_to_torso: float = Field(default=0.0, ge=0.0, le=3.0)
+    torso_to_leg: float = Field(default=0.0, ge=0.0, le=2.0)
+    arm_to_torso: float = Field(default=0.0, ge=0.0, le=3.0)
+    age: float = Field(default=30.0, ge=10, le=100)
+    category: str = "dress"
+    population: Literal["universal", "vietnamese"] = "vietnamese"
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0, description="Landmark detection confidence")
+    source: Literal["world_3d", "image_2d"] = "image_2d"
+
+
 class CompareRequest(BaseModel):
     """Request for comparing all 6 model variants."""
     height_cm: float = Field(gt=100, lt=250)
@@ -250,6 +265,126 @@ def recommend_size_research(req: ResearchSizeRequest):
         rule_based=rule_based_result,
         input_summary=input_summary,
     )
+
+
+# intent: visual size endpoint — webcam body ratios → weight estimation → GBM prediction
+# status: done
+# next: train a dedicated model on ratios directly (skip weight estimation)
+# confidence: high
+
+
+@app.post("/recommend-size/visual")
+def recommend_size_visual(req: VisualSizeRequest):
+    """Predict size from webcam body ratios + height (no weight needed).
+
+    Pipeline:
+      1. Estimate weight from height + shoulder-to-hip + waist-to-hip ratios
+      2. Feed estimated weight into existing GBM model
+      3. Return prediction + estimated weight + ratio analysis
+
+    This makes the webcam actually contribute data instead of just decoration.
+    """
+    from src.size_engine import (
+        estimate_chest_cm,
+        estimate_waist_cm,
+        estimate_hip_cm,
+    )
+
+    # ── Step 1: Estimate weight from body ratios ──
+    # Baselines differ by landmark source:
+    #   world_3d: real-body proportions in meters (matches anthropometric literature)
+    #   image_2d: inflated by 2D camera projection (needs dampened coefficients)
+    height_m = req.height_cm / 100.0
+    base_weight = 21.5 * height_m * height_m  # BMI ~21.5 baseline
+
+    if req.source == "world_3d":
+        # World landmarks: ratios match ANSUR/CAESAR anthropometric data
+        sth_delta = req.shoulder_to_hip - 1.1   # real S/H ~1.05–1.15 women
+        base_weight += sth_delta * 20
+        wth_delta = req.waist_to_hip - 0.8      # real W/H ~0.75–0.85 women
+        base_weight += wth_delta * 25
+    else:
+        # 2D fallback: camera perspective inflates ratios
+        sth_delta = req.shoulder_to_hip - 1.5   # 2D S/H ~1.4–1.8
+        base_weight += sth_delta * 12
+        wth_delta = req.waist_to_hip - 0.95     # 2D W/H ~0.90–1.10
+        base_weight += wth_delta * 15
+
+    estimated_weight = round(max(35, min(150, base_weight)), 1)
+    estimated_bmi = round(estimated_weight / (height_m ** 2), 1)
+
+    # ── Step 2: Run GBM with estimated weight ──
+    research_result = _predict_research_model(
+        "gbm_copula_tempered_a075",
+        req.height_cm,
+        estimated_weight,
+        req.age,
+        "unknown",
+        req.category,
+    )
+
+    if research_result is None:
+        research_result = {
+            "predicted_size": _bmi_to_size_heuristic(estimated_bmi),
+            "confidence": "low",
+            "model": "gbm_copula_tempered_a075",
+            "error": "Model not loaded — using BMI heuristic",
+        }
+    else:
+        research_result["model"] = "gbm_copula_tempered_a075"
+
+    # ── Step 3: Rule-based with estimated weight ──
+    pop = "vietnamese" if req.population == "vietnamese" else "universal"
+    chest = estimate_chest_cm(req.height_cm, estimated_weight, "regular", pop)
+    waist = estimate_waist_cm(req.height_cm, estimated_weight, pop)
+    hip = estimate_hip_cm(req.height_cm, estimated_weight, pop)
+
+    # ── Body shape analysis from ratios ──
+    if req.shoulder_to_hip > 1.15:
+        body_shape = "inverted_triangle"
+    elif req.waist_to_hip < 0.7:
+        body_shape = "hourglass"
+    elif req.waist_to_hip > 0.9:
+        body_shape = "rectangle"
+    elif req.shoulder_to_hip < 0.95:
+        body_shape = "pear"
+    else:
+        body_shape = "balanced"
+
+    return {
+        "research_model": research_result,
+        "rule_based": {
+            "predicted_size": _bmi_to_size_heuristic(estimated_bmi),
+            "confidence": "low",
+            "estimated_chest_cm": chest,
+            "estimated_waist_cm": waist,
+            "estimated_hip_cm": hip,
+        },
+        "weight_estimation": {
+            "estimated_weight_kg": estimated_weight,
+            "estimated_bmi": estimated_bmi,
+            "method": "ratio_regression",
+            "note": "Weight derived from height + webcam body proportions",
+        },
+        "body_shape": {
+            "type": body_shape,
+            "shoulder_to_hip": req.shoulder_to_hip,
+            "waist_to_hip": req.waist_to_hip,
+            "shoulder_to_torso": req.shoulder_to_torso,
+            "torso_to_leg": req.torso_to_leg,
+            "arm_to_torso": req.arm_to_torso,
+        },
+        "input_summary": {
+            "height_cm": req.height_cm,
+            "weight_kg": estimated_weight,
+            "bmi": estimated_bmi,
+            "age": req.age,
+            "category": req.category,
+            "population": req.population,
+            "landmark_confidence": req.confidence,
+            "source": "webcam_visual",
+        },
+    }
 
 
 # intent: compare trained research variants side-by-side + rule-based baseline

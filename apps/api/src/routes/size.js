@@ -154,6 +154,43 @@ router.post("/research", async (req, res) => {
 });
 
 /**
+ * POST /api/size-recommendation/visual — webcam body ratios → size prediction.
+ * No weight needed — estimates weight from height + body proportions.
+ */
+router.post("/visual", async (req, res) => {
+  try {
+    const response = await fetch(`${RECOMMENDATION_URL}/recommend-size/visual`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        height_cm: req.body.height_cm,
+        shoulder_to_hip: req.body.shoulder_to_hip,
+        waist_to_hip: req.body.waist_to_hip,
+        shoulder_to_torso: req.body.shoulder_to_torso || 0,
+        torso_to_leg: req.body.torso_to_leg || 0,
+        arm_to_torso: req.body.arm_to_torso || 0,
+        age: req.body.age || 30,
+        category: req.body.category || "dress",
+        population: req.body.population || "vietnamese",
+        confidence: req.body.confidence || 0,
+        source: req.body.source || "image_2d",
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      return res
+        .status(response.status)
+        .json({ detail: err.detail || "Visual size prediction failed" });
+    }
+
+    res.json(await response.json());
+  } catch (err) {
+    res.status(502).json({ detail: `Visual size prediction error: ${err.message}` });
+  }
+});
+
+/**
  * POST /api/size-recommendation/all-models — compare ALL 6 trained variants.
  * For research/demo purposes.
  */

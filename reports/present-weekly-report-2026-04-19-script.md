@@ -5,379 +5,287 @@ File này đi cùng với:
 
 Mục tiêu của file này:
 - giúp nói mạch lạc hơn khi trình bày;
-- không cần đọc lại nguyên văn slide;
-- tách rõ 2 nhánh của hệ thống: `size recommendation` và `virtual try-on`.
+- không đọc lại nguyên văn slide;
+- tách rất rõ 2 nhánh: `size recommendation` và `virtual try-on`.
 
 Thời lượng gợi ý:
 - Bản ngắn: 5-6 phút.
 - Bản đầy đủ: 7-8 phút.
-- Nếu đi cả phụ lục: 9-10 phút.
-
-Nguyên tắc khi nói:
-- Mỗi slide chỉ có 1 ý chính.
-- Không cần đọc hết bullet trên slide.
-- Nếu thời gian ngắn, chỉ nói 8 slide chính.
-- Phụ lục dùng khi có người hỏi thêm.
 
 ## Mở đầu 20-30 giây
 
-Hôm nay em báo cáo tiến độ của EA-VTON tại mốc ngày 19 tháng 4 năm 2026.
+Hôm nay em báo cáo tiến độ của EA-VTON tại mốc ngày 19 tháng 4 năm 2026, với code snapshot chốt ở ngày 22 tháng 4.
 
-Điểm quan trọng nhất ở mốc này là nhóm đã tách rõ hệ thống thành hai nhánh khác nhau, rồi chạy lại nhánh size để có số thật thay vì chỉ nói theo estimation.
-
+Điểm chính của deck này là nhóm đã tách rõ hệ thống thành 2 nhánh khác nhau.
 Nhánh thứ nhất là `size recommendation`, đây là phần nghiên cứu chính.
-Nhánh thứ hai là `virtual try-on`, đây là phần kỹ thuật để tạo ảnh thử đồ.
+Nhánh thứ hai là `virtual try-on`, đây là phần kỹ thuật xử lý ảnh để tạo trải nghiệm trực quan.
 
-Em sẽ đi lần lượt theo 3 ý:
-- vì sao nhóm chọn hướng này;
-- nhóm đang làm hai nhánh đó như thế nào;
-- và hiện tại mình đánh giá kết quả ra sao.
+Mục tiêu của giai đoạn này không phải là thêm thật nhiều thử nghiệm, mà là hợp nhất các phần đang có thành một pipeline hoàn chỉnh, có thể giải thích và có thể đo.
 
-## Slide 1 - Mở bài
+## Slide 1 - Title / Overview
 
 ### Ý chính
 
-Ở mốc báo cáo này, mục tiêu không chỉ là thêm thí nghiệm, mà là gom các phần đang có thành một hệ thống có thể giải thích và đo được.
+Deck này chốt lại rằng dự án có 2 nhánh riêng và chỉ một nhánh đã có improvement thật rõ.
 
 ### Script gợi ý
 
-Ở slide đầu tiên, ý em muốn chốt là dự án đã đi từ nhiều thí nghiệm rời rạc sang một cấu trúc rõ ràng hơn, và bắt đầu thay các claim ước lượng bằng số đã chạy lại.
+Ở slide đầu tiên, em muốn chốt ba ý.
 
-Trước đây mình có nhiều phần làm song song, nhưng chưa nói thật rõ phần nào là nghiên cứu chính, phần nào là phần kỹ thuật phục vụ sản phẩm.
+Ý thứ nhất, EA-VTON không phải là một bài toán duy nhất, mà là một hệ thống có 2 nhánh: size recommendation và virtual try-on.
 
-Ở mốc báo cáo này, nhóm thống nhất lại câu chuyện của hệ thống: đầu vào là ảnh người dùng và thông tin cơ bản, sau đó hệ thống đi ra hai loại đầu ra khác nhau, một là gợi ý size, hai là ảnh thử đồ.
+Ý thứ hai, ở mốc này nhóm đã có một kết quả thật ở nhánh size, cụ thể là VN Within-1 đạt 70.97 phần trăm sau vòng tuning GBM ngay trong repo.
 
-Điểm mới hơn so với bản deck cũ là nhánh size đã có một vòng train, eval và tuning thật trong repo, và research endpoint hiện cũng đã trỏ sang candidate tuned.
-Còn nhánh VTON thì vẫn được giữ ở trạng thái pipeline chạy được chứ chưa thổi lên thành kết quả đẹp.
+Ý thứ ba, ở nhánh VTON thì mình chỉ nên nói trung thực là đã có pipeline chạy được, chứ chưa đủ để xem là một kết quả triển khai thực tế.
 
 ### Câu chuyển slide
 
-Để tránh hiểu nhầm, slide tiếp theo em tách rất rõ hai nhánh này.
+Để tránh hiểu lầm, em tách luôn 2 nhánh này ra ngay ở slide tiếp theo.
 
-## Slide 2 - Hệ thống có 2 nhánh khác nhau
+## Slide 2 - System Overview
 
 ### Ý chính
 
-Hai nhánh dùng chung đầu vào ở mức sản phẩm, nhưng là hai bài toán khác nhau.
+Hai nhánh liên quan ở mức sản phẩm nhưng khác nhau về bản chất.
 
 ### Script gợi ý
 
-Ở đây em muốn làm rõ rằng `size recommendation` và `VTON` không nên bị gộp thành một thứ.
+Ở đây em muốn làm rõ là không nên gộp `size recommendation` với `VTON` thành một câu chuyện chung.
 
-Nhánh `size recommendation` nhận các đặc trưng như chiều cao, cân nặng, đặc trưng cơ thể và loại sản phẩm, rồi dự đoán ra size, độ tin cậy và một số đo ước lượng.
+Nhánh size là bài toán dự đoán: đầu vào là các đặc trưng cơ thể và loại sản phẩm, đầu ra là size, confidence và một số measurements ước lượng.
 
-Trong khi đó, nhánh `VTON` nhận ảnh người và ảnh quần áo để sinh ra ảnh mặc thử.
+Nhánh VTON là bài toán dựng ảnh: đầu vào là ảnh người và ảnh quần áo, đầu ra là ảnh mặc thử.
 
-Vì vậy, cách đo của hai nhánh cũng khác nhau.
-Nhánh size đo bằng accuracy, within-1, bias và ESS.
-Nhánh VTON đo bằng thời gian chạy, chất lượng ảnh và độ ổn định vùng mặt, vùng da.
-
-Nếu không tách hai nhánh này, phần đánh giá rất dễ bị lẫn giữa một bên là bài toán dự đoán và một bên là bài toán dựng ảnh.
+Vì vậy cách đánh giá cũng khác.
+Nhánh size nhìn bằng Within-1, Top-1, Bias, ESS.
+Nhánh VTON nhìn bằng latency, quality, usability.
 
 ### Câu chuyển slide
 
-Sau khi tách ra như vậy, em sẽ nói trước về nhánh size vì đây là phần nghiên cứu chính.
+Sau khi tách hai nhánh ra, em đi vào nhánh size trước vì đây là phần nghiên cứu chính.
 
-## Slide 3 - Size recommendation là phần nghiên cứu chính
+## Slide 3 - Size Recommendation
 
 ### Ý chính
 
-Lý do chọn hướng này là vì nút thắt lớn nhất hiện tại là lệch phân bố giữa dữ liệu nguồn và nhóm người dùng mục tiêu.
+Nút thắt của nhánh size là lệch phân bố giữa dữ liệu nguồn và nhóm người dùng mục tiêu.
 
 ### Script gợi ý
 
-Với nhánh size, vấn đề chính không phải là thiếu mô hình phức tạp, mà là dữ liệu mình đang có và nhóm người dùng mình muốn phục vụ không hoàn toàn giống nhau.
+Với nhánh size, vấn đề chính không phải là thiếu mô hình thật phức tạp, mà là dữ liệu nguồn và nhóm người dùng mình muốn phục vụ không hoàn toàn giống nhau.
 
-Nếu học trực tiếp trên dữ liệu nguồn, mô hình có thể dự đoán ổn trên tập nguồn nhưng bị lệch khi áp vào nhóm mục tiêu.
+Nếu train trực tiếp trên dữ liệu nguồn, model dễ học ra quy luật có lợi cho source nhưng lệch trên target users.
 
-Vì vậy nhóm chọn hướng `reweighting`, tức là không bỏ dữ liệu cũ đi, mà tăng trọng số cho những mẫu giống nhóm mục tiêu hơn.
+Vì vậy nhóm chọn hướng re-weight dữ liệu theo target users.
+Ở đây copula được dùng để modeling chiều cao và cân nặng như một cặp có liên hệ với nhau, thay vì xem hai biến này là độc lập.
+Sau đó PSIS được dùng để làm mượt tail của trọng số, để vài điểm quá hiếm không kéo lệch toàn bộ quá trình học.
 
-Sau bước đó, nhóm huấn luyện và so sánh các mô hình như `GBM` và `MLP`.
-Trong giai đoạn hiện tại, `GBM` vẫn là baseline mạnh và ổn định hơn.
-
-Hiện tại mình có thể hiểu nhánh này theo hai lớp:
-- `6` biến thể gốc để chứng minh câu chuyện nghiên cứu;
-- và `2` tuned candidates để chọn model thực dụng hơn cho service.
-
-Ở slide này em cũng có đưa công thức vào luôn để người nghe thấy rõ là mình đang dùng density ratio thật và weighted loss thật, chứ không chỉ nói bằng ý tưởng.
-
-Điểm cần chốt ở slide này là:
-đây là phần mang giá trị nghiên cứu chính, vì nó xử lý trực tiếp bài toán thích nghi phân bố giữa source và target.
+Phần so sánh model hiện tại tập trung vào hai family là GBM và MLP.
+Ở giai đoạn này, GBM vẫn là family mạnh và ổn định hơn.
 
 ### Câu chuyển slide
 
-Còn nhánh VTON thì khác, đó là phần thiên về kỹ thuật triển khai sản phẩm hơn.
+Tiếp theo là chỗ rất quan trọng: research pipeline và serving pipeline khác nhau.
 
-## Slide 4 - VTON là phần kỹ thuật phục vụ sản phẩm
+## Slide 4 - Pipeline vs Serving
 
 ### Ý chính
 
-VTON không phải phần nghiên cứu cốt lõi ở mốc báo cáo này; nó là nhánh phục vụ trải nghiệm sản phẩm và được tổ chức để nối vào pipeline chung.
+Research pipeline và serving pipeline có vai trò khác nhau, dù cuối cùng cùng gặp nhau ở API output.
 
 ### Script gợi ý
 
-Ở slide này em tách riêng hai việc.
+Ở slide này em tách rất rõ hai lớp.
 
-Một bên là workflow của nhánh size trong thư mục `research`, gồm tiền xử lý dữ liệu, gán trọng số, huấn luyện mô hình và đánh giá.
+Lớp thứ nhất là `research pipeline` của nhánh size: preprocess, weighting, train và evaluate.
 
-Bên còn lại là nhánh `VTON` và phần serving, tức là nhận request từ web, điều phối qua API, rồi gọi các service như feature estimation, recommendation và VTON.
+Lớp thứ hai là `serving pipeline`: web nhận input, gateway điều phối, feature service trích xuất measurement, rồi size service và VTON service trả output cuối.
 
-Điểm em muốn nhấn mạnh là:
-`VTON` quan trọng về mặt sản phẩm vì nó tạo ra đầu ra trực quan cho người dùng, nhưng nó không phải nơi mình đang đặt trọng tâm đóng góp phương pháp.
-
-Ở đây nhóm ưu tiên tận dụng lại các khối CV và pipeline có sẵn, rồi benchmark chúng một cách có hệ thống.
+Điểm quan trọng là nhánh size đi theo hướng modeling và domain adaptation, còn nhánh VTON đi theo hướng CV integration.
 
 ### Câu chuyển slide
 
-Khi đã tách hai nhánh như vậy, phần đánh giá cũng phải tách riêng.
+Sau đó, em đưa luôn flow end-to-end để thấy hai nhánh gặp nhau ở đâu.
 
-## Slide 5 - Khung đánh giá tách riêng cho 2 nhánh
+## Slide 5 - System Flow
 
 ### Ý chính
 
-Không thể dùng một bộ metric chung cho cả size recommendation và VTON.
+Ở mức sản phẩm, người dùng chỉ thấy một flow end-to-end duy nhất.
 
 ### Script gợi ý
 
-Với nhánh size, tiêu chí quan trọng nhất là mô hình có giúp tăng chất lượng dự đoán trên nhóm mục tiêu hay không.
+Luồng tổng thể là: người dùng upload input ở web, gateway nhận request, feature service trích xuất measurement và feature cần thiết, sau đó nhánh size dự đoán size còn nhánh VTON tạo ảnh thử đồ.
 
-Ở đây nhóm đặt mục tiêu là:
-- within-1 trên nhóm VN tăng khoảng 2 điểm phần trăm so với baseline;
-- độ suy giảm trên full test không quá lớn;
-- bias tiến gần về 0 hơn;
-- và ESS của hướng `copula + PSIS` phải tốt hơn hướng trọng số độc lập.
+Cuối cùng hai đầu ra này được trả ngược lại cho người dùng như một kết quả thống nhất.
 
-Với nhánh VTON, mình không nói accuracy theo kiểu classification.
-Thay vào đó, mình nhìn vào trade-off giữa thời gian chạy và chất lượng ảnh, đồng thời kiểm tra độ ổn định ở các vùng nhạy cảm như mặt và da.
-
-Slide này quan trọng vì nó trả lời câu hỏi:
-thế nào thì được xem là tiến bộ ở từng nhánh.
+Đây là chỗ quan trọng để phân biệt giữa trải nghiệm người dùng và cấu trúc kỹ thuật phía sau.
+Người dùng thấy một hệ thống, nhưng bên dưới là hai nhánh có logic khác nhau.
 
 ### Câu chuyển slide
 
-Sau đó em đi vào kết quả hiện tại của nhánh size trước.
+Khi hai nhánh đã được tách như vậy, phần đánh giá cũng phải tách ra tương ứng.
 
-## Slide 6 - Kết quả thật hiện tại của size recommendation
+## Slide 6 - Evaluation Framework (Size)
 
 ### Ý chính
 
-Kết quả hiện tại đã tốt hơn deck cũ, nhưng improvement vẫn là nhỏ và phải kể rất chặt chẽ.
+Nhánh size được đo bằng metric định lượng và ưu tiên đúng trên target users.
 
 ### Script gợi ý
 
-Đây là slide quan trọng nhất vì ở đây mình phải nói đúng sự thật của số liệu vừa chạy.
+Với nhánh size, metric chính là Within-1 trên nhóm VN.
+Tức là model đoán đúng hoặc chỉ lệch tối đa một size trên nhóm người dùng gần với mục tiêu.
 
-Trước khi đọc số, em sẽ giải thích rất ngắn tên các model trên chart để người nghe không bị rối.
-`GBM baseline` là model không gán trọng số.
-`GBM độc lập` là gán trọng số riêng cho chiều cao và cân nặng.
-`GBM copula` là gán trọng số theo cặp chiều cao - cân nặng.
-`Temper` nghĩa là làm mềm trọng số bằng lũy thừa nhỏ hơn 1 để giảm tác động của các mẫu quá cực đoan.
+Ngoài ra còn ba điểm cần giữ đồng thời.
+Một là full test không được giảm quá nhiều.
+Hai là bias phải tiến gần về 0.
+Ba là ESS của cách weighting tốt phải cao hơn hướng đơn giản hơn.
 
-Nếu chỉ nhìn bộ số cũ thì câu chuyện còn khá xấu.
-Nhưng sau khi em chạy thêm một vòng tuning ngay trong repo, có hai ứng viên mới đáng chú ý.
-
-Ứng viên thứ nhất là `gbm_copula_tempered_a075`.
-Nó nâng `VN-range Within-1` lên `70.97%`, trong khi `Full-test Within-1` vẫn giữ ở `83.18%`.
-Đây là cấu hình em nghiêng về hơn nếu mình ưu tiên đúng metric mục tiêu và vẫn muốn giữ logic `copula + PSIS`.
-Đây cũng là candidate hiện đã được nối vào research endpoint của recommendation service.
-
-Ứng viên thứ hai là `GBM độc lập + temper (gbm_indep_tempered_a05)`.
-Nó cho `VN-range Top-1` cao nhất là `51.46%`, và bias cũng đỡ âm hơn.
-Nếu sau này mình muốn ưu tiên exact size hơn là within-1, đây cũng là một đối chứng rất đáng giữ.
-
-Điểm em muốn sửa rõ so với deck cũ là phần `k-hat`.
-Số `7.171` trước đó đến từ tập `full fit` chưa lọc theo nhánh train size.
-Còn trên đúng split train đang dùng cho model size, `k-hat` của `copula + PSIS` gần bằng `0`.
-Tức là phần chẩn đoán trước đó đã kể sai bối cảnh.
-
-Chốt lại slide này:
-- `GBM` vẫn là nhánh mạnh nhất;
-- `tempered weighting` có tạo ra cải thiện thật;
-- `MLP + CORN` hiện vẫn là `NO-GO`.
+Nói ngắn gọn, slide này trả lời câu hỏi: thế nào thì được xem là tiến bộ ở nhánh size.
 
 ### Câu chuyển slide
 
-Sau phần size, em chuyển qua VTON, và ở đây câu chuyện cũng phải nói trung thực như vậy.
+Tương tự như vậy, nhánh VTON cũng cần một khung đánh giá riêng.
 
-## Slide 7 - Trạng thái thật hiện tại của VTON
+## Slide 7 - Evaluation Framework (VTON)
 
 ### Ý chính
 
-VTON hiện đã chạy được, nhưng chất lượng đầu ra vẫn chưa đủ để xem là một kết quả mạnh.
+Nhánh VTON không đo bằng classification metric, mà đo bằng chất lượng ảnh và khả năng sử dụng.
 
 ### Script gợi ý
 
-Ở slide này em không nói theo kiểu “đã benchmark xong và chọn được cấu hình đẹp nhất”, vì hiện tại mình chưa có đủ cơ sở để nói như vậy.
+Với VTON, thứ mình quan tâm không phải accuracy mà là ảnh có đủ tốt để người dùng tin hay không.
 
-Điều mình có thể nói chắc là:
-backend `local_composite` đã được chạy lại thành công trên sample có sẵn.
-Nó trả về latency khoảng `40ms` và confidence khoảng `0.45`.
+Vì vậy các tiêu chí chính là:
+- trade-off giữa latency và quality;
+- độ ổn định ở vùng mặt và da;
+- benchmark nhất quán giữa các backend;
+- và usability thực tế của output.
 
-Tức là ở mức kỹ thuật, pipeline có chạy được.
-Nhưng ảnh nhìn vẫn còn kiểu dán chồng lên người, nên chưa đủ tự nhiên.
-
-Ở phía còn lại, checkpoint trainable hiện tại cho ra output rất nhiễu, nên cũng chưa thể dùng làm demo chất lượng.
-
-Vì vậy, cách kể đúng nhất ở slide này là:
-nhánh VTON đã có `working pipeline`, nhưng chưa có `strong visual result`.
+Slide này quan trọng vì nó giúp mình không vô tình dùng tiêu chí của nhánh size để đánh giá một bài toán dựng ảnh.
 
 ### Câu chuyển slide
 
-Từ hai nhánh đó, em chốt lại hướng đi hiện tại ở slide cuối.
+Sau hai slide framework, em đi vào kết quả thật hiện có của nhánh size.
 
-## Slide 8 - Kết luận
+## Slide 8 - Size Status (Performance)
 
 ### Ý chính
 
-Hiện tại mình đã có đủ số thật để khóa narrative đúng: size có improvement thật, VTON thì chưa.
+Nhánh size đã có improvement thật, nhưng improvement này là nhỏ và cần kể rất chặt chẽ.
 
 ### Script gợi ý
 
-Phần chốt của em có ba ý.
+Nếu nhìn toàn bộ full test, GBM baseline vẫn đang giữ Within-1 tốt nhất là 83.37 phần trăm.
+Điều đó có nghĩa là baseline vẫn rất mạnh và là mốc để kiểm soát degradation.
 
-Ý thứ nhất, ở nhánh `size recommendation`, mình đã có một improvement thật trong repo chứ không còn chỉ là kế hoạch.
-Nếu cần chọn một candidate để kể trên deck, em sẽ chọn `gbm_copula_tempered_a075`.
-Điểm mới là candidate này không chỉ nằm ở file eval, mà đã được set làm model mặc định cho research endpoint.
+Nhưng nếu nhìn đúng vào nhóm mục tiêu, thì cấu hình `GBM copula tempered, alpha 0.75` hiện cho VN Within-1 tốt nhất là 70.97 phần trăm.
 
-Ý thứ hai, `body regression` vẫn là một điểm sáng kỹ thuật khá rõ, vì Ridge đã đạt average MAE khoảng `2.10 cm`.
+Nếu nhìn exact size, tức Top-1, thì cấu hình `independent + temper` hiện lại tốt nhất với 51.46 phần trăm.
 
-Ý thứ ba, ở nhánh `VTON`, mình vẫn phải nói rất thẳng là pipeline đã chạy được, nhưng chất lượng ảnh hiện tại chưa đủ để xem là benchmark đẹp.
+Điểm em muốn chốt ở đây là:
+GBM vẫn là nhánh mạnh nhất;
+tuning có tạo ra improvement thật;
+và neural models hiện chưa vượt được baseline.
 
-Nếu nói ngắn gọn một câu để kết thúc thì là:
-ở mốc báo cáo này, nhóm không đi tìm một ảnh đẹp bằng cách mượn model ngoài, mà dùng chính pipeline của repo để tìm ra một improvement nhỏ nhưng bảo vệ được, đồng thời giữ ranh giới rất rõ giữa phần đã chứng minh được và phần chưa.
+### Câu chuyển slide
 
-Việc tiếp theo là chạy lại luồng API end-to-end với candidate mới này để khóa nốt phần pipeline-level reporting.
+Sau performance, em tách riêng phần analysis để giải thích vì sao hướng này vẫn đáng giữ.
 
-## Phụ lục 1 - Từ điển thuật ngữ dùng trong deck
+## Slide 9 - Size Status (Analysis)
 
-Phần này dùng khi có người hỏi sâu.
-Không cần trình bày hết nếu thời gian ngắn.
+### Ý chính
 
-### Nhóm thuật ngữ về bài toán
+Phần analysis cho thấy hướng weighting hiện tại không chỉ tăng metric đích mà còn ổn định hơn về mặt huấn luyện.
 
-- `Size recommendation`: phần dự đoán người dùng nên mặc size nào.
-- `Virtual try-on` hoặc `VTON`: phần tạo ảnh mặc thử từ ảnh người và ảnh quần áo.
-- `Source`: dữ liệu nguồn, tức dữ liệu mình đang có để học.
-- `Target`: nhóm người dùng mục tiêu mà mình muốn mô hình phục vụ tốt hơn.
-- `Prior`: thống kê ban đầu về nhóm mục tiêu, ví dụ chiều cao, cân nặng, hoặc phân bố cụm cơ thể.
-- `Distribution shift`: dữ liệu nguồn và dữ liệu mục tiêu khác nhau, nên nếu học thẳng từ source thì dễ dự đoán sai khi áp vào target.
-- `Body clusters`: các nhóm hình thể chính trong dân số mục tiêu, dùng để mô tả cấu trúc cơ thể ở mức tổng quát.
+### Script gợi ý
 
-### Nhóm thuật ngữ về đầu vào và đặc trưng
+Ở đây có hai tín hiệu chính.
 
-- `Feature`: các thông tin đầu vào cho model, ví dụ chiều cao, cân nặng, BMI, tuổi, body type và category.
-- `Body type`: kiểu dáng cơ thể ở mức nhãn, ví dụ hourglass hay pear, dùng như một feature phụ.
-- `Category`: loại sản phẩm, ví dụ dress hay tops, vì cùng một cơ thể nhưng mỗi loại đồ có thể fit khác nhau.
-- `BMI`: chỉ số khối cơ thể, tính từ chiều cao và cân nặng, dùng như một đặc trưng bổ sung.
-- `Measurements`: các số đo cơ thể ước lượng như ngực, eo, hông.
+Tín hiệu thứ nhất là ESS tăng từ 10.95 phần trăm ở hướng independent lên 24.09 phần trăm ở copula cộng PSIS.
+Điều này cho thấy tập train sau weighting usable hơn và ổn định hơn.
 
-### Nhóm thuật ngữ về phương pháp gán trọng số
+Tín hiệu thứ hai là body regression hiện khá ổn, với MAE khoảng 2.10 cm và R bình phương khoảng 0.837.
+Nó chưa phải mô hình đo cơ thể hoàn hảo, nhưng đủ tốt để hỗ trợ nhánh size.
 
-- `Weighting`: gán mức quan trọng khác nhau cho từng mẫu train, thay vì coi mọi mẫu ngang nhau.
-- `Density ratio`: tỉ số mật độ giữa target và source. Mẫu nào giống target hơn thì có trọng số cao hơn.
-- `Copula density ratio`: cách tính density ratio nhưng nhìn chiều cao và cân nặng như một cặp có liên hệ, không tách rời từng biến.
-- `PSIS`: Pareto Smoothed Importance Sampling, tức bước làm mềm phần đuôi của phân phối trọng số để các mẫu quá hiếm không chi phối quá mạnh quá trình học.
-- `Temper`: làm mềm thêm trọng số bằng cách lấy lũy thừa nhỏ hơn 1. Nói dễ hiểu là giữ hướng ưu tiên, nhưng giảm độ gắt của weighting.
-- `Alpha`: hệ số dùng trong temper. Alpha càng nhỏ thì trọng số càng được làm mềm mạnh hơn.
-- `Max weight`: trọng số lớn nhất trong toàn bộ tập train. Nếu quá lớn thì dễ gây mất ổn định.
-- `k-hat`: chỉ số chẩn đoán tail của PSIS. Nếu gần 0 thì ổn hơn; nếu quá lớn thì phần tail đang có vấn đề.
-- `ESS`: Effective Sample Size, tức số mẫu hiệu dụng sau khi gán trọng số. ESS càng cao thì việc huấn luyện thường càng lành hơn.
+Ngoài ra, k-hat trên split train hiện đang dùng gần 0, nên phần chẩn đoán PSIS ở narrative hiện tại là lành mạnh.
 
-### Nhóm thuật ngữ về model
+### Câu chuyển slide
 
-- `GBM`: Gradient Boosting Machine. Đây là model học bằng nhiều cây quyết định nhỏ, mỗi vòng sửa lỗi của vòng trước. Nó thường rất mạnh với dữ liệu bảng.
-- `GBM baseline`: cấu hình GBM không gán trọng số, dùng làm mốc so sánh chính.
-- `GBM độc lập`: cấu hình GBM dùng trọng số độc lập cho chiều cao và cân nặng.
-- `GBM copula`: cấu hình GBM dùng copula để tính trọng số theo cặp chiều cao - cân nặng.
-- `GBM độc lập + temper`: bản độc lập nhưng đã làm mềm trọng số.
-- `GBM copula + temper`: bản copula nhưng đã làm mềm trọng số, hiện là candidate chính trong deck.
-- `MLP`: mạng neural nhiều lớp fully connected. Trong bài toán này, nó là đối chứng neural so với GBM.
-- `Ordinal`: cách nhìn bài toán size như một chuỗi có thứ tự, ví dụ XS nhỏ hơn S và S nhỏ hơn M.
-- `Ordinal loss`: hàm mất mát có xét đến thứ tự giữa các size, không coi các nhãn là rời rạc hoàn toàn.
-- `CORN`: một dạng ordinal classification cho neural network. Trong repo này nó chưa vượt được các baseline GBM.
-- `Baseline`: mốc so sánh gốc. Nếu model mới không hơn baseline thì chưa nên claim là cải thiện.
-- `Candidate`: cấu hình đang được cân nhắc để dùng thật trong service.
-- `Tuned candidate`: candidate đã qua một vòng tuning để tối ưu hơn cấu hình gốc.
-- `NO-GO`: kết luận rằng một hướng chưa đủ tốt để chọn làm hướng chính ở thời điểm hiện tại.
+Sau khi chốt size, em chuyển sang nhánh VTON và sẽ giữ đúng cùng mức độ trung thực.
 
-### Nhóm thuật ngữ về metric
+## Slide 10 - VTON Status
 
-- `Top-1`: dự đoán đúng exact size.
-- `Exact size`: đúng đúng một size, ví dụ người dùng cần size M thì model cũng phải ra M.
-- `Within-1`: dự đoán đúng hoặc chỉ lệch tối đa 1 size, ví dụ cần M mà ra S hoặc L thì vẫn chấp nhận được.
-- `Bias`: độ lệch có hướng của model. Bias âm nghĩa là model hay dự đoán nhỏ hơn thực tế; bias dương nghĩa là hay dự đoán lớn hơn thực tế.
-- `Full test`: toàn bộ tập test, dùng để xem model có giữ được chất lượng chung hay không.
-- `VN-range`: nhóm test gần với người dùng mục tiêu Việt Nam hơn, là nơi mình quan tâm nhất trong deck này.
-- `Degradation`: mức giảm hiệu năng khi đổi từ baseline sang model mới.
-- `Accuracy`: tỉ lệ dự đoán đúng exact size.
-- `Confidence`: mức tự tin của model với dự đoán hiện tại.
+### Ý chính
 
-### Nhóm thuật ngữ về ước lượng số đo
+VTON hiện là một working pipeline, chưa phải một kết quả visual mạnh.
 
-- `Body regression`: nhánh ước lượng số đo cơ thể từ các feature đơn giản.
-- `Ridge`: một dạng linear regression có regularization, đang là model tốt nhất cho nhánh body regression trong repo này.
-- `MAE`: Mean Absolute Error, tức sai số tuyệt đối trung bình. Ví dụ MAE 2 cm nghĩa là trung bình lệch khoảng 2 cm.
-- `R²`: mức độ giải thích được biến thiên của dữ liệu. R² càng cao thì model giải thích càng tốt.
+### Script gợi ý
 
-### Nhóm thuật ngữ về hệ thống
+Ở nhánh VTON, local composite chạy rất nhanh, khoảng 40 mili giây, nhưng ảnh vẫn có cảm giác dán chồng.
 
-- `Pipeline`: toàn bộ chuỗi xử lý từ đầu vào đến đầu ra.
-- `Working pipeline`: pipeline đã chạy được từ đầu đến cuối, nhưng chưa có nghĩa là chất lượng đã tốt.
-- `Service`: một thành phần độc lập trong hệ thống, ví dụ recommendation service hay VTON service.
-- `Recommendation service`: service chịu trách nhiệm trả kết quả gợi ý size.
-- `Research endpoint`: endpoint dùng model nghiên cứu đã train, khác với các rule-based fallback đơn giản.
-- `Serving`: phần đưa model vào chạy như một dịch vụ có thể gọi từ hệ thống.
-- `End-to-end`: chạy trọn luồng từ request đầu vào đến kết quả cuối cùng.
-- `Latency`: thời gian xử lý của hệ thống hay của một backend.
+Ở phía trainable model, output hiện còn nhiễu và chưa đủ tốt để dùng như benchmark chất lượng hay demo usable.
 
-### Nhóm thuật ngữ riêng cho VTON
+Vì vậy cách kể đúng nhất ở mốc này là:
+mình đã có pipeline chạy được,
+nhưng chưa có visual quality đủ mạnh để claim như một thành quả hoàn chỉnh.
 
-- `local_composite`: backend ghép ảnh đơn giản đang có trong repo. Nó chạy nhanh nhưng chất lượng ảnh còn hạn chế.
-- `Checkpoint trainable`: model checkpoint đã train hoặc đang train để sinh ảnh thử đồ. Trong deck hiện tại, output của nó vẫn chưa đủ đẹp.
-- `Visual readiness`: mức độ sẵn sàng để đem ảnh lên slide hay demo cho người khác xem.
-- `Fallback`: phương án thay thế khi nhánh chính chưa đủ tốt hoặc chưa sẵn sàng.
+### Câu chuyển slide
 
-### Vì sao chọn hướng này thay vì hướng khác
+Từ hai nhánh đó, em chốt lại model đang giữ và việc cần làm tiếp.
 
-Nói ngắn gọn:
-- tốt hơn `rule-based` vì đo được bằng số liệu và dễ cải thiện theo vòng;
-- tốt hơn `trọng số độc lập` vì nhìn được liên hệ giữa chiều cao và cân nặng;
-- tốt hơn `trọng số thô` vì có PSIS để giảm mất ổn định;
-- thực tế hơn `neural-only` ở giai đoạn hiện tại vì GBM đang ổn định hơn;
-- nhanh hơn việc chờ thêm dữ liệu mới, dù về dài hạn vẫn nên bổ sung dữ liệu mục tiêu.
+## Slide 11 - Conclusion & Next Steps
 
-## Phụ lục 2 - Các nghiên cứu gần tinh thần Lighter-X
+### Ý chính
 
-Phần này dùng khi có người hỏi:
-“Vì sao lại ưu tiên hướng nhẹ, mô-đun, và benchmark rõ như vậy?”
+Nhánh size đã có candidate rõ ràng; nhánh VTON thì chưa.
 
-### Cách nói ngắn
+### Script gợi ý
 
-Có một nhóm nghiên cứu gần tinh thần đó như `LightGCN`, `UltraGCN`, `JGCF`, `LightGCL`, `SVD-GCN`, `Less is More` và `Lighter-X`.
+Kết luận hiện tại của em có ba ý.
+
+Ý thứ nhất, candidate chính ở nhánh size là `GBM copula tempered, alpha 0.75`, vì nó cho VN Within-1 tốt nhất là 70.97 phần trăm.
+
+Ý thứ hai, `independent + temper` vẫn nên được giữ làm baseline phụ nếu sau này mình muốn ưu tiên Top-1 hơn.
+
+Ý thứ ba, việc cần làm tiếp là chạy end-to-end pipeline thật ở mức request thật và tiếp tục nâng chất lượng VTON, thay vì chỉ tinh chỉnh thêm slide.
+
+### Câu chuyển slide
+
+Cuối cùng là một slide ngắn về related research để đặt hướng làm hiện tại vào đúng bối cảnh thiết kế.
+
+## Slide 12 - Related Research
+
+### Ý chính
+
+Nhóm có tham khảo các hướng nghiên cứu lightweight và decoupled, nhưng không triển khai trực tiếp các mô hình đó.
+
+### Script gợi ý
+
+Ở slide cuối này, em không đi sâu vào từng paper, mà chỉ chốt là nhóm có tham khảo các hướng như LightGCN, UltraGCN, JGCF, LightGCL, SVD-GCN và Lighter-X ở mức tư duy thiết kế.
 
 Điểm chung của các hướng này là:
-- không mặc định mô hình càng nặng càng tốt;
-- cố gắng tách bài toán thành các phần rõ hơn;
-- chỉ giữ những tín hiệu thực sự quan trọng;
-- và benchmark rất chặt.
+ưu tiên mô hình gọn hơn,
+tách mô-đun rõ hơn,
+và chỉ giữ phần tín hiệu thật sự cần thiết.
 
-### Cách nối về EA-VTON
+Điều mình học từ đó là cách thiết kế pipeline nhẹ, rõ vai trò từng khối, và dễ benchmark.
+Nhưng EA-VTON hiện vẫn bám vào bài toán riêng là size adaptation cộng với virtual try-on serving.
 
-Điều nhóm học từ các nghiên cứu này không phải là bê nguyên mô hình graph về dùng.
+## Từ điển thuật ngữ ngắn
 
-Thứ nhóm học là tư duy thiết kế:
-- xác định đúng nút thắt chính;
-- giữ hệ thống nhẹ và thay thế được;
-- và tách rõ phần nào là research, phần nào là serving.
+- `GBM`: mô hình học bằng nhiều cây quyết định nối tiếp nhau; rất hợp với dữ liệu bảng.
+- `MLP`: mạng fully-connected nhiều tầng; hiện chưa thắng GBM ở repo này.
+- `Copula`: cách mô hình chiều cao và cân nặng cùng nhau thay vì tách riêng.
+- `PSIS`: bước làm mượt tail của trọng số để tránh vài điểm cực đoan kéo lệch model.
+- `ESS`: số mẫu hiệu dụng sau weighting; cao hơn thường nghĩa là ổn định hơn.
+- `Within-1`: dự đoán đúng hoặc chỉ lệch tối đa 1 size.
+- `Top-1`: dự đoán đúng exact size.
+- `Bias`: xu hướng model đoán lệch có hệ thống về một phía.
+- `VTON`: virtual try-on, tức nhánh tạo ảnh thử đồ.
 
-Với EA-VTON hiện tại, nút thắt chính là `distribution shift` ở nhánh size, chứ không phải graph quá nặng.
+## Một câu chốt cuối
 
-Vì vậy, hướng `copula + PSIS + GBM` vẫn sát bài toán của mình hơn.
-
-## Chốt 15 giây
-
-Nếu cần kết thúc rất nhanh, có thể nói:
-
-EA-VTON hiện nên được nhìn như một hệ thống hai nhánh.
-Nhánh size là phần nghiên cứu chính và hiện tại hướng `copula + PSIS + GBM` là phù hợp nhất để đi tiếp.
-Nhánh VTON là phần kỹ thuật phục vụ sản phẩm, và mục tiêu trước mắt là benchmark ổn định giữa tốc độ và chất lượng.
+Ở mốc này, điều quan trọng nhất không phải là có một ảnh demo đẹp, mà là mình đã có một improvement thật ở nhánh size bằng chính logic của repo, đồng thời biết rất rõ phần nào đã chứng minh được và phần nào thì chưa.

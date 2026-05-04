@@ -44,6 +44,13 @@ export default function HomePage() {
               >
                 Browse Catalog
               </Link>
+              <Link
+                href="/live-size"
+                className="flex items-center gap-2 rounded-xl border border-border bg-card px-8 py-4 text-base font-semibold shadow-sm transition-all duration-200 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
+              >
+                <Camera className="h-4 w-4" />
+                Live Size Test
+              </Link>
             </div>
           </div>
         </div>

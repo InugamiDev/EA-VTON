@@ -265,6 +265,48 @@ export interface BodyMeasurementResult {
   population_comparison: SizeComparisonResult | null;
 }
 
+export interface LiveBodyMeasurementResult {
+  chest_circumference: number;
+  waist_circumference: number;
+  hip_circumference: number;
+  shoulder_width: number;
+  arm_length: number;
+  leg_length: number;
+  torso_length: number;
+  bmi: number;
+  method: string;
+  landmark_confidence: number;
+  warnings: string[];
+}
+
+export interface ResearchSizeRecommendationResult {
+  research_model: {
+    predicted_size: string | null;
+    confidence: "high" | "medium" | "low";
+    confidence_score?: number;
+    probabilities?: Record<string, number>;
+    model: string;
+    error?: string;
+  };
+  rule_based: {
+    predicted_size: string | null;
+    confidence: "high" | "medium" | "low";
+    estimated_chest_cm?: number;
+    estimated_waist_cm?: number;
+    estimated_hip_cm?: number;
+    alternatives?: { size: string; note: string }[];
+  };
+  input_summary: {
+    height_cm: number;
+    weight_kg: number;
+    bmi: number;
+    age: number;
+    body_type: string;
+    category: string;
+    population: string;
+  };
+}
+
 export async function estimateBodyMeasurements(
   photo: Blob,
   heightCm: number,
@@ -292,6 +334,29 @@ export async function estimateBodyMeasurements(
   return res.json();
 }
 
+export async function getLiveBodyMeasurements(
+  photo: Blob,
+  heightCm: number,
+  weightKg: number
+): Promise<LiveBodyMeasurementResult> {
+  const form = new FormData();
+  form.append("photo", photo, "live-capture.jpg");
+  form.append("height_cm", heightCm.toString());
+  form.append("weight_kg", weightKg.toString());
+
+  const res = await fetch(`${API_BASE}/api/body-measurement`, {
+    method: "POST",
+    body: form,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || "Failed to extract live body measurements");
+  }
+
+  return res.json();
+}
+
 export async function quickBodyMeasurement(params: {
   height_cm: number;
   weight_kg: number;
@@ -307,6 +372,101 @@ export async function quickBodyMeasurement(params: {
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(err.detail || "Failed to get quick measurement");
+  }
+
+  return res.json();
+}
+
+export async function getResearchSizeRecommendation(params: {
+  height_cm: number;
+  weight_kg: number;
+  age?: number;
+  body_type?: string;
+  category?: string;
+  population?: "universal" | "vietnamese";
+}): Promise<ResearchSizeRecommendationResult> {
+  const res = await fetch(`${API_BASE}/api/size-recommendation/research`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || "Failed to get research size recommendation");
+  }
+
+  return res.json();
+}
+
+/* ------------------------------------------------------------------ */
+/*  Visual size recommendation (webcam body ratios → no weight needed)  */
+/* ------------------------------------------------------------------ */
+
+export interface VisualSizeResult {
+  research_model: {
+    predicted_size: string | null;
+    confidence: "high" | "medium" | "low";
+    confidence_score?: number;
+    probabilities?: Record<string, number>;
+    model: string;
+    error?: string;
+  };
+  rule_based: {
+    predicted_size: string | null;
+    confidence: "high" | "medium" | "low";
+    estimated_chest_cm?: number;
+    estimated_waist_cm?: number;
+    estimated_hip_cm?: number;
+  };
+  weight_estimation: {
+    estimated_weight_kg: number;
+    estimated_bmi: number;
+    method: string;
+    note: string;
+  };
+  body_shape: {
+    type: string;
+    shoulder_to_hip: number;
+    waist_to_hip: number;
+    shoulder_to_torso: number;
+    torso_to_leg: number;
+    arm_to_torso: number;
+  };
+  input_summary: {
+    height_cm: number;
+    weight_kg: number;
+    bmi: number;
+    age: number;
+    category: string;
+    population: string;
+    landmark_confidence: number;
+    source: string;
+  };
+}
+
+export async function getVisualSizeRecommendation(params: {
+  height_cm: number;
+  shoulder_to_hip: number;
+  waist_to_hip: number;
+  shoulder_to_torso?: number;
+  torso_to_leg?: number;
+  arm_to_torso?: number;
+  age?: number;
+  category?: string;
+  population?: "universal" | "vietnamese";
+  confidence?: number;
+  source?: "world_3d" | "image_2d";
+}): Promise<VisualSizeResult> {
+  const res = await fetch(`${API_BASE}/api/size-recommendation/visual`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || "Failed to get visual size recommendation");
   }
 
   return res.json();

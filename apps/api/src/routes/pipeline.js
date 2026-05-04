@@ -188,10 +188,8 @@ async function runPipeline(
   // Stage 1: Body measurements
   job.stages.body_measurement = { status: "running", startedAt: Date.now() };
   try {
-    const { Blob } = await import("node:buffer");
-
     const form = new FormData();
-    form.append("image", new Blob([personBuf]), "person.jpg");
+    form.append("image", new File([personBuf], "person.jpg", { type: "image/jpeg" }));
     form.append("include_pose", "true");
     form.append("include_parsing", "false");
     form.append("include_embedding", "false");
@@ -275,13 +273,11 @@ async function runPipeline(
   if (garmentBuf || garmentId) {
     job.stages.vton = { status: "running", startedAt: Date.now() };
     try {
-      const { Blob } = await import("node:buffer");
-
       const form = new FormData();
-      form.append("person_image", new Blob([personBuf], { type: "image/jpeg" }), "person.jpg");
+      form.append("person_image", new File([personBuf], "person.jpg", { type: "image/jpeg" }));
 
       if (garmentBuf) {
-        form.append("garment_image", new Blob([garmentBuf], { type: "image/png" }), "garment.jpg");
+        form.append("garment_image", new File([garmentBuf], "garment.jpg", { type: "image/png" }));
       }
       form.append("garment_type", "upper_body");
 

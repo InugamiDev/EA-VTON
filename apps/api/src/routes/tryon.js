@@ -257,13 +257,11 @@ async function processJob(jobId, photoId, garmentId) {
     const form = new FormData();
     form.append(
       "person_image",
-      new Blob([personBuf], { type: "image/jpeg" }),
-      "person.jpg"
+      new File([personBuf], "person.jpg", { type: "image/jpeg" })
     );
     form.append(
       "garment_image",
-      new Blob([garmentBuf], { type: "image/png" }),
-      "garment.jpg"
+      new File([garmentBuf], "garment.jpg", { type: "image/png" })
     );
     form.append("garment_type", "upper_body");
 
@@ -306,11 +304,9 @@ async function processSimpleJob(jobId, personBuf, garmentBuf, garmentType) {
   const job = jobs.get(jobId);
 
   try {
-    const { Blob } = await import("node:buffer");
-
     const form = new FormData();
-    form.append("person_image", new Blob([personBuf], { type: "image/jpeg" }), "person.jpg");
-    form.append("garment_image", new Blob([garmentBuf], { type: "image/png" }), "garment.jpg");
+    form.append("person_image", new File([personBuf], "person.jpg", { type: "image/jpeg" }));
+    form.append("garment_image", new File([garmentBuf], "garment.jpg", { type: "image/png" }));
     form.append("garment_type", garmentType);
 
     const response = await fetch(`${VTON_SERVICE_URL}/infer`, {

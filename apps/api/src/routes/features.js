@@ -13,11 +13,10 @@ const FEATURE_SERVICE_URL =
 
 router.post("/extract", upload.single("image"), async (req, res) => {
   try {
-    const { Blob } = await import("node:buffer");
-    const FormData = (await import("node-fetch")).FormData;
-
     const form = new FormData();
-    form.append("image", new Blob([req.file.buffer]), "image.jpg");
+    form.append("image", new File([req.file.buffer], req.file.originalname || "image.jpg", {
+      type: req.file.mimetype || "image/jpeg",
+    }));
 
     for (const key of [
       "include_pose",
@@ -49,11 +48,10 @@ router.post("/extract", upload.single("image"), async (req, res) => {
 
 router.post("/quality-check", upload.single("image"), async (req, res) => {
   try {
-    const { Blob } = await import("node:buffer");
-    const FormData = (await import("node-fetch")).FormData;
-
     const form = new FormData();
-    form.append("image", new Blob([req.file.buffer]), "image.jpg");
+    form.append("image", new File([req.file.buffer], req.file.originalname || "image.jpg", {
+      type: req.file.mimetype || "image/jpeg",
+    }));
 
     const response = await fetch(`${FEATURE_SERVICE_URL}/quality-check`, {
       method: "POST",
