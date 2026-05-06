@@ -1,0 +1,303 @@
+{
+  "_doc": "Seed catalog of upper-body items for testing the Fit-Flatter-Match recommender. 10 items spanning major silhouette/neckline/color combinations.",
+  "_size_chart_convention": "size_chart_cm values represent the TARGET BODY circumference each size is designed for (the 'fits body X' interpretation, like Uniqlo's body chart). The actual garment circumference at each section equals chart_value + ease_cm. Fit math compares user body to chart (target body) directly; ease is informational only.",
+  "items": [
+    {
+      "item_id": "vn_top_001",
+      "title": "Áo sơ mi cổ V tay lỡ - màu be",
+      "category": "blouse",
+      "brand": "Seed Brand",
+      "image_url": "/seed/top_001.jpg",
+      "price_vnd": 450000,
+      "available_sizes": ["S", "M", "L", "XL"],
+      "size_chart_cm": {
+        "S":  {"shoulder": 36, "bust": 86, "waist": 76},
+        "M":  {"shoulder": 38, "bust": 90, "waist": 80},
+        "L":  {"shoulder": 40, "bust": 96, "waist": 86},
+        "XL": {"shoulder": 42, "bust": 102, "waist": 92}
+      },
+      "ease_cm": {"shoulder": 0, "bust": 6, "waist": 8},
+      "stretch": 0.05,
+      "drape_class": "semi_fitted",
+      "attributes": {
+        "neckline": "v_neck",
+        "silhouette": "semi_fitted",
+        "sleeve": "three_quarter",
+        "length": "regular",
+        "pattern": "solid",
+        "color_temperature": "warm",
+        "color_value": "light"
+      },
+      "primary_color_hex": "#d2b48c",
+      "primary_color_lab": [76.5, 5.0, 22.0],
+      "occasion_tags": ["work", "casual", "date"]
+    },
+    {
+      "item_id": "vn_top_002",
+      "title": "Áo thun cổ tròn ôm body - đen",
+      "category": "tshirt",
+      "brand": "Seed Brand",
+      "image_url": "/seed/top_002.jpg",
+      "price_vnd": 220000,
+      "available_sizes": ["XS", "S", "M", "L"],
+      "size_chart_cm": {
+        "XS": {"shoulder": 34, "bust": 80, "waist": 70},
+        "S":  {"shoulder": 36, "bust": 84, "waist": 74},
+        "M":  {"shoulder": 38, "bust": 88, "waist": 78},
+        "L":  {"shoulder": 40, "bust": 94, "waist": 84}
+      },
+      "ease_cm": {"shoulder": 0, "bust": 2, "waist": 2},
+      "stretch": 0.20,
+      "drape_class": "fitted",
+      "attributes": {
+        "neckline": "crew",
+        "silhouette": "fitted",
+        "sleeve": "short",
+        "length": "regular",
+        "pattern": "solid",
+        "color_temperature": "neutral",
+        "color_value": "dark"
+      },
+      "primary_color_hex": "#1a1a1a",
+      "primary_color_lab": [10.0, 0.0, 0.0],
+      "occasion_tags": ["casual", "date"]
+    },
+    {
+      "item_id": "vn_top_003",
+      "title": "Áo blouse tay phồng cổ vuông - hồng nude",
+      "category": "blouse",
+      "brand": "Seed Brand",
+      "image_url": "/seed/top_003.jpg",
+      "price_vnd": 380000,
+      "available_sizes": ["S", "M", "L"],
+      "size_chart_cm": {
+        "S":  {"shoulder": 36, "bust": 88, "waist": 80},
+        "M":  {"shoulder": 38, "bust": 92, "waist": 84},
+        "L":  {"shoulder": 40, "bust": 98, "waist": 90}
+      },
+      "ease_cm": {"shoulder": 0, "bust": 8, "waist": 10},
+      "stretch": 0.0,
+      "drape_class": "semi_fitted",
+      "attributes": {
+        "neckline": "sweetheart",
+        "silhouette": "semi_fitted",
+        "sleeve": "puff",
+        "length": "regular",
+        "pattern": "solid",
+        "color_temperature": "warm",
+        "color_value": "light"
+      },
+      "primary_color_hex": "#f5d6cb",
+      "primary_color_lab": [86.0, 8.0, 11.0],
+      "occasion_tags": ["date", "casual", "party"]
+    },
+    {
+      "item_id": "vn_top_004",
+      "title": "Áo sơ mi oversize cổ bẻ - trắng",
+      "category": "shirt",
+      "brand": "Seed Brand",
+      "image_url": "/seed/top_004.jpg",
+      "price_vnd": 520000,
+      "available_sizes": ["S", "M", "L", "XL"],
+      "size_chart_cm": {
+        "S":  {"shoulder": 38, "bust": 86, "waist": 78},
+        "M":  {"shoulder": 40, "bust": 92, "waist": 84},
+        "L":  {"shoulder": 42, "bust": 98, "waist": 90},
+        "XL": {"shoulder": 44, "bust": 102, "waist": 96}
+      },
+      "ease_cm": {"shoulder": 4, "bust": 16, "waist": 22},
+      "stretch": 0.0,
+      "drape_class": "oversized",
+      "attributes": {
+        "neckline": "crew",
+        "silhouette": "oversized",
+        "sleeve": "long",
+        "length": "tunic",
+        "pattern": "solid",
+        "color_temperature": "neutral",
+        "color_value": "light"
+      },
+      "primary_color_hex": "#fafafa",
+      "primary_color_lab": [98.0, 0.0, 0.0],
+      "occasion_tags": ["work", "casual"]
+    },
+    {
+      "item_id": "vn_top_005",
+      "title": "Áo croptop cổ thuyền - kẻ ngang",
+      "category": "tshirt",
+      "brand": "Seed Brand",
+      "image_url": "/seed/top_005.jpg",
+      "price_vnd": 180000,
+      "available_sizes": ["XS", "S", "M"],
+      "size_chart_cm": {
+        "XS": {"shoulder": 34, "bust": 78, "waist": 68},
+        "S":  {"shoulder": 36, "bust": 82, "waist": 72},
+        "M":  {"shoulder": 38, "bust": 86, "waist": 76}
+      },
+      "ease_cm": {"shoulder": 0, "bust": 0, "waist": 0},
+      "stretch": 0.25,
+      "drape_class": "bodycon",
+      "attributes": {
+        "neckline": "boat",
+        "silhouette": "bodycon",
+        "sleeve": "short",
+        "length": "crop",
+        "pattern": "horizontal_stripe",
+        "color_temperature": "neutral",
+        "color_value": "medium"
+      },
+      "primary_color_hex": "#9aa0a6",
+      "primary_color_lab": [65.0, 0.0, -2.0],
+      "occasion_tags": ["casual", "date"]
+    },
+    {
+      "item_id": "vn_top_006",
+      "title": "Áo blouse cổ V dài tay - xanh navy",
+      "category": "blouse",
+      "brand": "Seed Brand",
+      "image_url": "/seed/top_006.jpg",
+      "price_vnd": 480000,
+      "available_sizes": ["S", "M", "L", "XL"],
+      "size_chart_cm": {
+        "S":  {"shoulder": 36, "bust": 86, "waist": 76},
+        "M":  {"shoulder": 38, "bust": 90, "waist": 80},
+        "L":  {"shoulder": 40, "bust": 96, "waist": 86},
+        "XL": {"shoulder": 42, "bust": 102, "waist": 92}
+      },
+      "ease_cm": {"shoulder": 0, "bust": 6, "waist": 8},
+      "stretch": 0.05,
+      "drape_class": "semi_fitted",
+      "attributes": {
+        "neckline": "deep_v_neck",
+        "silhouette": "semi_fitted",
+        "sleeve": "long",
+        "length": "regular",
+        "pattern": "vertical_stripe",
+        "color_temperature": "cool",
+        "color_value": "dark"
+      },
+      "primary_color_hex": "#1f2a44",
+      "primary_color_lab": [16.5, 4.0, -22.0],
+      "occasion_tags": ["work", "formal"]
+    },
+    {
+      "item_id": "vn_top_007",
+      "title": "Áo polo cổ bẻ ngắn tay - xanh ngọc",
+      "category": "tshirt",
+      "brand": "Seed Brand",
+      "image_url": "/seed/top_007.jpg",
+      "price_vnd": 290000,
+      "available_sizes": ["S", "M", "L", "XL"],
+      "size_chart_cm": {
+        "S":  {"shoulder": 38, "bust": 92, "waist": 86},
+        "M":  {"shoulder": 40, "bust": 96, "waist": 90},
+        "L":  {"shoulder": 42, "bust": 102, "waist": 96},
+        "XL": {"shoulder": 44, "bust": 108, "waist": 102}
+      },
+      "ease_cm": {"shoulder": 1, "bust": 8, "waist": 10},
+      "stretch": 0.10,
+      "drape_class": "semi_fitted",
+      "attributes": {
+        "neckline": "high_neck",
+        "silhouette": "semi_fitted",
+        "sleeve": "short",
+        "length": "regular",
+        "pattern": "solid",
+        "color_temperature": "cool",
+        "color_value": "medium"
+      },
+      "primary_color_hex": "#5fb3a6",
+      "primary_color_lab": [66.0, -25.0, 2.0],
+      "occasion_tags": ["casual", "work"]
+    },
+    {
+      "item_id": "vn_top_008",
+      "title": "Áo sát nách cổ tim - đỏ đô",
+      "category": "tshirt",
+      "brand": "Seed Brand",
+      "image_url": "/seed/top_008.jpg",
+      "price_vnd": 200000,
+      "available_sizes": ["XS", "S", "M", "L"],
+      "size_chart_cm": {
+        "XS": {"shoulder": 32, "bust": 78, "waist": 68},
+        "S":  {"shoulder": 34, "bust": 82, "waist": 72},
+        "M":  {"shoulder": 36, "bust": 86, "waist": 76},
+        "L":  {"shoulder": 38, "bust": 92, "waist": 82}
+      },
+      "ease_cm": {"shoulder": 0, "bust": 2, "waist": 2},
+      "stretch": 0.15,
+      "drape_class": "fitted",
+      "attributes": {
+        "neckline": "v_neck",
+        "silhouette": "fitted",
+        "sleeve": "sleeveless",
+        "length": "regular",
+        "pattern": "solid",
+        "color_temperature": "warm",
+        "color_value": "dark"
+      },
+      "primary_color_hex": "#7a1f2e",
+      "primary_color_lab": [22.0, 32.0, 12.0],
+      "occasion_tags": ["date", "party", "casual"]
+    },
+    {
+      "item_id": "vn_top_009",
+      "title": "Áo sơ mi tay phồng cổ tròn - hoa nhỏ",
+      "category": "blouse",
+      "brand": "Seed Brand",
+      "image_url": "/seed/top_009.jpg",
+      "price_vnd": 420000,
+      "available_sizes": ["S", "M", "L"],
+      "size_chart_cm": {
+        "S":  {"shoulder": 36, "bust": 88, "waist": 80},
+        "M":  {"shoulder": 38, "bust": 92, "waist": 84},
+        "L":  {"shoulder": 40, "bust": 98, "waist": 90}
+      },
+      "ease_cm": {"shoulder": 0, "bust": 8, "waist": 10},
+      "stretch": 0.0,
+      "drape_class": "semi_fitted",
+      "attributes": {
+        "neckline": "crew",
+        "silhouette": "semi_fitted",
+        "sleeve": "puff",
+        "length": "regular",
+        "pattern": "small_print",
+        "color_temperature": "warm",
+        "color_value": "light"
+      },
+      "primary_color_hex": "#f8e6d0",
+      "primary_color_lab": [92.0, 3.0, 14.0],
+      "occasion_tags": ["date", "casual", "party"]
+    },
+    {
+      "item_id": "vn_top_010",
+      "title": "Áo dệt kim cổ chữ V - xám than",
+      "category": "blouse",
+      "brand": "Seed Brand",
+      "image_url": "/seed/top_010.jpg",
+      "price_vnd": 360000,
+      "available_sizes": ["S", "M", "L", "XL"],
+      "size_chart_cm": {
+        "S":  {"shoulder": 36, "bust": 84, "waist": 74},
+        "M":  {"shoulder": 38, "bust": 88, "waist": 78},
+        "L":  {"shoulder": 40, "bust": 94, "waist": 84},
+        "XL": {"shoulder": 42, "bust": 100, "waist": 90}
+      },
+      "ease_cm": {"shoulder": 0, "bust": 4, "waist": 6},
+      "stretch": 0.18,
+      "drape_class": "fitted",
+      "attributes": {
+        "neckline": "v_neck",
+        "silhouette": "fitted",
+        "sleeve": "long",
+        "length": "regular",
+        "pattern": "solid",
+        "color_temperature": "cool",
+        "color_value": "dark"
+      },
+      "primary_color_hex": "#3d4148",
+      "primary_color_lab": [27.0, -1.0, -3.0],
+      "occasion_tags": ["work", "formal", "casual"]
+    }
+  ]
+}

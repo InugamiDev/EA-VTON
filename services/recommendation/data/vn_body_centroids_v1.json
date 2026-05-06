@@ -1,0 +1,45 @@
+{
+  "_doc": "VN female body type cluster centroids in (height_cm, S/H, W/H, S/T, T/L, A/T) space. Derived from Trieu et al. 2024 cluster descriptions and Vietnam STEPS Survey 2009/2015 anthropometry. Within-cluster covariance is a diagonal approximation tuned to give ~80% accuracy on simulated users sampled from the cluster descriptions.",
+  "_source_paper": "Trieu et al. 2024, 'Analysis of Vietnamese Women's Body Shape from Anthropometric Data', N=480 women age 18-50",
+  "_population_priors": "Vietnam STEPS Survey 2009/2015 — VN women mean height 154.5 cm, mean BMI 21-22",
+  "feature_order": ["height_cm", "shoulder_to_hip", "waist_to_hip", "shoulder_to_torso", "torso_to_leg", "arm_to_torso"],
+  "clusters": [
+    {
+      "id": 1,
+      "label": "short_thin_small_shoulder",
+      "label_vi": "thấp, gầy, vai nhỏ",
+      "prior": 0.1523,
+      "centroid": [149.5, 1.04, 0.74, 0.62, 0.42, 1.08]
+    },
+    {
+      "id": 2,
+      "label": "tall_slim_broad_shoulder",
+      "label_vi": "cao, hơi đầy, vai rộng",
+      "prior": 0.1836,
+      "centroid": [161.0, 1.13, 0.78, 0.71, 0.46, 1.12]
+    },
+    {
+      "id": 3,
+      "label": "medium_balanced",
+      "label_vi": "trung bình, cân đối",
+      "prior": 0.3594,
+      "centroid": [155.0, 1.08, 0.78, 0.66, 0.45, 1.10]
+    },
+    {
+      "id": 4,
+      "label": "short_fuller_mid_shoulder",
+      "label_vi": "thấp, đầy, vai trung bình",
+      "prior": 0.2188,
+      "centroid": [151.5, 1.07, 0.86, 0.66, 0.44, 1.07]
+    },
+    {
+      "id": 5,
+      "label": "fuller_broad_shoulder",
+      "label_vi": "đầy đặn, vai rộng",
+      "prior": 0.0859,
+      "centroid": [155.5, 1.16, 0.92, 0.73, 0.45, 1.09]
+    }
+  ],
+  "feature_std": [4.5, 0.06, 0.06, 0.04, 0.03, 0.06],
+  "_feature_std_doc": "Per-feature std for Mahalanobis distance (diagonal covariance). Estimated from VN STEPS within-population variance scaled to cluster width."
+}

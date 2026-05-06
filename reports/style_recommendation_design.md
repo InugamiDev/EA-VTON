@@ -852,3 +852,155 @@ The system cannot today:
 Three weeks of work + a small catalog gets us to a credible style assistant. The user flow should assume this — design for the world where rules + body type + skin tone + size pivot all exist, but personalization is still ~6 months out.
 
 The biggest UX question: do we frame ourselves as **"size + fit assistant"** (low ambition, high trust) or **"AI stylist"** (high ambition, currently overpromising)? My recommendation: position as the former, evolve into the latter once the logging data accumulates.
+
+---
+
+## 12. Implementation Plan v1 — Upper Body, Vietnamese Women (small scope)
+
+This is the first concrete build. All other categories (bottoms, dresses,
+outerwear, men's) are deferred until v1 ships and we validate the
+Fit-Flatter-Match decomposition empirically.
+
+### 12.1 Scope (intentionally narrow)
+
+| Axis | v1 scope | Out of scope |
+|---|---|---|
+| Garment category | **Upper body only** (top, blouse, shirt, t-shirt) | Dresses, bottoms, outerwear, accessories |
+| Population | **Vietnamese women** | Men, other markets |
+| Age | 18–50 (matches Trieu et al. 2024) | Children, seniors |
+| Sizes | XS–XXL (covers ~95% of VN distribution) | Petites, plus-plus |
+| Inputs | Height + 5 body ratios + occasion + sliders | Skin tone (parallel track), face shape |
+
+Why upper body first:
+- Fewer landmarks needed (shoulder, bust, waist — already extracted)
+- Drape model is simpler (cylinder + cone, no leg geometry)
+- Largest VN apparel market segment
+- Validates the math before extending
+
+### 12.2 The three-component scoring (formal)
+
+$$
+s(u, i, c) = \alpha \cdot \text{Fit}(b_u, i) + \beta \cdot \text{Flatter}(b_u, a_i) + \gamma \cdot \text{Match}(a_i, c)
+$$
+
+Initial weights (no data yet): $\alpha=0.4, \beta=0.3, \gamma=0.3$.
+Hard constraint: $\text{Fit} > 0.4$ and item-size availability.
+
+#### Fit (geometric, no training)
+
+Per body section $k \in \{\text{shoulder}, \text{bust}, \text{waist}\}$:
+$$
+\text{stress}_k = \frac{C_{u,k} - (g_{i,k} + \text{ease}_k) \cdot (1 + \text{stretch}_i)}{C_{u,k}}
+$$
+
+User circumferences $C_{u,k}$ from VN size pivot lookup (predicted size → cm bands).
+Garment $g_{i,k}$ from item's size chart for the user's predicted size.
+
+$$
+\text{Fit} = \exp\left(-\frac{1}{|K|} \sum_{k} w_k \cdot \max(0, |\text{stress}_k - \tau_k|)^2 / \sigma^2\right)
+$$
+
+with intent-aware setpoint $\tau_k$ depending on garment drape class:
+- bodycon: $\tau = -0.05$ (snug)
+- fitted: $\tau = 0.00$
+- semi-fitted: $\tau = +0.05$
+- A-line/loose: $\tau = +0.10$
+- oversized: $\tau = +0.20$
+
+#### Flatter (rules-based with VN cluster prior)
+
+5 body type clusters from Trieu et al. 2024:
+
+| Group | % | Description | Recommend (upper body) | Avoid |
+|---|---|---|---|---|
+| 1 | 15% | Short, thin, small-shouldered | Structured shoulders, puff sleeves, light colors, horizontal stripes | Drop-shoulder, oversized, deep V |
+| 2 | 18% | Tall, slim, large-shoulders | V-neck, soft shoulders, vertical lines | Boat neck, puff sleeve, horizontal stripes |
+| 3 | 36% | Medium build (modal) | Most styles work; fitted shows shape | Few constraints |
+| 4 | 22% | Short, fuller, medium-shoulders | V-neck, vertical seams, dark tones, three-quarter sleeve | Boat neck, crop top, horizontal stripes at bust |
+| 5 | 9% | Heavy, big shoulders | Deep V, soft fabrics, vertical stripes, dark/cool tones | Boat neck, puff sleeve, light bright colors at shoulder |
+
+Score:
+$$
+\text{Flatter}_{\text{rule}} = \frac{1}{|R|}\sum_{a \in a_i \cap R^+} +1 + \sum_{a \in a_i \cap R^-} -1
+$$
+
+normalized to $(0, 1]$ via shifted sigmoid.
+
+#### Match (occasion + steerable)
+
+Hard filter on occasion tags. Soft score from style sliders projected onto item attributes:
+$$
+\text{Match} = \mathbb{1}[c.\text{occ} \in i.\text{occ\_tags}] \cdot \left(0.5 + 0.5 \cdot \langle \theta, \phi_i \rangle / k\right)
+$$
+
+### 12.3 Files to ship
+
+| Path | Purpose | Status |
+|---|---|---|
+| `services/recommendation/data/vn_body_centroids_v1.json` | 5-cluster centroids in (height, ratios) space | **TO CREATE** |
+| `services/recommendation/data/upper_body_rules_vn_v1.json` | Cluster × attribute polarity matrix | **TO CREATE** |
+| `services/recommendation/data/upper_catalog_seed_v1.json` | ~10-item seed catalog for testing | **TO CREATE** |
+| `services/recommendation/src/body_type_vn.py` | Mahalanobis kNN classifier | **TO CREATE** |
+| `services/recommendation/src/fit_upper.py` | Parametric fit math (upper body) | **TO CREATE** |
+| `services/recommendation/src/style_upper.py` | Composition + explanation DAG | **TO CREATE** |
+| `services/recommendation/src/app.py` | Add `POST /recommend-style/upper` endpoint | UPDATE |
+
+### 12.4 API contract
+
+**Request**
+```json
+{
+  "height_cm": 158,
+  "predicted_size": "M",
+  "ratios": {"sh": 1.10, "wh": 0.78, "st": 0.65, "tl": 0.45, "at": 1.10},
+  "context": {
+    "occasion": "work",
+    "sliders": {"bold": 0.0, "loose": 0.2, "warm": 0.5, "cover": 0.5}
+  },
+  "top_k": 10,
+  "catalog": "seed_v1"
+}
+```
+
+**Response**
+```json
+{
+  "user_state": {
+    "body_type_vn": {"group": 3, "label": "medium build", "confidence": 0.81},
+    "size_bands_cm": {"shoulder": 38, "bust": 90, "waist": 71}
+  },
+  "items": [
+    {
+      "item_id": "...",
+      "title": "...",
+      "score": 0.82,
+      "rank": 1,
+      "explanation": {
+        "fit": {"score": 0.88, "sections": [...]},
+        "flatter": {"score": 0.75, "rules_fired": [...]},
+        "match": {"score": 0.85, "occasion_ok": true, "slider_proj": 0.6}
+      }
+    }
+  ]
+}
+```
+
+### 12.5 Acceptance criteria (when v1 is "done")
+
+- [ ] Endpoint returns in <200ms for 10-item catalog on M2 CPU
+- [ ] Each item has full explanation DAG (fit + flatter + match breakdown)
+- [ ] Body type classifier confidence on synthetic users matches expected cluster ≥80% of the time
+- [ ] Fit score correlates with actual size chart deviation (manual spot-check on 5 items)
+- [ ] No item with `Fit < 0.4` appears in top-K
+- [ ] Slider movement causes re-rank (verify via curl with different slider values)
+
+### 12.6 What's deferred to v2+
+
+- Skin tone integration → after upper-body v1 ships
+- Try-on rendering bundling → after we wire CatVTON to recommendation flow
+- Frontend UI for style results → after backend math is validated
+- FM correction term for Flatter → after we have ≥1k logged interactions
+- Bottoms / dresses → after upper-body validates the decomposition
+- Men's track → after women's v1 has users
+
+---

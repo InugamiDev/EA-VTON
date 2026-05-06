@@ -87,6 +87,32 @@ class VisualSizeRequest(BaseModel):
     source: Literal["world_3d", "image_2d"] = "image_2d"
 
 
+class StyleUpperRatios(BaseModel):
+    """Body ratios for upper-body style recommendation."""
+    sh: float = Field(ge=0.5, le=2.0, description="Shoulder/Hip ratio")
+    wh: float = Field(ge=0.3, le=1.5, description="Waist/Hip ratio")
+    st: float = Field(default=0.66, ge=0.0, le=3.0, description="Shoulder/Torso ratio")
+    tl: float = Field(default=0.45, ge=0.0, le=2.0, description="Torso/Leg ratio")
+    at: float = Field(default=1.10, ge=0.0, le=3.0, description="Arm/Torso ratio")
+
+
+class StyleUpperContext(BaseModel):
+    """Context: occasion + steerable sliders."""
+    occasion: Literal["work", "casual", "date", "formal", "party"] = "casual"
+    sliders: dict[str, float] = Field(default_factory=dict, description="Slider axes ∈ [-1, 1]: bold, loose, warm, cover")
+
+
+class StyleUpperRequest(BaseModel):
+    """Request for upper-body style recommendation (VN women, v1)."""
+    height_cm: float = Field(gt=100, lt=250)
+    predicted_size: Literal["XS", "S", "M", "L", "XL", "XXL"]
+    ratios: StyleUpperRatios
+    context: StyleUpperContext = Field(default_factory=StyleUpperContext)
+    user_palette_lab: list[float] | None = Field(default=None, description="User skin-tone palette anchor in CIE LAB (optional)")
+    top_k: int = Field(default=10, ge=1, le=50)
+    weights: dict[str, float] | None = None
+
+
 class CompareRequest(BaseModel):
     """Request for comparing all 6 model variants."""
     height_cm: float = Field(gt=100, lt=250)
@@ -385,6 +411,38 @@ def recommend_size_visual(req: VisualSizeRequest):
             "source": "webcam_visual",
         },
     }
+
+
+# intent: upper-body style recommendation (VN women v1) — Fit-Flatter-Match decomposition
+# status: done
+# next: add reranking with diversity (MMR), accept skin tone, learn weights from feedback
+# confidence: high
+
+
+@app.post("/recommend-style/upper")
+def recommend_style_upper(req: StyleUpperRequest):
+    """Upper-body style recommendation for Vietnamese women (v1).
+
+    Decomposed scoring:
+        s = α·Fit + β·Flatter + γ·Match
+    with hard constraints on size availability, occasion, and minimum fit score.
+
+    Returns a ranked list of items, each with a full explanation DAG containing
+    the per-component scores and the rules/sections that produced them.
+    """
+    from src.style_upper import rank_upper_body, build_response
+
+    body, ranked = rank_upper_body(
+        height_cm=req.height_cm,
+        predicted_size=req.predicted_size,
+        ratios=req.ratios.model_dump(),
+        occasion=req.context.occasion,
+        sliders=req.context.sliders,
+        user_palette_lab=req.user_palette_lab,
+        top_k=req.top_k,
+        weights=req.weights,
+    )
+    return build_response(body, req.predicted_size, ranked, req.weights)
 
 
 # intent: compare trained research variants side-by-side + rule-based baseline
