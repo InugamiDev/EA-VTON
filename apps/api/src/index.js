@@ -22,6 +22,7 @@ const bodyRoutes = require("./routes/body");
 const featureRoutes = require("./routes/features");
 const healthRoutes = require("./routes/health");
 const pipelineRoutes = require("./routes/pipeline");
+const styleRoutes = require("./routes/style");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -41,6 +42,7 @@ app.use("/api/size-recommendation", sizeRoutes);
 app.use("/api/body-measurement", bodyRoutes);
 app.use("/api/features", featureRoutes);
 app.use("/api/pipeline", pipelineRoutes);
+app.use("/api/style", styleRoutes);
 app.use("/api", healthRoutes);
 
 // ── Root ──
