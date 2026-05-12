@@ -1,0 +1,38 @@
+{
+  "self_identified_gender": ["female"],
+  "garment_families": ["top", "bottom", "dress_jumpsuit", "outerwear", "footwear", "accessory"],
+  "categories_by_family": {
+    "top": ["t_shirt", "shirt", "blouse", "polo", "sweater", "hoodie", "cardigan", "tank", "camisole", "tunic", "bodysuit", "vest_top"],
+    "bottom": ["jeans", "trousers", "leggings", "shorts", "skirt", "culottes", "joggers", "sweatpants"],
+    "dress_jumpsuit": ["mini_dress", "midi_dress", "maxi_dress", "shift_dress", "wrap_dress", "bodycon_dress", "shirt_dress", "jumpsuit", "romper", "overalls"],
+    "outerwear": ["blazer", "denim_jacket", "leather_jacket", "bomber", "coat", "trench", "parka", "puffer", "kimono", "shacket"],
+    "footwear": ["sneakers", "flats", "loafers", "boots", "heels", "sandals", "mules", "slides"],
+    "accessory": ["bag", "belt", "scarf", "hat", "jewelry", "glasses", "watch", "hair_accessory"]
+  },
+  "garment_attributes": {
+    "visibility": ["primary", "secondary", "partial"],
+    "layer_role": ["base", "mid", "outer", "full_body", "footwear", "accessory"],
+    "fit": ["bodycon", "fitted", "semi_fitted", "straight", "relaxed", "oversized", "unknown"],
+    "silhouette": ["straight", "a_line", "boxy", "wrap", "peplum", "cropped", "wide_leg", "skinny", "bootcut", "flare", "pleated", "slip", "tailored", "unknown"],
+    "neckline": ["crew", "v_neck", "scoop", "square", "collared", "turtleneck", "halter", "strapless", "hooded", "one_shoulder", "unknown", "not_applicable"],
+    "sleeve_length": ["sleeveless", "cap", "short", "elbow", "three_quarter", "long", "unknown", "not_applicable"],
+    "hem_length": ["cropped", "regular", "tunic", "mini", "knee", "midi", "maxi", "unknown", "not_applicable"],
+    "rise": ["low", "mid", "high", "unknown", "not_applicable"],
+    "leg_shape": ["skinny", "straight", "wide", "flare", "bootcut", "tapered", "unknown", "not_applicable"],
+    "closure": ["pullover", "button", "zip", "tie", "wrap", "elastic", "none", "unknown", "not_applicable"],
+    "fabric_weight": ["light", "medium", "heavy", "unknown"],
+    "structure": ["soft", "structured", "stretch", "knit", "drapey", "unknown"],
+    "color_family": ["black", "white", "gray", "beige", "brown", "navy", "blue", "green", "olive", "yellow", "orange", "red", "pink", "purple", "metallic", "multi", "unknown"],
+    "pattern": ["solid", "stripe", "check", "plaid", "floral", "graphic", "abstract", "animal", "logo", "texture", "colorblock", "unknown"],
+    "material_tags": ["cotton", "denim", "linen", "silk", "satin", "wool", "knit", "jersey", "fleece", "leather", "suede", "mesh", "lace", "chiffon", "polyester", "nylon", "woven", "ribbed", "unknown"]
+  },
+  "outfit": {
+    "occasion": ["casual", "work", "date", "formal", "party", "athleisure", "lounge", "outdoor", "travel", "unknown"],
+    "formality": ["very_casual", "casual", "smart_casual", "business", "formal", "unknown"],
+    "aesthetic_tags": ["minimal", "classic", "streetwear", "preppy", "romantic", "sporty", "soft", "edgy", "boho", "business", "luxe", "casual_basic", "colorful", "monochrome", "layered", "vintage", "y2k", "modest", "androgynous", "glam"],
+    "color_mood": ["monochrome", "neutral", "warm", "cool", "colorful", "high_contrast", "unknown"],
+    "layering": ["single_layer", "light_layering", "heavy_layering", "unknown"]
+  },
+  "age_band": ["18_24", "25_34", "35_44", "45_54", "55_64", "65_plus", "unknown"],
+  "split": ["train", "val", "test", "holdout"]
+}

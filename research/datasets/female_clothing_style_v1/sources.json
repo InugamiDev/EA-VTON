@@ -1,0 +1,229 @@
+{
+  "dataset": "female_clothing_style_v1",
+  "policy": {
+    "no_arbitrary_web_scraping": true,
+    "requires_consent_or_ml_training_license": true,
+    "requires_face_redaction_before_training": true,
+    "requires_person_level_grouping_provenance": true
+  },
+  "sources": [
+    {
+      "id": "participant_intake_v1",
+      "name": "Direct participant intake",
+      "status": "preferred",
+      "access_type": "first_party_consent",
+      "license_status": "consent_required",
+      "person_level_grouping": true,
+      "target_records": 100000,
+      "target_people": 10000,
+      "target_images_per_person": 10,
+      "notes": "Only source type that reliably satisfies 10 images per same person with explicit consent."
+    },
+    {
+      "id": "deepfashion2",
+      "name": "DeepFashion2",
+      "status": "manual_access_required",
+      "homepage": "https://github.com/switchablenorms/DeepFashion2",
+      "access_type": "research_dataset_registration",
+      "license_status": "verify_before_use",
+      "person_level_grouping": false,
+      "supported_tasks": ["garment_detection", "category_classification", "landmarks", "segmentation"],
+      "notes": "Useful for garment labels, not sufficient for 10 images per same person. Do not train person-level preference models from it."
+    },
+    {
+      "id": "deepfashion_with_masks",
+      "name": "DeepFashion with masks on Hugging Face",
+      "status": "available_huggingface",
+      "homepage": "https://huggingface.co/datasets/SaffalPoosh/deepFashion-with-masks",
+      "access_type": "public_dataset_download",
+      "license_status": "apache-2.0_huggingface_metadata_verify_derivative_terms_before_production",
+      "person_level_grouping": true,
+      "supported_tasks": ["garment_segmentation", "category_classification", "licensed_external_pretraining"],
+      "notes": "Contains WOMEN/MEN source labels and pid fields. Use WOMEN-labeled rows only for licensed external pretraining or pipeline pilots, not as first-party self-identified participant data."
+    },
+    {
+      "id": "deepfashion_multimodal_parts2whole",
+      "name": "DeepFashion MultiModal Parts2Whole on Hugging Face",
+      "status": "metadata_downloaded_media_requires_storage",
+      "homepage": "https://huggingface.co/datasets/huanngzh/DeepFashion-MultiModal-Parts2Whole",
+      "access_type": "public_dataset_download",
+      "license_status": "apache-2.0_huggingface_metadata_verify_derivative_terms_before_production",
+      "person_level_grouping": true,
+      "supported_tasks": ["same_person_pose_pairs", "multimodal_human_generation_research", "licensed_external_pretraining"],
+      "estimated_media_size_gb": 53,
+      "notes": "Metadata is downloaded locally. Full media storage is about 53GB; confirm free disk and run an explicit preflight before image import. WOMEN-labeled metadata has about 31k unique target images across about 5.5k source pids, still short of 10k people with 10 images/person."
+    },
+    {
+      "id": "amazon_review_2018_fashion",
+      "name": "Amazon Review Data 2018 fashion categories",
+      "status": "available_partial_direct",
+      "homepage": "https://nijianmo.github.io/amazon/index.html",
+      "access_type": "public_research_dataset_and_request_form",
+      "license_status": "research_dataset_terms_required_before_training",
+      "person_level_grouping": false,
+      "supported_tasks": ["product_metadata_bootstrap", "review_fit_signal_bootstrap", "size_color_preference_research", "item_graph_research"],
+      "blocked_tasks": ["people_image_training_without_separate_rights_review", "person_level_style_dataset_collection"],
+      "direct_files": {
+        "amazon_fashion_5core": "https://jmcauley.ucsd.edu/data/amazon_v2/categoryFilesSmall/AMAZON_FASHION_5.json.gz",
+        "amazon_fashion_ratings": "https://jmcauley.ucsd.edu/data/amazon_v2/categoryFilesSmall/AMAZON_FASHION.csv",
+        "clothing_shoes_jewelry_5core": "https://jmcauley.ucsd.edu/data/amazon_v2/categoryFilesSmall/Clothing_Shoes_and_Jewelry_5.json.gz",
+        "clothing_shoes_jewelry_ratings": "https://jmcauley.ucsd.edu/data/amazon_v2/categoryFilesSmall/Clothing_Shoes_and_Jewelry.csv"
+      },
+      "notes": "Useful for product metadata, style fields, ratings, reviews, and co-purchase graphs. Reviews may contain reviewer IDs/names and user-posted images; strip identifying fields and do not add user images to the redacted people manifest without a separate rights/privacy review. Full per-category review and metadata files are form-gated."
+    },
+    {
+      "id": "amazon_review_2023_fashion",
+      "name": "Amazon Reviews 2023 fashion categories",
+      "status": "available_partial_direct",
+      "homepage": "https://amazon-reviews-2023.github.io/",
+      "access_type": "public_research_dataset",
+      "license_status": "research_dataset_terms_required_before_training",
+      "person_level_grouping": false,
+      "supported_tasks": ["product_metadata_bootstrap", "review_fit_signal_bootstrap", "size_color_preference_research", "item_graph_research", "two_tower_recommendation_pretraining"],
+      "blocked_tasks": ["people_image_training_without_separate_rights_review", "person_level_style_dataset_collection", "reviewer_identity_feature_export"],
+      "reported_scale": {
+        "all_reviews": 571540000,
+        "amazon_fashion_users": 2000000,
+        "amazon_fashion_items": 825900,
+        "amazon_fashion_ratings": 2500000,
+        "clothing_shoes_jewelry_users": 22600000,
+        "clothing_shoes_jewelry_items": 7200000,
+        "clothing_shoes_jewelry_ratings": 66000000
+      },
+      "direct_files": {
+        "amazon_fashion_reviews": "https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon_2023/raw/review_categories/Amazon_Fashion.jsonl.gz",
+        "amazon_fashion_metadata": "https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon_2023/raw/meta_categories/meta_Amazon_Fashion.jsonl.gz",
+        "clothing_shoes_jewelry_reviews": "https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon_2023/raw/review_categories/Clothing_Shoes_and_Jewelry.jsonl.gz",
+        "clothing_shoes_jewelry_metadata": "https://datarepo.eng.ucsd.edu/mcauley_group/data/amazon_2023/raw/meta_categories/meta_Clothing_Shoes_and_Jewelry.jsonl.gz",
+        "clothing_shoes_jewelry_ratings_0core": "https://mcauleylab.ucsd.edu/public_datasets/data/amazon_2023/benchmark/0core/rating_only/Clothing_Shoes_and_Jewelry.csv.gz"
+      },
+      "notes": "Prefer this over the 2018 version for new recommendation experiments. Use product metadata, product images, ratings, reviews, and item graphs as a sidecar source only. Strip reviewer identifiers from exported training features and exclude user-posted review images from the people-image manifest unless a separate rights/privacy review approves them."
+    },
+    {
+      "id": "luperson",
+      "name": "LUPerson",
+      "status": "rejected_for_target_research_only_candidate",
+      "homepage": "https://github.com/DengpanFu/LUPerson",
+      "access_type": "public_research_dataset_reconstruction",
+      "license_status": "research_only_commercial_forbidden_terms_review_required",
+      "person_level_grouping": true,
+      "supported_tasks": ["generic_person_reid_pretraining_after_terms_review"],
+      "blocked_tasks": ["commercial_training", "female_style_preference_training", "person_level_fashion_dataset_collection"],
+      "reported_scale": {
+        "images": 4000000,
+        "identities": 200000
+      },
+      "notes": "Reported as 4M images over 200K identities, but the project states research-only use and forbids commercial usage. The reconstruction process uses YouTube videos and detection outputs. No verified female labels, fashion taxonomy, consent basis, or style-preference labels were found, so do not use as a source for the requested women-focused clothing dataset."
+    },
+    {
+      "id": "luperson_nl",
+      "name": "LUPerson-NL",
+      "status": "rejected_for_target_research_only_candidate",
+      "homepage": "https://github.com/DengpanFu/LUPerson-NL",
+      "access_type": "public_research_dataset_reconstruction_or_baidudisk",
+      "license_status": "research_terms_review_required",
+      "person_level_grouping": true,
+      "supported_tasks": ["generic_person_reid_pretraining_after_terms_review"],
+      "blocked_tasks": ["female_style_preference_training", "person_level_fashion_dataset_collection"],
+      "reported_scale": {
+        "images": 10000000,
+        "identities": 430000
+      },
+      "notes": "Noisy-label extension of LUPerson with 10M images and 430K automatically generated identities from street-view videos. The labels are tracklet-derived/noisy, not consented participant IDs or self-identified gender labels. Not suitable for the target manifest without separate terms, privacy, gender, and fashion-label review."
+    },
+    {
+      "id": "last_reid",
+      "name": "LaST large-scale spatio-temporal person ReID",
+      "status": "candidate_blocked_pending_terms_gender_storage_review",
+      "homepage": "https://github.com/shuxjweb/last",
+      "access_type": "public_research_dataset_download",
+      "license_status": "academic_research_only",
+      "person_level_grouping": true,
+      "supported_tasks": ["person_reid_research", "clothing_label_pretraining_research"],
+      "blocked_tasks": ["production_training", "commercial_training", "female_style_preference_training_without_gender_filter"],
+      "reported_scale": {
+        "images": 228156,
+        "identities": 10862,
+        "train_identities": 5000,
+        "train_images": 71248,
+        "val_identities": 56,
+        "val_images": 21379,
+        "test_identities": 5806,
+        "test_images": 135529
+      },
+      "notes": "Meets the raw 10k identity threshold on paper and reports clothing labels for the training set, but it is collected from movies and released for academic research only. No verified female-label filter or production rights were found. Treat as research-only until terms, media rights, gender labels, redaction, and download/storage feasibility are audited."
+    },
+    {
+      "id": "entire_id",
+      "name": "ENTIRe-ID",
+      "status": "candidate_blocked_pending_terms_privacy_gender_storage_review",
+      "homepage": "https://serdaryildiz.github.io/ENTIRe-ID/",
+      "access_type": "public_google_drive_research_dataset",
+      "license_status": "verify_dataset_terms_before_any_use",
+      "person_level_grouping": true,
+      "supported_tasks": ["person_reid_research"],
+      "blocked_tasks": ["female_style_preference_training_without_gender_filter", "fashion_taxonomy_training_without_labels", "production_training_without_rights_review"],
+      "reported_scale": {
+        "images": 4450000,
+        "identities": 13540,
+        "cameras": 37
+      },
+      "notes": "Reported as 4.45M images, 13,540 IDs, and 37 cameras from public internet cams, with facial blurring discussed in the paper. It clears raw identity scale on paper, but there is no verified female-label filter, garment taxonomy, consent basis, or production license. Treat as blocked for this dataset until legal/privacy and labeling reviews pass."
+    },
+    {
+      "id": "awesome_reid_dataset_index",
+      "name": "Awesome Person Re-Identification Datasets index",
+      "status": "research_index_only",
+      "homepage": "https://github.com/NEU-Gou/awesome-reid-dataset",
+      "access_type": "curated_dataset_index",
+      "license_status": "refer_to_original_dataset_licenses",
+      "person_level_grouping": false,
+      "supported_tasks": ["source_discovery"],
+      "blocked_tasks": ["direct_training_source"],
+      "notes": "Useful for discovering ReID datasets and reported identity/image counts. The index is not itself a dataset; every candidate must be audited against its original license, consent/privacy posture, gender labels, image-per-person distribution, and fashion-label suitability."
+    },
+    {
+      "id": "fashionpedia",
+      "name": "Fashionpedia",
+      "status": "manual_access_required",
+      "homepage": "https://fashionpedia.github.io/home/",
+      "access_type": "public_research_dataset",
+      "license_status": "verify_before_use",
+      "person_level_grouping": false,
+      "supported_tasks": ["garment_segmentation", "attribute_classification", "category_classification"],
+      "notes": "Useful for taxonomy pretraining and garment parsing, not person-level repeated-image style preference."
+    },
+    {
+      "id": "dresscode",
+      "name": "Dress Code dataset",
+      "status": "manual_access_required",
+      "homepage": "https://github.com/aimagelab/dress-code",
+      "access_type": "research_dataset_registration",
+      "license_status": "verify_before_use",
+      "person_level_grouping": false,
+      "supported_tasks": ["virtual_try_on", "paired_clothing", "category_classification"],
+      "notes": "Potentially useful for try-on and garment/body pairing; verify terms before training."
+    },
+    {
+      "id": "viton_hd",
+      "name": "VITON-HD",
+      "status": "manual_access_required",
+      "homepage": "https://github.com/shadow2496/VITON-HD",
+      "access_type": "research_dataset_registration",
+      "license_status": "verify_before_use",
+      "person_level_grouping": false,
+      "supported_tasks": ["virtual_try_on", "upper_body_garments"],
+      "notes": "Primarily tops/try-on; verify license and do not assume person consent beyond dataset terms."
+    },
+    {
+      "id": "local_catalog_pilot",
+      "name": "Local garment catalog pilot",
+      "status": "available_local",
+      "access_type": "local_catalog_images",
+      "license_status": "product_image_terms_required_before_training",
+      "person_level_grouping": false,
+      "supported_tasks": ["garment_attribute_bootstrap", "pipeline_smoke_test"],
+      "notes": "Not a people dataset. Use only for pipeline smoke tests or item metadata bootstrapping."
+    }
+  ]
+}

@@ -26,7 +26,27 @@
 
 **Limitations**: No ethnicity data. Biased toward US urban demographic (rental clothing users). Self-reported measurements may have systematic error.
 
-### 2. Vietnamese Female Anthropometric Data (Tran et al. 2024)
+### 2. NHANES + ANSUR II Calibration Data
+
+**NHANES source**: CDC NHANES 2017-2018 Body Measures and Demographics files
+
+**ANSUR II source**: Public female anthropometry data from the US Army
+Anthropometric Survey
+
+**Usage in this repo**:
+- NHANES body-measures and demographics files provide civilian US-women anchors
+  for the current `us_women` population profile.
+- ANSUR II female data is used only for missing shoulder/torso visual-ratio
+  geometry. It is not treated as a civilian population-size prior because the
+  sample is military.
+- RTR remains the fashion-fit prior for model training and visual BMI defaults.
+
+**Limitations**: Public NHANES body measures do not include bust/chest
+circumference, so current chest/waist/hip formulas are calibrated heuristics
+anchored to available population statistics. Replace them with a trained
+measurement model when labeled bust/chest data is available.
+
+### 3. Vietnamese Female Anthropometric Data (Tran et al. 2024)
 
 **Source**: "Anthropometric characteristics and body shape classification of Vietnamese women" — peer-reviewed study
 **Sample**: 480 women, ages 18-50, 3 geographic regions of Vietnam
@@ -45,7 +65,7 @@
 **National estimates** (population-weighted):
 - Female: $\bar{h} = 156.2 \pm 5.5$ cm, $\bar{w} = 53.9 \pm 8.0$ kg
 
-### 3. Vietnamese Male Anthropometric Data (IUH 2022)
+### 4. Vietnamese Male Anthropometric Data (IUH 2022)
 
 **Source**: Industrial University of Ho Chi Minh City study
 **Sample**: 1,106 men

@@ -1,0 +1,164 @@
+{
+  "dataset": "female_clothing_style_v1",
+  "selected_at": "2026-05-08",
+  "target": {
+    "people": 10000,
+    "images_per_person": 10,
+    "total_images": 100000,
+    "status": "not_yet_met"
+  },
+  "policy": {
+    "no_arbitrary_web_scraping": true,
+    "requires_consent_or_ml_training_license": true,
+    "requires_face_redaction_before_training": true,
+    "split_by_person_id": true
+  },
+  "selected_sources": [
+    {
+      "id": "participant_intake_v1",
+      "selection_status": "selected_primary_collection",
+      "role": "final_target_dataset",
+      "path": "research/datasets/female_clothing_style_v1/intake_roster.csv",
+      "target_people": 10000,
+      "target_images": 100000,
+      "allowed_tasks": [
+        "style_rec_training",
+        "outfit_classification",
+        "garment_attribute_prediction",
+        "fit_flattery_ranking"
+      ],
+      "conditions": [
+        "adult participant consent required",
+        "self-identified female label only",
+        "face redaction required before labeling and training",
+        "raw identifiable media stays restricted"
+      ]
+    },
+    {
+      "id": "deepfashion_with_masks_all_capped20",
+      "selection_status": "selected_local_pretraining",
+      "role": "external_redacted_pretraining",
+      "manifest": "research/datasets/female_clothing_style_v1/manifest_deepfashion_with_masks_all_capped20.jsonl",
+      "records": 34142,
+      "people": 6694,
+      "gender_label_source": "dataset_label",
+      "rights_basis": "dataset_license",
+      "allowed_tasks": [
+        "garment_family_classification",
+        "category_classification",
+        "style_attribute_pretraining",
+        "pipeline_smoke_tests"
+      ],
+      "conditions": [
+        "do not treat as self-identified participant data",
+        "do not use as final 10000-person target",
+        "manual redaction audit recommended before production training"
+      ]
+    },
+    {
+      "id": "deepfashion_with_masks_balanced_10_20",
+      "selection_status": "selected_person_level_pilot",
+      "role": "same-person_repeated-image_pilot",
+      "manifest": "research/datasets/female_clothing_style_v1/manifest_deepfashion_with_masks_balanced_10_20.jsonl",
+      "records": 8194,
+      "people": 589,
+      "images_per_person_min": 10,
+      "images_per_person_max": 20,
+      "gender_label_source": "dataset_label",
+      "rights_basis": "dataset_license",
+      "allowed_tasks": [
+        "person-level split tests",
+        "repeated-image style aggregation pilot",
+        "classifier smoke tests"
+      ],
+      "conditions": [
+        "not enough people for the target dataset",
+        "do not train demographic preference claims from dataset labels",
+        "manual redaction audit recommended before production training"
+      ]
+    },
+    {
+      "id": "amazon_review_2023_fashion",
+      "selection_status": "selected_metadata_sidecar_pending_download",
+      "role": "recommendation_metadata_sidecar",
+      "registry": "research/datasets/female_clothing_style_v1/sources.json",
+      "allowed_tasks": [
+        "item_metadata_bootstrap",
+        "ratings_interaction_pretraining",
+        "review_text_embedding",
+        "item_graph_research",
+        "two_tower_recommendation_pretraining"
+      ],
+      "conditions": [
+        "product and review metadata only",
+        "strip reviewer identifiers from exported features",
+        "exclude user-posted images from people-image manifests",
+        "download only fixed registry URLs"
+      ]
+    },
+    {
+      "id": "local_catalog_pilot",
+      "selection_status": "selected_smoke_test_only",
+      "role": "local_item_catalog_pilot",
+      "path": "research/datasets/raw/female_clothing_style_v1/local_catalog_pilot/garments.json",
+      "allowed_tasks": [
+        "pipeline_smoke_tests",
+        "item_schema_tests"
+      ],
+      "conditions": [
+        "not a people dataset",
+        "not sufficient for recommendation training"
+      ]
+    }
+  ],
+  "deferred_sources": [
+    {
+      "id": "deepfashion2",
+      "reason": "manual access and license review required before import"
+    },
+    {
+      "id": "fashionpedia",
+      "reason": "manual access and source image terms review required before import"
+    },
+    {
+      "id": "modanet",
+      "reason": "benchmark/source image terms review required before import"
+    },
+    {
+      "id": "viton_hd",
+      "reason": "manual access and non-commercial/research terms review required before import"
+    },
+    {
+      "id": "dresscode",
+      "reason": "access-gated and not released to private companies"
+    },
+    {
+      "id": "deepfashion_multimodal_parts2whole",
+      "reason": "media import needs storage, rights review, and still falls short of the 10000-person target"
+    }
+  ],
+  "blocked_sources": [
+    {
+      "id": "luperson",
+      "reason": "research-only ReID data; no verified female labels, consent basis, or fashion taxonomy"
+    },
+    {
+      "id": "luperson_nl",
+      "reason": "noisy ReID tracklets; no verified female labels, consent basis, or fashion taxonomy"
+    },
+    {
+      "id": "last_reid",
+      "reason": "academic-research-only movie-derived media; not approved for production style training"
+    },
+    {
+      "id": "entire_id",
+      "reason": "public camera ReID source; privacy, gender-label, license, and fashion-label reviews not passed"
+    }
+  ],
+  "next_build_order": [
+    "Use deepfashion_with_masks_all_capped20 for initial garment/style classifiers.",
+    "Use deepfashion_with_masks_balanced_10_20 for repeated-image person-level pilot tests.",
+    "Use amazon_review_2023_fashion as item/review sidecar after metadata download succeeds.",
+    "Use participant_intake_v1 to fill the real 10000-person target."
+  ]
+}

@@ -34,10 +34,21 @@ ea-vton/datasets/raw/rtr_raw.json
 ea-vton/datasets/raw/rtr_raw.json.gz
 ea-vton/datasets/processed/*.parquet
 ea-vton/datasets/processed/*.csv
+research/datasets/restricted/**
 research/datasets/raw/rtr_raw.json
 research/datasets/raw/rtr_raw.json.gz
 research/datasets/processed/*.parquet
 research/datasets/processed/*.csv
+research/datasets/female_clothing_style_v1/.DS_Store
+research/datasets/female_clothing_style_v1/redacted/**
+research/datasets/raw/female_clothing_style_v1/**/*.csv
+research/datasets/raw/female_clothing_style_v1/**/*.gz
+research/datasets/raw/female_clothing_style_v1/**/*.jpg
+research/datasets/raw/female_clothing_style_v1/**/*.jpeg
+research/datasets/raw/female_clothing_style_v1/**/*.jsonl
+research/datasets/raw/female_clothing_style_v1/**/*.parquet
+research/datasets/raw/female_clothing_style_v1/**/*.png
+research/datasets/raw/female_clothing_style_v1/**/*.webp
 research/models/variants/*.pkl
 research/models/variants/*.pt
 research/models/body_regression/*.pkl
@@ -105,4 +116,3 @@ htmlcov/
 
 # ── Generated media (Manim output, regenerable) ──
 media/
-

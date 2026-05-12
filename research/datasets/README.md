@@ -10,6 +10,14 @@ Downloaded and processed: 2026-03-19
 | `processed/rtr_full.parquet` | Rent The Runway | 192,544 | 40.7 MB | Parquet |
 | `processed/bodym_measurements.parquet` | Amazon BodyM | 2,507 | 203 KB | Parquet |
 
+## Planned Collection Dataset
+
+| Dataset | Scope | Target Size | Privacy Gate |
+|---------|-------|-------------|--------------|
+| `female_clothing_style_v1/` | Consented adult women, full clothing/outfit style labels | 10,000 people x 10 images = 100,000 redacted images | Face redaction required before labeling/training |
+
+See `female_clothing_style_v1/README.md` for the collection protocol, hierarchical label taxonomy, manifest schema, and validation commands.
+
 ## Dataset Details
 
 ### Rent The Runway (RTR)

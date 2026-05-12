@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ea-vton.local/schemas/female_clothing_style_v1.json",
+  "title": "Female Clothing Style Dataset v1 Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["person_id", "image_id", "split", "gender_label", "age_band", "redacted_image_uri", "face_redaction", "rights", "garments", "outfit", "quality"],
+  "properties": {
+    "person_id": {"type": "string", "pattern": "^p_[0-9a-fA-F]{6,}$"},
+    "image_id": {"type": "string", "pattern": "^p_[0-9a-fA-F]{6,}_[0-9]{2}$"},
+    "split": {"enum": ["train", "val", "test", "holdout"]},
+    "gender_label": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "source"],
+      "properties": {
+        "value": {"const": "female"},
+        "source": {"enum": ["self_identified", "dataset_label"]},
+        "notes": {"type": "string"}
+      }
+    },
+    "age_band": {"enum": ["18_24", "25_34", "35_44", "45_54", "55_64", "65_plus", "unknown"]},
+    "redacted_image_uri": {"type": "string", "minLength": 1},
+    "face_redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "method"],
+      "properties": {
+        "status": {"enum": ["redacted", "no_face_visible", "rejected"]},
+        "method": {"enum": ["black_box", "blur", "pixelate", "none"]}
+      }
+    },
+    "rights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["basis", "status", "scope"],
+      "properties": {
+        "basis": {"enum": ["first_party_consent", "dataset_license"]},
+        "status": {"enum": ["granted", "licensed"]},
+        "scope": {"enum": ["style_rec_training", "research_only"]},
+        "version": {"type": "string"},
+        "license": {"type": "string"},
+        "source": {"type": "string"}
+      }
+    },
+    "garments": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/garment"}
+    },
+    "outfit": {"$ref": "#/$defs/outfit"},
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["usable", "face_visible_after_redaction", "garments_visible"],
+      "properties": {
+        "usable": {"type": "boolean"},
+        "face_visible_after_redaction": {"const": false},
+        "garments_visible": {"type": "boolean"},
+        "notes": {"type": "string"}
+      }
+    },
+    "annotator": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string"},
+        "labeled_at": {"type": "string"}
+      }
+    }
+  },
+  "$defs": {
+    "box": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": {"type": "number", "minimum": 0},
+        "y": {"type": "number", "minimum": 0},
+        "width": {"type": "number", "exclusiveMinimum": 0},
+        "height": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "garment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["garment_id", "family", "category", "visibility", "layer_role", "attributes"],
+      "properties": {
+        "garment_id": {"type": "string", "pattern": "^g[0-9]{2}$"},
+        "family": {"enum": ["top", "bottom", "dress_jumpsuit", "outerwear", "footwear", "accessory"]},
+        "category": {"type": "string", "minLength": 1},
+        "visibility": {"enum": ["primary", "secondary", "partial"]},
+        "layer_role": {"enum": ["base", "mid", "outer", "full_body", "footwear", "accessory"]},
+        "bbox": {"$ref": "#/$defs/box"},
+        "attributes": {"$ref": "#/$defs/garment_attributes"}
+      }
+    },
+    "garment_attributes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fit", "silhouette", "color_family", "pattern", "fabric_weight", "structure", "material_tags"],
+      "properties": {
+        "fit": {"enum": ["bodycon", "fitted", "semi_fitted", "straight", "relaxed", "oversized", "unknown"]},
+        "silhouette": {"enum": ["straight", "a_line", "boxy", "wrap", "peplum", "cropped", "wide_leg", "skinny", "bootcut", "flare", "pleated", "slip", "tailored", "unknown"]},
+        "neckline": {"enum": ["crew", "v_neck", "scoop", "square", "collared", "turtleneck", "halter", "strapless", "hooded", "one_shoulder", "unknown", "not_applicable"]},
+        "sleeve_length": {"enum": ["sleeveless", "cap", "short", "elbow", "three_quarter", "long", "unknown", "not_applicable"]},
+        "hem_length": {"enum": ["cropped", "regular", "tunic", "mini", "knee", "midi", "maxi", "unknown", "not_applicable"]},
+        "rise": {"enum": ["low", "mid", "high", "unknown", "not_applicable"]},
+        "leg_shape": {"enum": ["skinny", "straight", "wide", "flare", "bootcut", "tapered", "unknown", "not_applicable"]},
+        "closure": {"enum": ["pullover", "button", "zip", "tie", "wrap", "elastic", "none", "unknown", "not_applicable"]},
+        "fabric_weight": {"enum": ["light", "medium", "heavy", "unknown"]},
+        "structure": {"enum": ["soft", "structured", "stretch", "knit", "drapey", "unknown"]},
+        "color_family": {"enum": ["black", "white", "gray", "beige", "brown", "navy", "blue", "green", "olive", "yellow", "orange", "red", "pink", "purple", "metallic", "multi", "unknown"]},
+        "pattern": {"enum": ["solid", "stripe", "check", "plaid", "floral", "graphic", "abstract", "animal", "logo", "texture", "colorblock", "unknown"]},
+        "material_tags": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"enum": ["cotton", "denim", "linen", "silk", "satin", "wool", "knit", "jersey", "fleece", "leather", "suede", "mesh", "lace", "chiffon", "polyester", "nylon", "woven", "ribbed", "unknown"]}
+        }
+      }
+    },
+    "outfit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["occasion", "formality", "aesthetic_tags", "color_mood", "layering"],
+      "properties": {
+        "occasion": {"enum": ["casual", "work", "date", "formal", "party", "athleisure", "lounge", "outdoor", "travel", "unknown"]},
+        "formality": {"enum": ["very_casual", "casual", "smart_casual", "business", "formal", "unknown"]},
+        "aesthetic_tags": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"enum": ["minimal", "classic", "streetwear", "preppy", "romantic", "sporty", "soft", "edgy", "boho", "business", "luxe", "casual_basic", "colorful", "monochrome", "layered", "vintage", "y2k", "modest", "androgynous", "glam"]}
+        },
+        "color_mood": {"enum": ["monochrome", "neutral", "warm", "cool", "colorful", "high_contrast", "unknown"]},
+        "layering": {"enum": ["single_layer", "light_layering", "heavy_layering", "unknown"]}
+      }
+    }
+  }
+}
