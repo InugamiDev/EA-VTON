@@ -1,4 +1,4 @@
-// API gateway proxy for upper-body style recommendation (VN women, v1).
+// API gateway proxy for population-aware upper-body style recommendation.
 // Forwards to recommendation service POST /recommend-style/upper.
 
 const express = require("express");
@@ -11,7 +11,7 @@ const RECOMMENDATION_URL =
  * POST /api/style/upper — Fit-Flatter-Match upper-body recommendation.
  *
  * Body:
- *   height_cm, predicted_size, ratios {sh, wh, st?, tl?, at?},
+ *   height_cm, predicted_size, population?, ratios {sh, wh, st?, tl?, at?},
  *   context {occasion, sliders {bold?, loose?, warm?, cover?}},
  *   user_palette_lab? [L, a, b], top_k?, weights?
  */

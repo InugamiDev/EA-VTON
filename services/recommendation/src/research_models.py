@@ -35,8 +35,14 @@ SIZE_MAP = {0: "XXS", 1: "XS", 2: "S", 3: "M", 4: "L", 5: "XL", 6: "XXL"}
 SIZE_ORDER = {"XXS": 0, "XS": 1, "S": 2, "M": 3, "L": 4, "XL": 5, "XXL": 6}
 
 # GBM variant names that have .pkl files
+# intent: expose both legacy and refreshed GBM artifacts for population-aware serving
+# status: done
+# next: move model availability/versioning into a registry manifest
+# blockers: artifacts are local pickle files under research/models/variants
+# confidence: high
 GBM_VARIANTS = [
     "gbm_uniform",
+    "gbm_uniform_current",
     "gbm_indep",
     "gbm_copula",
     "gbm_indep_tempered_a05",

@@ -1,27 +1,16 @@
-"""EA-VTON ethnicity-aware size recommendation engine.
+"""EA-VTON population-aware size recommendation engine.
 
-Provides two estimation modes:
-  1. Baseline (US): chest_cm = height * 0.52 + weight * 0.18
-     Calibrated to CAESAR/RTR population (mean H=165.9, W=62.3)
-
-  2. Vietnamese: chest_cm = height * 0.485 + weight * 0.22 - 2.5
-     Calibrated to Tran et al. (2024) Vietnamese female clusters:
-       Cluster 3 (dominant, 36%): H=156, W=52, chest=83
-       Cluster 4 (short heavy):   H=152, W=58, chest=90
-       Cluster 1 (short thin):    H=151, W=46, chest=79
-
-     Regression fitted to these reference points produces tighter
-     chest estimates for Vietnamese body proportions.
-
-Comparison endpoint shows both predictions side-by-side to demonstrate
-the ethnicity gap in size recommendation.
+Provides rule-based measurement estimates when trained models or exact user
+measurements are unavailable. Population constants live in population_profiles.py
+so visual sizing, manual sizing, and style ranking share the same assumptions.
 """
 
 from __future__ import annotations
 
 from typing import Literal
 
-Population = Literal["universal", "vietnamese"]
+from .population_profiles import Population, get_population_profile
+
 FitPreference = Literal["slim", "regular", "relaxed"]
 
 _FIT_ADJUSTMENTS: dict[FitPreference, float] = {
@@ -47,13 +36,8 @@ def estimate_chest_cm(
     population: Population = "universal",
 ) -> float:
     """Estimate chest circumference using population-specific formula."""
-    if population == "vietnamese":
-        # Fitted to Vietnamese anthropometric cluster centroids
-        # OLS on 5 cluster centroids: chest ~ height + weight
-        raw = height_cm * 0.485 + weight_kg * 0.22 - 2.5
-    else:
-        # Original US-calibrated formula
-        raw = height_cm * 0.52 + weight_kg * 0.18
+    profile = get_population_profile(population)
+    raw = profile.chest.estimate(height_cm, weight_kg)
 
     adjustment = _FIT_ADJUSTMENTS.get(fit_preference, 0.0)
     return round(raw + adjustment, 1)
@@ -65,9 +49,8 @@ def estimate_waist_cm(
     population: Population = "universal",
 ) -> float:
     """Estimate waist circumference."""
-    if population == "vietnamese":
-        return round(height_cm * 0.30 + weight_kg * 0.38 - 4.0, 1)
-    return round(height_cm * 0.35 + weight_kg * 0.30, 1)
+    profile = get_population_profile(population)
+    return round(profile.waist.estimate(height_cm, weight_kg), 1)
 
 
 def estimate_hip_cm(
@@ -76,9 +59,8 @@ def estimate_hip_cm(
     population: Population = "universal",
 ) -> float:
     """Estimate hip circumference."""
-    if population == "vietnamese":
-        return round(height_cm * 0.42 + weight_kg * 0.24 + 3.0, 1)
-    return round(height_cm * 0.48 + weight_kg * 0.22, 1)
+    profile = get_population_profile(population)
+    return round(profile.hip.estimate(height_cm, weight_kg), 1)
 
 
 def find_best_size(estimated_chest: float, size_chart: list[dict]) -> dict:
@@ -178,7 +160,7 @@ def compare_recommendations(
             "fit_preference": fit_preference,
         },
         "baseline": {
-            "population": "US (Universal)",
+            "population": "US women",
             "estimated_chest_cm": baseline_chest,
             "estimated_waist_cm": baseline_waist,
             "estimated_hip_cm": baseline_hip,
@@ -233,13 +215,13 @@ def _build_explanation(
     if size_changed:
         parts.append(
             f"This shifts the recommendation from {baseline_size} to {eavton_size}. "
-            f"The universal model oversizes because it was calibrated to "
-            f"US body proportions (mean height 165.9cm) where someone at "
+            f"The US-women model estimates a different chest because it was calibrated to "
+            f"US fashion/body proportions (mean height 165.9cm) where someone at "
             f"{height_cm:.0f}cm/{weight_kg:.0f}kg would have a larger chest."
         )
     else:
         parts.append(
-            f"Both models recommend {baseline_size}, but the Vietnamese model "
+            f"Both models recommend {baseline_size}, but the population-specific model "
             f"has higher confidence because the chest estimate better matches "
             f"the size chart range."
         )

@@ -98,7 +98,7 @@ export interface TryOnJob {
 // ── Size recommendation types ──
 
 export type FitPreference = "slim" | "regular" | "relaxed";
-export type Population = "universal" | "vietnamese";
+export type Population = "us_women" | "universal" | "vietnamese";
 
 export interface SizeAlternative {
   size: string;

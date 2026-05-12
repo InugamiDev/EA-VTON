@@ -22,9 +22,9 @@ $$\mathbb{E}_{P_T}[f(\mathbf{x})] = \mathbb{E}_{P_S}\left[\frac{p_T(\mathbf{x})}
 
 In practice: a sample that's common in the Vietnamese population but rare in RTR gets upweighted; a sample common in RTR but rare in Vietnam gets downweighted.
 
-### Gaussian Assumption
+### Independent Gaussian Baseline
 
-We model both distributions as independent Gaussians per feature:
+The original baseline models both distributions as independent Gaussians per feature:
 
 $$p_T(\mathbf{x}) = \prod_{j \in \{h,w,b\}} \mathcal{N}(x_j \mid \mu_j^T, \sigma_j^T)$$
 
@@ -90,6 +90,31 @@ Normalized to mean 1:
 
 $$\tilde{r}_i = \frac{r_i}{\frac{1}{N}\sum_{j=1}^N r_j}$$
 
+## Copula+PSIS Weighting
+
+The served EA-VTON GBM now uses `research/weighting/copula_psis.py` instead of
+the independent baseline. It fits a bivariate Gaussian source distribution over
+height and weight, builds the Vietnamese target covariance using the same fitted
+height-weight correlation, then computes:
+
+$$r(h,w) = \frac{\phi_{VN}(h,w)}{\phi_{US}(h,w)}$$
+
+The raw log ratios are smoothed with Pareto Smoothed Importance Sampling (PSIS)
+before normalization. The Vietnamese-targeted artifact applies additional tempering:
+
+$$\tilde{r}_{0.75} = \frac{\tilde{r}^{0.75}}{\frac{1}{N}\sum_{j=1}^N \tilde{r}_j^{0.75}}$$
+
+Current `gbm_copula_tempered_a075` training-split diagnostics:
+
+| Metric | Value |
+|--------|-------|
+| Fit-only training rows | 86,379 |
+| Raw Copula+PSIS ESS | 20,806 (24.1%) |
+| Tempered ESS | 32,355 (37.5%) |
+| PSIS k-hat | -0.001 |
+| US train mean | 165.6 cm, 60.3 kg |
+| VN target mean | 156.2 cm, 53.9 kg |
+
 ## Clipping Rationale
 
 Without clipping, density ratios can be extreme. Consider $h = 140$ cm:
@@ -112,7 +137,7 @@ $$n_{\text{eff}} = \frac{\left(\sum_{i=1}^N \tilde{r}_i\right)^2}{\sum_{i=1}^N \
 - When one weight dominates: $n_{\text{eff}} \to 1$
 - High weight variance → low ESS → less reliable estimates
 
-**Observed**: ESS ≈ 24,313 out of 192,311 total (~12.6%), computed by `research/datasets/scripts/adapt_rtr_to_vn.py` on our current snapshot of the RTR parquet. This means the adapted dataset has roughly the statistical power of ~24K independent Vietnamese-like samples — adequate for training but indicating significant distribution shift. The number will move if the RTR snapshot or the Gaussian population parameters are updated; it is a property of our pipeline output, not a fixed external constant.
+**Observed**: the older independent-Gaussian adapted dataset has ESS ≈ 24,313 out of 192,311 total (~12.6%), computed by `research/datasets/scripts/adapt_rtr_to_vn.py`. The served tuned Copula model is trained directly on fit-only rows and has tempered ESS ≈ 32,355 out of 86,379 (~37.5%). These numbers move if the RTR snapshot, filtering, target population parameters, or tempering alpha changes.
 
 ## Resampling
 
@@ -150,6 +175,6 @@ This reflects the physical reality: Vietnamese women are shorter and lighter, so
 ## Limitations
 
 1. **Gaussian assumption**: Body measurements are approximately but not exactly Gaussian (right-skewed for weight/BMI)
-2. **Feature independence**: Height, weight, BMI are correlated but modeled independently — a multivariate Gaussian would be more accurate
+2. **Gaussian copula assumption**: The served Copula model captures height-weight correlation, but still assumes Gaussian marginals and reuses the US correlation for the VN target because raw paired VN data is unavailable
 3. **No fit-label shift**: We assume that the relationship between body measurements and correct size is the same across populations — only the body distribution changes
 4. **Missing features**: Torso length, limb proportions, and other ethnicity-correlated features are not captured

@@ -23,7 +23,7 @@ router.post("/", async (req, res) => {
         height_cm: req.body.height_cm,
         weight_kg: req.body.weight_kg,
         fit_preference: req.body.fit_preference || "regular",
-        population: req.body.population || "universal",
+        population: req.body.population || "us_women",
         size_chart: garment.sizeChart,
       }),
     });
@@ -117,7 +117,7 @@ router.post("/research", async (req, res) => {
         age: req.body.age || 30,
         body_type: req.body.body_type || "unknown",
         category: req.body.category || "dress",
-        population: req.body.population || "vietnamese",
+        population: req.body.population || "us_women",
       }),
     });
 
@@ -141,7 +141,7 @@ router.post("/research", async (req, res) => {
           height_cm: req.body.height_cm,
           weight_kg: req.body.weight_kg,
           fit_preference: "regular",
-          population: req.body.population || "vietnamese",
+          population: req.body.population || "us_women",
           size_chart: garment.sizeChart,
         }),
       });
@@ -171,7 +171,7 @@ router.post("/visual", async (req, res) => {
         arm_to_torso: req.body.arm_to_torso || 0,
         age: req.body.age || 30,
         category: req.body.category || "dress",
-        population: req.body.population || "vietnamese",
+        population: req.body.population || "us_women",
         confidence: req.body.confidence || 0,
         source: req.body.source || "image_2d",
       }),
@@ -205,6 +205,7 @@ router.post("/all-models", async (req, res) => {
         age: req.body.age || 30,
         body_type: req.body.body_type || "unknown",
         category: req.body.category || "dress",
+        population: req.body.population || "us_women",
       }),
     });
 

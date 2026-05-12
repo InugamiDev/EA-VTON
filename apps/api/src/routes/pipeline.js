@@ -39,7 +39,7 @@ const pipelineJobs = new Map();
  *   garment_id: string — garment catalog ID (optional if garment file provided)
  *   height_cm: number
  *   weight_kg: number (optional)
- *   population: "universal" | "vietnamese" (default: "vietnamese")
+ *   population: "us_women" | "universal" | "vietnamese" (default: "us_women")
  *   fit_preference: "slim" | "regular" | "relaxed" (default: "regular")
  */
 router.post(
@@ -80,7 +80,7 @@ router.post(
       req.body.garment_id || null,
       heightCm,
       parseFloat(req.body.weight_kg) || null,
-      req.body.population || "vietnamese",
+      req.body.population || "us_women",
       req.body.fit_preference || "regular"
     ).catch((err) => {
       job.status = "failed";
@@ -146,7 +146,7 @@ router.post("/quick", async (req, res) => {
         age: 30,
         body_type: "unknown",
         category: "dress",
-        population: population || "vietnamese",
+        population: population || "us_women",
       }),
     });
 
@@ -161,7 +161,7 @@ router.post("/quick", async (req, res) => {
           height_cm,
           weight_kg: weight_kg || 55,
           fit_preference: fit_preference || "regular",
-          population: population || "vietnamese",
+          population: population || "us_women",
           size_chart: sizeChart,
         }),
       });

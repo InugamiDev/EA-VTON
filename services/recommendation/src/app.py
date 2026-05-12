@@ -23,6 +23,10 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
+PopulationLiteral = Literal["us_women", "universal", "vietnamese"]
+SIZE_ORDER = ["XXS", "XS", "S", "M", "L", "XL", "XXL"]
+SIZE_INDEX = {size: index for index, size in enumerate(SIZE_ORDER)}
+
 app = FastAPI(
     title="Recommendation Service",
     description="Size recommendation (rule-based + trained research models) + item recommendation (two-tower)",
@@ -37,7 +41,7 @@ class SizeRequest(BaseModel):
     height_cm: float = Field(gt=100, lt=250)
     weight_kg: float = Field(gt=30, lt=250)
     fit_preference: Literal["slim", "regular", "relaxed"] = "regular"
-    population: Literal["universal", "vietnamese"] = "universal"
+    population: PopulationLiteral = "us_women"
     size_chart: list[dict]
     body_embedding: list[float] | None = None
 
@@ -60,8 +64,8 @@ class ResearchSizeRequest(BaseModel):
     weight_kg: float = Field(gt=30, lt=250)
     age: float = Field(default=30.0, ge=10, le=100)
     body_type: str = "unknown"
-    category: str = "dress"
-    population: Literal["universal", "vietnamese"] = "vietnamese"
+    category: str = "shirt"
+    population: PopulationLiteral = "us_women"
     size_chart: list[dict] | None = None
 
 
@@ -81,8 +85,8 @@ class VisualSizeRequest(BaseModel):
     torso_to_leg: float = Field(default=0.0, ge=0.0, le=2.0)
     arm_to_torso: float = Field(default=0.0, ge=0.0, le=3.0)
     age: float = Field(default=30.0, ge=10, le=100)
-    category: str = "dress"
-    population: Literal["universal", "vietnamese"] = "vietnamese"
+    category: str = "shirt"
+    population: PopulationLiteral = "us_women"
     confidence: float = Field(default=0.0, ge=0.0, le=1.0, description="Landmark detection confidence")
     source: Literal["world_3d", "image_2d"] = "image_2d"
 
@@ -103,9 +107,10 @@ class StyleUpperContext(BaseModel):
 
 
 class StyleUpperRequest(BaseModel):
-    """Request for upper-body style recommendation (VN women, v1)."""
+    """Request for upper-body style recommendation."""
     height_cm: float = Field(gt=100, lt=250)
     predicted_size: Literal["XS", "S", "M", "L", "XL", "XXL"]
+    population: PopulationLiteral = "us_women"
     ratios: StyleUpperRatios
     context: StyleUpperContext = Field(default_factory=StyleUpperContext)
     user_palette_lab: list[float] | None = Field(default=None, description="User skin-tone palette anchor in CIE LAB (optional)")
@@ -120,7 +125,7 @@ class CompareRequest(BaseModel):
     age: float = Field(default=30.0, ge=10, le=100)
     body_type: str = "unknown"
     category: str = "dress"
-    population: Literal["universal", "vietnamese"] = "vietnamese"
+    population: PopulationLiteral = "us_women"
 
 
 class CompareResponse(BaseModel):
@@ -175,6 +180,7 @@ def recommend_size(req: SizeRequest):
         find_best_size,
         VN_CLUSTERS,
     )
+    from src.population_profiles import get_population_profile
 
     # Try MLP first
     if req.body_embedding and _is_mlp_loaded():
@@ -207,13 +213,13 @@ def recommend_size(req: SizeRequest):
         estimated_waist_cm=waist,
         estimated_hip_cm=hip,
         alternatives=result["alternatives"],
-        population="Vietnamese" if req.population == "vietnamese" else "US (Universal)",
+        population=get_population_profile(req.population).label,
         nearest_body_type=nearest_cluster["label"] if nearest_cluster else None,
         nearest_body_type_pct=nearest_cluster["pct"] if nearest_cluster else None,
     )
 
 
-# intent: research model endpoint — runs GBM (best practical) + rule-based for comparison
+# intent: research model endpoint — runs population-appropriate GBM + rule-based for comparison
 # status: done
 # next: add size_chart-aware mapping for research predictions
 # confidence: high
@@ -221,11 +227,11 @@ def recommend_size(req: SizeRequest):
 
 @app.post("/recommend-size/research", response_model=ResearchSizeResponse)
 def recommend_size_research(req: ResearchSizeRequest):
-    """Predict size using the tuned GBM model (best current practical variant).
+    """Predict size using the population-appropriate tuned GBM variant.
 
-    Runs gbm_copula_tempered_a075 as the primary model and also returns the rule-based
-    prediction for comparison. Gracefully falls back to rule-based only
-    if the GBM model file is missing.
+    Vietnamese requests use the target-weighted Copula model. US/default requests use
+    the unweighted current model to avoid applying Vietnamese density ratios to the
+    US-women objective.
     """
     from src.size_engine import (
         estimate_chest_cm,
@@ -248,7 +254,7 @@ def recommend_size_research(req: ResearchSizeRequest):
     }
 
     # Rule-based prediction
-    pop = "vietnamese" if req.population == "vietnamese" else "universal"
+    pop = req.population
     chest = estimate_chest_cm(req.height_cm, req.weight_kg, "regular", pop)
     waist = estimate_waist_cm(req.height_cm, req.weight_kg, pop)
     hip = estimate_hip_cm(req.height_cm, req.weight_kg, pop)
@@ -267,24 +273,29 @@ def recommend_size_research(req: ResearchSizeRequest):
         rule_based_result["confidence"] = size_result["confidence"]
         rule_based_result["alternatives"] = size_result["alternatives"]
     else:
-        # Without a size chart, estimate using BMI-based heuristic
-        rule_based_result["predicted_size"] = _bmi_to_size_heuristic(bmi)
-        rule_based_result["confidence"] = "low"
+        # Without a garment chart, use population bust bands instead of BMI alone.
+        rule_based_result["predicted_size"] = _chest_to_size_heuristic(chest, req.population)
+        rule_based_result["confidence"] = "medium"
 
-    # Research model prediction (tuned GBM copula — best current practical model)
-    research_result = _predict_research_model(
-        "gbm_copula_tempered_a075", req.height_cm, req.weight_kg, req.age, req.body_type, req.category
+    # Research model prediction: choose the model for the requested population objective.
+    selected_model, research_result = _predict_population_research_model(
+        req.population,
+        req.height_cm,
+        req.weight_kg,
+        req.age,
+        req.body_type,
+        req.category,
     )
 
     if research_result is None:
         research_result = {
             "predicted_size": rule_based_result["predicted_size"],
             "confidence": "low",
-            "model": "gbm_copula_tempered_a075",
+            "model": selected_model,
             "error": "Model not loaded — falling back to rule-based",
         }
     else:
-        research_result["model"] = "gbm_copula_tempered_a075"
+        research_result["model"] = selected_model
 
     return ResearchSizeResponse(
         research_model=research_result,
@@ -315,33 +326,27 @@ def recommend_size_visual(req: VisualSizeRequest):
         estimate_waist_cm,
         estimate_hip_cm,
     )
+    from src.population_profiles import estimate_visual_weight_kg, get_population_profile
 
-    # ── Step 1: Estimate weight from body ratios ──
-    # Baselines differ by landmark source:
-    #   world_3d: real-body proportions in meters (matches anthropometric literature)
-    #   image_2d: inflated by 2D camera projection (needs dampened coefficients)
+    # intent: use explicit population calibration instead of hidden visual-ratio constants
+    # status: done
+    # next: train direct ratio-to-size model so visual sizing can avoid weight estimation
+    # blockers: no labeled webcam-ratio-to-garment-size dataset yet
+    # confidence: medium
     height_m = req.height_cm / 100.0
-    base_weight = 21.5 * height_m * height_m  # BMI ~21.5 baseline
-
-    if req.source == "world_3d":
-        # World landmarks: ratios match ANSUR/CAESAR anthropometric data
-        sth_delta = req.shoulder_to_hip - 1.1   # real S/H ~1.05–1.15 women
-        base_weight += sth_delta * 20
-        wth_delta = req.waist_to_hip - 0.8      # real W/H ~0.75–0.85 women
-        base_weight += wth_delta * 25
-    else:
-        # 2D fallback: camera perspective inflates ratios
-        sth_delta = req.shoulder_to_hip - 1.5   # 2D S/H ~1.4–1.8
-        base_weight += sth_delta * 12
-        wth_delta = req.waist_to_hip - 0.95     # 2D W/H ~0.90–1.10
-        base_weight += wth_delta * 15
-
-    estimated_weight = round(max(35, min(150, base_weight)), 1)
+    profile = get_population_profile(req.population)
+    estimated_weight = estimate_visual_weight_kg(
+        height_cm=req.height_cm,
+        shoulder_to_hip=req.shoulder_to_hip,
+        waist_to_hip=req.waist_to_hip,
+        source=req.source,
+        population=req.population,
+    )
     estimated_bmi = round(estimated_weight / (height_m ** 2), 1)
 
     # ── Step 2: Run GBM with estimated weight ──
-    research_result = _predict_research_model(
-        "gbm_copula_tempered_a075",
+    selected_model, research_result = _predict_population_research_model(
+        req.population,
         req.height_cm,
         estimated_weight,
         req.age,
@@ -351,37 +356,58 @@ def recommend_size_visual(req: VisualSizeRequest):
 
     if research_result is None:
         research_result = {
-            "predicted_size": _bmi_to_size_heuristic(estimated_bmi),
+            "predicted_size": _chest_to_size_heuristic(
+                estimate_chest_cm(req.height_cm, estimated_weight, "regular", req.population),
+                req.population,
+            ),
             "confidence": "low",
-            "model": "gbm_copula_tempered_a075",
-            "error": "Model not loaded — using BMI heuristic",
+            "model": selected_model,
+            "error": "Model not loaded - using calibrated chest heuristic",
         }
     else:
-        research_result["model"] = "gbm_copula_tempered_a075"
+        research_result["model"] = selected_model
 
     # ── Step 3: Rule-based with estimated weight ──
-    pop = "vietnamese" if req.population == "vietnamese" else "universal"
+    pop = req.population
     chest = estimate_chest_cm(req.height_cm, estimated_weight, "regular", pop)
     waist = estimate_waist_cm(req.height_cm, estimated_weight, pop)
     hip = estimate_hip_cm(req.height_cm, estimated_weight, pop)
 
     # ── Body shape analysis from ratios ──
-    if req.shoulder_to_hip > 1.15:
+    if req.source == "image_2d":
+        shape_shoulder_to_hip = (
+            req.shoulder_to_hip
+            / profile.image_2d.shoulder_to_hip
+            * profile.world_3d.shoulder_to_hip
+        )
+        shape_waist_to_hip = (
+            req.waist_to_hip
+            / profile.image_2d.waist_to_hip
+            * profile.world_3d.waist_to_hip
+        )
+    else:
+        shape_shoulder_to_hip = req.shoulder_to_hip
+        shape_waist_to_hip = req.waist_to_hip
+
+    if shape_shoulder_to_hip > 1.12 and shape_waist_to_hip >= 0.78:
         body_shape = "inverted_triangle"
-    elif req.waist_to_hip < 0.7:
+    elif shape_waist_to_hip < 0.74:
         body_shape = "hourglass"
-    elif req.waist_to_hip > 0.9:
+    elif shape_waist_to_hip > 0.88:
         body_shape = "rectangle"
-    elif req.shoulder_to_hip < 0.95:
+    elif shape_shoulder_to_hip < 0.98:
         body_shape = "pear"
     else:
         body_shape = "balanced"
 
+    rule_based_size = _chest_to_size_heuristic(chest, req.population)
+    research_result = _stabilize_visual_research_result(research_result, rule_based_size)
+
     return {
         "research_model": research_result,
         "rule_based": {
-            "predicted_size": _bmi_to_size_heuristic(estimated_bmi),
-            "confidence": "low",
+            "predicted_size": rule_based_size,
+            "confidence": "medium",
             "estimated_chest_cm": chest,
             "estimated_waist_cm": waist,
             "estimated_hip_cm": hip,
@@ -389,8 +415,8 @@ def recommend_size_visual(req: VisualSizeRequest):
         "weight_estimation": {
             "estimated_weight_kg": estimated_weight,
             "estimated_bmi": estimated_bmi,
-            "method": "ratio_regression",
-            "note": "Weight derived from height + webcam body proportions",
+            "method": "population_ratio_regression",
+            "note": f"Weight derived from height + webcam body proportions using {profile.label} priors",
         },
         "body_shape": {
             "type": body_shape,
@@ -399,6 +425,8 @@ def recommend_size_visual(req: VisualSizeRequest):
             "shoulder_to_torso": req.shoulder_to_torso,
             "torso_to_leg": req.torso_to_leg,
             "arm_to_torso": req.arm_to_torso,
+            "normalized_shoulder_to_hip": round(shape_shoulder_to_hip, 3),
+            "normalized_waist_to_hip": round(shape_waist_to_hip, 3),
         },
         "input_summary": {
             "height_cm": req.height_cm,
@@ -408,12 +436,12 @@ def recommend_size_visual(req: VisualSizeRequest):
             "category": req.category,
             "population": req.population,
             "landmark_confidence": req.confidence,
-            "source": "webcam_visual",
+            "source": req.source,
         },
     }
 
 
-# intent: upper-body style recommendation (VN women v1) — Fit-Flatter-Match decomposition
+# intent: upper-body style recommendation — Fit-Flatter-Match decomposition
 # status: done
 # next: add reranking with diversity (MMR), accept skin tone, learn weights from feedback
 # confidence: high
@@ -421,7 +449,7 @@ def recommend_size_visual(req: VisualSizeRequest):
 
 @app.post("/recommend-style/upper")
 def recommend_style_upper(req: StyleUpperRequest):
-    """Upper-body style recommendation for Vietnamese women (v1).
+    """Upper-body style recommendation.
 
     Decomposed scoring:
         s = α·Fit + β·Flatter + γ·Match
@@ -435,6 +463,7 @@ def recommend_style_upper(req: StyleUpperRequest):
     body, ranked = rank_upper_body(
         height_cm=req.height_cm,
         predicted_size=req.predicted_size,
+        population=req.population,
         ratios=req.ratios.model_dump(),
         occasion=req.context.occasion,
         sliders=req.context.sliders,
@@ -442,7 +471,7 @@ def recommend_style_upper(req: StyleUpperRequest):
         top_k=req.top_k,
         weights=req.weights,
     )
-    return build_response(body, req.predicted_size, ranked, req.weights)
+    return build_response(body, req.predicted_size, ranked, req.weights, req.population)
 
 
 # intent: compare trained research variants side-by-side + rule-based baseline
@@ -455,8 +484,8 @@ def recommend_style_upper(req: StyleUpperRequest):
 def compare_models(req: CompareRequest):
     """Compare all available research model variants + rule-based baseline.
 
-    Returns predictions from every available variant and recommends the
-    best model (gbm_copula_tempered_a075 by default — best tuned within-1 trade-off).
+    Returns predictions from every available variant and recommends the model that
+    matches the requested population objective.
     """
     from src.size_engine import (
         estimate_chest_cm,
@@ -491,7 +520,7 @@ def compare_models(req: CompareRequest):
         )
 
     # Rule-based prediction
-    pop = "vietnamese" if req.population == "vietnamese" else "universal"
+    pop = req.population
     chest = estimate_chest_cm(req.height_cm, req.weight_kg, "regular", pop)
     waist = estimate_waist_cm(req.height_cm, req.weight_kg, pop)
     hip = estimate_hip_cm(req.height_cm, req.weight_kg, pop)
@@ -505,24 +534,7 @@ def compare_models(req: CompareRequest):
         "estimated_hip_cm": hip,
     }
 
-    # Recommended model: prefer tuned copula candidate, else other GBM baselines
-    recommended = "rule_based"
-    if "gbm_copula_tempered_a075" in all_results:
-        recommended = "gbm_copula_tempered_a075"
-    elif all_results:
-        # Pick any available GBM variant first, then MLP
-        for name in [
-            "gbm_indep_tempered_a05",
-            "gbm_copula",
-            "gbm_indep",
-            "gbm_uniform",
-            "mlp_ce_uniform",
-            "mlp_ce_copula",
-            "mlp_corn_copula",
-        ]:
-            if name in all_results:
-                recommended = name
-                break
+    recommended = _select_available_research_model(req.population, all_results) or "rule_based"
 
     return CompareResponse(
         models=all_results,
@@ -608,6 +620,84 @@ def _get_research_variants() -> list[str]:
     return registry.available_variants()
 
 
+def _research_model_candidates(population: str | None) -> list[str]:
+    """Return model preference order for a population objective."""
+    # intent: prevent Vietnamese density-ratio models from becoming the US-women default
+    # status: done
+    # next: tune direct population-specific models when target labels exist
+    # blockers: no labeled Vietnamese garment-fit feedback dataset yet
+    # confidence: high
+    if population == "vietnamese":
+        return [
+            "gbm_indep_tempered_a05",
+            "gbm_copula_tempered_a075",
+            "gbm_copula",
+            "gbm_uniform_current",
+            "gbm_uniform",
+        ]
+    return [
+        "gbm_uniform_current",
+        "gbm_uniform",
+        "gbm_indep_tempered_a05",
+        "gbm_copula_tempered_a075",
+        "gbm_copula",
+    ]
+
+
+def _select_available_research_model(population: str | None, results: dict) -> str | None:
+    """Select the first population-preferred model present in a result map."""
+    for name in _research_model_candidates(population):
+        if name in results:
+            return name
+    return next(iter(results), None)
+
+
+def _predict_population_research_model(
+    population: str | None,
+    height_cm: float,
+    weight_kg: float,
+    age: float = 30.0,
+    body_type: str = "unknown",
+    category: str = "dress",
+) -> tuple[str, dict | None]:
+    """Run the first loadable research variant for the requested population."""
+    candidates = _research_model_candidates(population)
+    for name in candidates:
+        result = _predict_research_model(name, height_cm, weight_kg, age, body_type, category)
+        if result is not None:
+            return name, result
+    return candidates[0], None
+
+
+def _stabilize_visual_research_result(research_result: dict, rule_based_size: str) -> dict:
+    """Keep visual-only predictions from jumping far beyond calibrated chest size."""
+    # intent: prevent upper-body-only webcam ratios from pumping estimates to XL/XXL
+    # status: done
+    # next: replace this guard with a direct webcam-ratio-to-size model when labeled data exists
+    # blockers: current GBM expects full body weight, but visual flow estimates weight from chest-up ratios
+    # confidence: high
+    predicted_size = research_result.get("predicted_size")
+    predicted_idx = SIZE_INDEX.get(str(predicted_size))
+    rule_idx = SIZE_INDEX.get(str(rule_based_size))
+    if predicted_idx is None or rule_idx is None:
+        return research_result
+
+    if predicted_idx == rule_idx:
+        return research_result
+
+    stabilized = dict(research_result)
+    stabilized["raw_predicted_size"] = predicted_size
+    stabilized["raw_confidence_score"] = research_result.get("confidence_score")
+    stabilized["raw_probabilities"] = research_result.get("probabilities")
+    stabilized["predicted_size"] = rule_based_size
+    stabilized["confidence"] = "medium"
+    stabilized["confidence_score"] = 0.5
+    stabilized["probabilities"] = {rule_based_size: 1.0}
+    stabilized["stabilized_by"] = "visual_chest_heuristic"
+    stabilized["note"] = "Visual mode uses upper-body ratios and estimated weight only; displayed size follows calibrated chest sizing."
+    return stabilized
+
+
 def _predict_research_model(
     name: str,
     height_cm: float,
@@ -642,6 +732,27 @@ def _bmi_to_size_heuristic(bmi: float) -> str:
     elif bmi < 30.0:
         return "XL"
     return "XXL"
+
+
+def _chest_to_size_heuristic(chest_cm: float, population: str | None = "us_women") -> str:
+    """Map an estimated bust/chest circumference to the nearest population size band."""
+    from src.population_profiles import get_population_profile
+
+    profile = get_population_profile(population)
+    best_size = "M"
+    best_distance = float("inf")
+    for size, bands in profile.size_bands_cm.items():
+        bust_band = bands.get("bust")
+        if bust_band is None:
+            continue
+        lo, hi = bust_band
+        if lo <= chest_cm <= hi:
+            return size
+        distance = min(abs(chest_cm - lo), abs(chest_cm - hi))
+        if distance < best_distance:
+            best_distance = distance
+            best_size = size
+    return best_size
 
 
 if __name__ == "__main__":

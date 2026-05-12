@@ -7,7 +7,68 @@ Two size recommendation approaches operate in the system:
 1. **Formula-based**: Direct regression from (height, weight) → estimated measurements → size chart lookup
 2. **ML-based**: GradientBoosting classifier from (height, weight, BMI, age, body_type, category) → size label
 
-Both support baseline (US) and EA-VTON (Vietnamese) modes.
+Both support explicit population modes. `us_women` is the default calibration,
+`vietnamese` uses the EA-VTON Vietnamese adaptation, and `universal` is kept as a
+legacy alias for the US-women profile.
+
+## Population Profiles
+
+The recommendation service centralizes anthropometric priors in
+`services/recommendation/src/population_profiles.py`. This keeps visual sizing,
+manual size estimation, and upper-body style ranking on the same assumptions.
+
+| Population key | Current behavior |
+|----------------|------------------|
+| `us_women` | Default profile for US women's upper-body sizing and real-catalog style ranking |
+| `vietnamese` | EA-VTON Vietnamese calibration, body-type classifier, and VN flattery rules |
+| `universal` | Legacy input accepted by the API; resolves to the US-women profile |
+
+### Measurement Regression
+
+For formula-based sizing, each profile estimates body measurements from height
+and weight before size-chart lookup. Inputs are height in cm and weight in kg;
+outputs are estimated circumferences in cm.
+
+US-women profile:
+
+$$\hat{c}_{US} = 0.24h + 0.42w + 24.0$$
+
+$$\hat{waist}_{US} = 0.20h + 0.50w + 10.0$$
+
+$$\hat{hip}_{US} = 0.35h + 0.55w + 6.0$$
+
+Vietnamese profile:
+
+$$\hat{c}_{VN} = 0.485h + 0.22w - 2.5$$
+
+$$\hat{waist}_{VN} = 0.30h + 0.38w - 4.0$$
+
+$$\hat{hip}_{VN} = 0.42h + 0.24w + 3.0$$
+
+The US-women constants are practical calibration coefficients for the current
+demo. They are anchored to RTR/NHANES population statistics but should be
+replaced by a trained measurement model when labeled bust/chest data is
+available.
+
+### Visual Upper-Body Calibration
+
+The visual `/recommend-size/visual` flow does not ask for weight, so it estimates
+visual weight from height plus normalized shoulder/hip and waist/hip ratios:
+
+$$\hat{w}_{visual} = BMI_p(h / 100)^2 + (r_s - r_{s,p})\alpha_s + (r_w - r_{w,p})\alpha_w$$
+
+where:
+
+| Symbol | Meaning |
+|--------|---------|
+| $BMI_p$ | Population-specific visual BMI prior |
+| $r_s$ | Observed shoulder-to-hip ratio |
+| $r_w$ | Observed waist-to-hip ratio |
+| $r_{s,p}$, $r_{w,p}$ | Source-specific population ratio anchors |
+| $\alpha_s$, $\alpha_w$ | Source-specific ratio-to-weight calibration weights |
+
+`world_3d` and `image_2d` use separate ratio anchors because projected 2D body
+ratios are not numerically comparable to metric 3D ratios.
 
 ## Formula-Based Size Matching
 
@@ -112,6 +173,28 @@ where $\tilde{r}_i$ is the normalized importance weight and $L$ is the deviance 
 
 This causes the model to focus on samples that look like Vietnamese body types — effectively learning "what size should a person with Vietnamese proportions wear?"
 
+The served tuned GBM artifact is regenerated with:
+
+```bash
+python research/models/retrain_gbm_density_ratio.py
+```
+
+That script recomputes Copula+PSIS density ratios on the valid fit-only training
+split, applies the selected tempering, rewrites the ignored pickle artifacts in
+`research/models/variants/`, and refreshes `research/evaluation/tuned_results.json`.
+
+Current Vietnamese-targeted Copula diagnostics for `gbm_copula_tempered_a075`:
+
+| Metric | Value |
+|--------|-------|
+| Method | `copula_psis` |
+| Tempering alpha | `0.75` |
+| Raw Copula+PSIS ESS | 20,806 / 86,379 (24.1%) |
+| Tempered ESS | 32,355 / 86,379 (37.5%) |
+| PSIS k-hat | -0.001 |
+| US train mean | 165.6 cm, 60.3 kg |
+| VN target mean | 156.2 cm, 53.9 kg |
+
 ### Evaluation Metrics
 
 **Top-1 Accuracy**: Fraction of exact size matches.
@@ -126,12 +209,22 @@ $$\text{W1} = \frac{1}{N_{\text{test}}} \sum_{i=1}^{N_{\text{test}}} \mathbb{1}[
 
 ### Observed Performance
 
-| Model | Top-1 Accuracy | Within-1 Accuracy |
-|-------|---------------|-------------------|
-| Baseline (US) | 49.0% | 83.4% |
-| EA-VTON (VN-weighted) | 48.0% | 83.0% |
+| Model | Full Top-1 | Full Within-1 | VN-range Top-1 | VN-range Within-1 |
+|-------|------------|---------------|----------------|-------------------|
+| `gbm_uniform_current` | 49.0% | 83.4% | 50.7% | 70.1% |
+| `gbm_indep_tempered_a05` | 48.9% | 83.1% | 51.5% | 70.9% |
+| `gbm_copula_current` | 48.5% | 83.2% | 51.4% | 70.7% |
+| `gbm_copula_tempered_a075` | 48.7% | 83.2% | 51.4% | 71.0% |
 
-The EA-VTON model has slightly lower overall accuracy because it's optimized for a different population slice (downweighting US-typical bodies that dominate the test set). The key metric is accuracy *on Vietnamese body types*, which is higher for EA-VTON.
+The EA-VTON weighted models have slightly lower overall accuracy because they are
+optimized for a different population slice. The key metric is performance on
+VN-range bodies, where the tuned Copula model improves within-1 accuracy from
+70.1% to 71.0%.
+
+Serving therefore selects the model by population objective and exact top-1
+accuracy first: `gbm_uniform_current` for `us_women`/`universal` requests and
+`gbm_indep_tempered_a05` for `vietnamese` requests. `gbm_copula_tempered_a075`
+stays available because it has the best VN-range within-1 score.
 
 ## Comparison Mode
 
