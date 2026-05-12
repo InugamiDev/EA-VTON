@@ -49,6 +49,67 @@ export async function uploadPhoto(file: File | Blob): Promise<UploadResult> {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Participant dataset intake                                         */
+/* ------------------------------------------------------------------ */
+
+export interface IntakeSubmissionResult {
+  submission_id: string;
+  person_id: string;
+  image_count: number;
+  next_step: string;
+}
+
+export interface IntakeStatusResult {
+  storage: "restricted_local";
+  records: number;
+  people: number;
+  min_images_per_submission: number;
+  max_images_per_submission: number;
+  raw_manifest: string;
+}
+
+export async function submitParticipantIntake(params: {
+  files: File[];
+  age_band: string;
+  participant_note: string;
+  consent_training: boolean;
+  consent_research: boolean;
+}): Promise<IntakeSubmissionResult> {
+  const form = new FormData();
+  form.append("gender_label", "female");
+  form.append("age_band", params.age_band);
+  form.append("participant_note", params.participant_note);
+  form.append("consent_training", String(params.consent_training));
+  form.append("consent_research", String(params.consent_research));
+  for (const file of params.files) {
+    form.append("images", file);
+  }
+
+  const res = await fetch(`${API_BASE}/api/intake/participant`, {
+    method: "POST",
+    body: form,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || "Intake submission failed");
+  }
+
+  return res.json();
+}
+
+export async function getIntakeStatus(): Promise<IntakeStatusResult> {
+  const res = await fetch(`${API_BASE}/api/intake/status`);
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || "Failed to load intake status");
+  }
+
+  return res.json();
+}
+
+/* ------------------------------------------------------------------ */
 /*  Try-on job                                                         */
 /* ------------------------------------------------------------------ */
 
@@ -311,7 +372,7 @@ export async function estimateBodyMeasurements(
   photo: Blob,
   heightCm: number,
   weightKg: number,
-  population: string = "universal",
+  population: string = "us_women",
   fitPreference: string = "regular"
 ): Promise<BodyMeasurementResult> {
   const form = new FormData();
@@ -383,7 +444,7 @@ export async function getResearchSizeRecommendation(params: {
   age?: number;
   body_type?: string;
   category?: string;
-  population?: "universal" | "vietnamese";
+  population?: "us_women" | "universal" | "vietnamese";
 }): Promise<ResearchSizeRecommendationResult> {
   const res = await fetch(`${API_BASE}/api/size-recommendation/research`, {
     method: "POST",
@@ -454,7 +515,7 @@ export async function getVisualSizeRecommendation(params: {
   arm_to_torso?: number;
   age?: number;
   category?: string;
-  population?: "universal" | "vietnamese";
+  population?: "us_women" | "universal" | "vietnamese";
   confidence?: number;
   source?: "world_3d" | "image_2d";
 }): Promise<VisualSizeResult> {
@@ -467,6 +528,137 @@ export async function getVisualSizeRecommendation(params: {
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(err.detail || "Failed to get visual size recommendation");
+  }
+
+  return res.json();
+}
+
+/* ------------------------------------------------------------------ */
+/*  Upper-body style recommendation                                    */
+/* ------------------------------------------------------------------ */
+
+// intent: expose the existing recommendation-service style endpoint to frontend flows
+// status: done
+// next: use explicit merchandised style attributes when the catalog exposes them
+// blockers: none
+// confidence: high
+
+export type UpperStyleSize = "XS" | "S" | "M" | "L" | "XL" | "XXL";
+export type UpperStyleOccasion = "work" | "casual" | "date" | "formal" | "party";
+export type PopulationKey = "us_women" | "universal" | "vietnamese";
+
+export interface UpperStyleRecommendationRequest {
+  height_cm: number;
+  predicted_size: UpperStyleSize;
+  population?: PopulationKey;
+  ratios: {
+    sh: number;
+    wh: number;
+    st?: number;
+    tl?: number;
+    at?: number;
+  };
+  context: {
+    occasion: UpperStyleOccasion;
+    sliders: Partial<Record<"bold" | "loose" | "warm" | "cover", number>>;
+  };
+  user_palette_lab?: number[] | null;
+  top_k?: number;
+  weights?: Partial<Record<"alpha" | "beta" | "gamma", number>>;
+}
+
+export interface UpperStyleRecommendationResult {
+  user_state: {
+    body_shape?: {
+      id: number;
+      label: string;
+      display_label: string;
+      confidence: number;
+    };
+    body_type_vn?: {
+      cluster_id: number;
+      label: string;
+      label_vi: string;
+      confidence: number;
+    };
+    predicted_size: UpperStyleSize;
+    population?: string;
+    size_band_midpoints_cm?: Record<string, number>;
+  };
+  weights: {
+    alpha: number;
+    beta: number;
+    gamma: number;
+  };
+  items: UpperStyleRecommendationItem[];
+}
+
+export interface UpperStyleRecommendationItem {
+  item_id: string;
+  title: string;
+  brand: string;
+  image_url: string;
+  price_vnd: number;
+  category: string;
+  garment_parameters?: {
+    material_tags?: string[];
+    fabric_weight?: string;
+    structure?: string;
+    closure?: string;
+    layering?: string;
+    weather_tags?: string[];
+  };
+  rank: number;
+  total_score: number;
+  explanation: {
+    fit: {
+      score: number;
+      drape_class: string;
+      overall_verdict: string;
+      sections?: Array<{
+        section: string;
+        verdict: string;
+        user_cm?: number;
+        garment_cm?: number;
+      }>;
+    };
+    flatter: {
+      score: number;
+      cluster_id: number;
+      rules_fired?: Array<{
+        attribute_dim: string;
+        attribute_value: string;
+        polarity: number;
+        verdict: string;
+      }>;
+    };
+    match: {
+      score: number;
+      occasion_ok: boolean;
+      color?: {
+        score: number;
+        delta_e76: number | null;
+      };
+      sliders?: {
+        score: number;
+        item_projection: Record<string, number>;
+      };
+    };
+  };
+}
+
+export async function getUpperStyleRecommendation(
+  params: UpperStyleRecommendationRequest
+): Promise<UpperStyleRecommendationResult> {
+  const res = await fetch(`${API_BASE}/api/style/upper`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || "Failed to get style recommendations");
   }
 
   return res.json();
