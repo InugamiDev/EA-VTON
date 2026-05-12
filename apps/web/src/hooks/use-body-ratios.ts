@@ -24,6 +24,11 @@ import type { PoseLandmark } from "./use-pose-detector";
  *   0: nose, 11: L shoulder, 12: R shoulder, 13: L elbow, 14: R elbow,
  *   15: L wrist, 16: R wrist, 23: L hip, 24: R hip, 25: L knee, 26: R knee,
  *   27: L ankle, 28: R ankle
+ *
+ * For upper-body sizing, shoulders are the hard requirement. Hips, legs, and
+ * arms improve the ratios when visible, but missing lower-body landmarks fall
+ * back to neutral anthropometric priors so a chest-up camera can still produce
+ * a top-size guess.
  */
 
 export interface BodyRatios {
@@ -50,6 +55,10 @@ export interface BodyRatios {
 }
 
 const CONF_THRESHOLD = 0.4;
+const WORLD_SHOULDER_TO_HIP_PRIOR = 1.08;
+const IMAGE_SHOULDER_TO_HIP_PRIOR = 1.5;
+const WORLD_WAIST_TO_HIP_PRIOR = 0.82;
+const IMAGE_WAIST_TO_HIP_PRIOR = 0.95;
 
 // Key body landmark indices (excluding face detail)
 const BODY_LANDMARKS = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28];
@@ -70,6 +79,21 @@ function midpoint3d(a: PoseLandmark, b: PoseLandmark): { x: number; y: number; z
 
 function isVisible(lm: PoseLandmark): boolean {
   return lm.visibility > CONF_THRESHOLD;
+}
+
+function averageVisibleConfidence(landmarks: PoseLandmark[], indices: number[]): number {
+  const visible = indices.filter((i) => isVisible(landmarks[i]));
+  if (visible.length === 0) return 0;
+
+  return visible.reduce((sum, i) => sum + landmarks[i].visibility, 0) / visible.length;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function safeWidthFromRatio(width: number, ratio: number): number {
+  return width / ratio;
 }
 
 /**
@@ -102,39 +126,54 @@ function extractFromWorldLandmarks(
   const vis = (idx: number) => isVisible(image[idx]);
 
   const visibleCount = BODY_LANDMARKS.filter((i) => vis(i)).length;
-  const avgConf =
-    BODY_LANDMARKS.reduce((sum, i) => sum + image[i].visibility, 0) / BODY_LANDMARKS.length;
+  const avgConf = averageVisibleConfidence(image, BODY_LANDMARKS);
 
-  // Need at minimum: both shoulders, both hips
-  if (!vis(11) || !vis(12) || !vis(23) || !vis(24)) return null;
+  // Need at minimum: both shoulders. Hips are optional for upper-body sizing.
+  if (!vis(11) || !vis(12)) return null;
 
   // ── Core widths (3D meters) ──
   const shoulderWidth = dist3d(lShoulder, rShoulder);
-  const hipWidth = dist3d(lHip, rHip);
+  if (shoulderWidth < 0.01) return null;
+
+  const hipsVisible = vis(23) && vis(24);
+  let hipWidth = hipsVisible ? dist3d(lHip, rHip) : safeWidthFromRatio(shoulderWidth, WORLD_SHOULDER_TO_HIP_PRIOR);
+  const rawShoulderToHip = shoulderWidth / hipWidth;
+  if (!Number.isFinite(rawShoulderToHip) || rawShoulderToHip < 0.78 || rawShoulderToHip > 1.45) {
+    hipWidth = safeWidthFromRatio(shoulderWidth, WORLD_SHOULDER_TO_HIP_PRIOR);
+  }
 
   // Waist estimation: interpolate between shoulder and hip on each side
-  const lWaist: PoseLandmark = {
-    x: lShoulder.x * 0.35 + lHip.x * 0.65,
-    y: lShoulder.y * 0.35 + lHip.y * 0.65,
-    z: lShoulder.z * 0.35 + lHip.z * 0.65,
-    visibility: Math.min(image[11].visibility, image[23].visibility),
-  };
-  const rWaist: PoseLandmark = {
-    x: rShoulder.x * 0.35 + rHip.x * 0.65,
-    y: rShoulder.y * 0.35 + rHip.y * 0.65,
-    z: rShoulder.z * 0.35 + rHip.z * 0.65,
-    visibility: Math.min(image[12].visibility, image[24].visibility),
-  };
-  const waistWidth = dist3d(lWaist, rWaist);
+  let waistWidth = hipsVisible
+    ? dist3d(
+        {
+          x: lShoulder.x * 0.35 + lHip.x * 0.65,
+          y: lShoulder.y * 0.35 + lHip.y * 0.65,
+          z: lShoulder.z * 0.35 + lHip.z * 0.65,
+          visibility: Math.min(image[11].visibility, image[23].visibility),
+        },
+        {
+          x: rShoulder.x * 0.35 + rHip.x * 0.65,
+          y: rShoulder.y * 0.35 + rHip.y * 0.65,
+          z: rShoulder.z * 0.35 + rHip.z * 0.65,
+          visibility: Math.min(image[12].visibility, image[24].visibility),
+        }
+      )
+    : hipWidth * WORLD_WAIST_TO_HIP_PRIOR;
+  const rawWaistToHip = waistWidth / hipWidth;
+  if (!Number.isFinite(rawWaistToHip) || rawWaistToHip < 0.58 || rawWaistToHip > 1.08) {
+    waistWidth = hipWidth * WORLD_WAIST_TO_HIP_PRIOR;
+  }
 
   // ── Vertical segments (3D) ──
   const shoulderMid = midpoint3d(lShoulder, rShoulder);
-  const hipMid = midpoint3d(lHip, rHip);
-  const torsoHeight = Math.sqrt(
-    (hipMid.x - shoulderMid.x) ** 2 +
-    (hipMid.y - shoulderMid.y) ** 2 +
-    (hipMid.z - shoulderMid.z) ** 2,
-  );
+  const hipMid = hipsVisible ? midpoint3d(lHip, rHip) : null;
+  const torsoHeight = hipMid
+    ? Math.sqrt(
+        (hipMid.x - shoulderMid.x) ** 2 +
+        (hipMid.y - shoulderMid.y) ** 2 +
+        (hipMid.z - shoulderMid.z) ** 2,
+      )
+    : shoulderWidth / 0.7;
 
   // Leg height: use best visible side
   let legHeight = 0;
@@ -173,14 +212,14 @@ function extractFromWorldLandmarks(
   // Guard against degenerate values
   if (hipWidth < 0.01 || torsoHeight < 0.01) return null;
 
-  const reliable = visibleCount >= 8 && legHeight > 0 && armLength > 0;
+  const reliable = true;
 
   return {
-    shoulderToHip: round3(shoulderWidth / hipWidth),
-    waistToHip: round3(waistWidth / hipWidth),
+    shoulderToHip: round3(clamp(shoulderWidth / hipWidth, 0.78, 1.45)),
+    waistToHip: round3(clamp(waistWidth / hipWidth, 0.58, 1.08)),
     shoulderToTorso: round3(shoulderWidth / torsoHeight),
-    torsoToLeg: legHeight > 0 ? round3(torsoHeight / legHeight) : 0,
-    armToTorso: armLength > 0 ? round3(armLength / torsoHeight) : 0,
+    torsoToLeg: legHeight > 0 ? round3(torsoHeight / legHeight) : 0.45,
+    armToTorso: armLength > 0 ? round3(armLength / torsoHeight) : 1.1,
     bodyHeightPx: round3(bodyHeight),
     landmarksUsed: visibleCount,
     confidence: round3(avgConf),
@@ -210,33 +249,46 @@ function extractFromImageLandmarks(landmarks: PoseLandmark[]): BodyRatios | null
   const rAnkle = landmarks[28];
 
   const visibleCount = BODY_LANDMARKS.filter((i) => isVisible(landmarks[i])).length;
-  const avgConf =
-    BODY_LANDMARKS.reduce((sum, i) => sum + landmarks[i].visibility, 0) / BODY_LANDMARKS.length;
+  const avgConf = averageVisibleConfidence(landmarks, BODY_LANDMARKS);
 
-  if (!isVisible(lShoulder) || !isVisible(rShoulder) || !isVisible(lHip) || !isVisible(rHip)) {
+  if (!isVisible(lShoulder) || !isVisible(rShoulder)) {
     return null;
   }
 
   const shoulderWidth = dist2d(lShoulder, rShoulder);
-  const hipWidth = dist2d(lHip, rHip);
+  if (shoulderWidth < 0.01) return null;
 
-  const lWaist: PoseLandmark = {
-    x: lShoulder.x * 0.35 + lHip.x * 0.65,
-    y: lShoulder.y * 0.35 + lHip.y * 0.65,
-    z: 0,
-    visibility: Math.min(lShoulder.visibility, lHip.visibility),
-  };
-  const rWaist: PoseLandmark = {
-    x: rShoulder.x * 0.35 + rHip.x * 0.65,
-    y: rShoulder.y * 0.35 + rHip.y * 0.65,
-    z: 0,
-    visibility: Math.min(rShoulder.visibility, rHip.visibility),
-  };
-  const waistWidth = dist2d(lWaist, rWaist);
+  const hipsVisible = isVisible(lHip) && isVisible(rHip);
+  let hipWidth = hipsVisible ? dist2d(lHip, rHip) : safeWidthFromRatio(shoulderWidth, IMAGE_SHOULDER_TO_HIP_PRIOR);
+  const rawShoulderToHip = shoulderWidth / hipWidth;
+  if (!Number.isFinite(rawShoulderToHip) || rawShoulderToHip < 0.95 || rawShoulderToHip > 2.05) {
+    hipWidth = safeWidthFromRatio(shoulderWidth, IMAGE_SHOULDER_TO_HIP_PRIOR);
+  }
+
+  let waistWidth = hipsVisible
+    ? dist2d(
+        {
+          x: lShoulder.x * 0.35 + lHip.x * 0.65,
+          y: lShoulder.y * 0.35 + lHip.y * 0.65,
+          z: 0,
+          visibility: Math.min(lShoulder.visibility, lHip.visibility),
+        },
+        {
+          x: rShoulder.x * 0.35 + rHip.x * 0.65,
+          y: rShoulder.y * 0.35 + rHip.y * 0.65,
+          z: 0,
+          visibility: Math.min(rShoulder.visibility, rHip.visibility),
+        }
+      )
+    : hipWidth * IMAGE_WAIST_TO_HIP_PRIOR;
+  const rawWaistToHip = waistWidth / hipWidth;
+  if (!Number.isFinite(rawWaistToHip) || rawWaistToHip < 0.65 || rawWaistToHip > 1.25) {
+    waistWidth = hipWidth * IMAGE_WAIST_TO_HIP_PRIOR;
+  }
 
   const shoulderMid = { x: (lShoulder.x + rShoulder.x) / 2, y: (lShoulder.y + rShoulder.y) / 2 };
-  const hipMid = { x: (lHip.x + rHip.x) / 2, y: (lHip.y + rHip.y) / 2 };
-  const torsoHeight = Math.abs(hipMid.y - shoulderMid.y);
+  const hipMid = hipsVisible ? { x: (lHip.x + rHip.x) / 2, y: (lHip.y + rHip.y) / 2 } : null;
+  const torsoHeight = hipMid ? Math.abs(hipMid.y - shoulderMid.y) : shoulderWidth / 0.7;
 
   let legHeight = 0;
   if (isVisible(lKnee) && isVisible(lAnkle)) {
@@ -265,14 +317,14 @@ function extractFromImageLandmarks(landmarks: PoseLandmark[]): BodyRatios | null
 
   if (hipWidth < 0.01 || torsoHeight < 0.01) return null;
 
-  const reliable = visibleCount >= 8 && legHeight > 0 && armLength > 0;
+  const reliable = true;
 
   return {
-    shoulderToHip: round3(shoulderWidth / hipWidth),
-    waistToHip: round3(waistWidth / hipWidth),
+    shoulderToHip: round3(clamp(shoulderWidth / hipWidth, 0.95, 2.05)),
+    waistToHip: round3(clamp(waistWidth / hipWidth, 0.65, 1.25)),
     shoulderToTorso: round3(shoulderWidth / torsoHeight),
-    torsoToLeg: legHeight > 0 ? round3(torsoHeight / legHeight) : 0,
-    armToTorso: armLength > 0 ? round3(armLength / torsoHeight) : 0,
+    torsoToLeg: legHeight > 0 ? round3(torsoHeight / legHeight) : 0.45,
+    armToTorso: armLength > 0 ? round3(armLength / torsoHeight) : 1.1,
     bodyHeightPx: round3(bodyHeightPx),
     landmarksUsed: visibleCount,
     confidence: round3(avgConf),

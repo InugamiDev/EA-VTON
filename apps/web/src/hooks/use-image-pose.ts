@@ -1,6 +1,6 @@
 // intent: One-shot pose detection on a static image via MediaPipe PoseLandmarker (IMAGE mode)
 // status: done
-// next: consider caching the detector instance across calls
+// next: validate upper-body skeleton overlay against uploaded photo aspect ratios
 // confidence: high
 
 "use client";
@@ -88,24 +88,12 @@ export function drawImageSkeleton(
     [11, 12], [11, 23], [12, 24], [23, 24],
     [11, 13], [13, 15],
     [12, 14], [14, 16],
-    [15, 17], [15, 19], [15, 21], [17, 19],
-    [16, 18], [16, 20], [16, 22], [18, 20],
-    [23, 25], [25, 27],
-    [24, 26], [26, 28],
-    [27, 29], [27, 31], [29, 31],
-    [28, 30], [28, 32], [30, 32],
-    [0, 1], [1, 2], [2, 3], [3, 7],
-    [0, 4], [4, 5], [5, 6], [6, 8],
-    [9, 10],
   ];
 
   const REGION_COLORS: Record<string, [number, number][]> = {
     "#00ff88": [[11, 12], [11, 23], [12, 24], [23, 24]],
-    "#00aaff": [[11, 13], [13, 15], [15, 17], [15, 19], [15, 21], [17, 19]],
-    "#ffaa00": [[12, 14], [14, 16], [16, 18], [16, 20], [16, 22], [18, 20]],
-    "#aa66ff": [[23, 25], [25, 27], [27, 29], [27, 31], [29, 31]],
-    "#ff66aa": [[24, 26], [26, 28], [28, 30], [28, 32], [30, 32]],
-    "#ffffff80": [[0, 1], [1, 2], [2, 3], [3, 7], [0, 4], [4, 5], [5, 6], [6, 8], [9, 10]],
+    "#00aaff": [[11, 13], [13, 15]],
+    "#ffaa00": [[12, 14], [14, 16]],
   };
 
   const colorMap = new Map<string, string>();
@@ -132,12 +120,12 @@ export function drawImageSkeleton(
     ctx.stroke();
   }
 
-  // Points
-  for (let i = 0; i < landmarks.length; i++) {
+  // Key upper-body points only. Full 33-point overlays add noise for top sizing.
+  for (const i of [11, 12, 13, 14, 15, 16, 23, 24]) {
     const l = landmarks[i];
+    if (!l) continue;
     if (l.visibility < CONF) continue;
-    const isFace = i <= 10;
-    const r = isFace ? 2.5 : 4;
+    const r = 4;
 
     ctx.fillStyle = l.visibility > 0.7 ? "#00ff88" : l.visibility > 0.5 ? "#ffaa00" : "#ff4444";
     ctx.beginPath();

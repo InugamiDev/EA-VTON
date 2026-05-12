@@ -29,11 +29,20 @@ export function useMockAuth() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      setUser(JSON.parse(stored));
-    }
-    setIsLoading(false);
+    let cancelled = false;
+    const loadId = window.setTimeout(() => {
+      if (cancelled) return;
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        setUser(JSON.parse(stored));
+      }
+      setIsLoading(false);
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(loadId);
+    };
   }, []);
 
   const login = () => {

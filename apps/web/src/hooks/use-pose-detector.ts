@@ -1,6 +1,6 @@
 // intent: Client-side MediaPipe PoseLandmarker for real-time skeleton overlay
 // status: done
-// next: wire into live-size page overlay canvas
+// next: validate upper-body overlay alignment across webcam aspect ratios
 // confidence: high
 
 "use client";
@@ -55,11 +55,11 @@ export interface DrawOptions {
 
 const DEFAULT_DRAW: Required<DrawOptions> = {
   showSkeleton: true,
-  showPoints: true,
-  showFaceMesh: true,
-  showBoundingBox: true,
+  showPoints: false,
+  showFaceMesh: false,
+  showBoundingBox: false,
   showLabels: false,
-  showConfidence: true,
+  showConfidence: false,
   pointRadius: 4,
   lineWidth: 2.5,
   skeletonColor: "#00ff88",
@@ -69,32 +69,15 @@ const DEFAULT_DRAW: Required<DrawOptions> = {
   mirror: true,
 };
 
-// ── 33 MediaPipe Pose Landmark connections (skeleton) ──
+// ── Upper-body MediaPipe Pose Landmark connections for top sizing ──
 // https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker
 
 const POSE_CONNECTIONS: [number, number][] = [
-  // Torso
+  // Shoulder and torso frame
   [11, 12], [11, 23], [12, 24], [23, 24],
-  // Left arm
+  // Arms without hand/finger fan noise
   [11, 13], [13, 15],
-  // Right arm
   [12, 14], [14, 16],
-  // Left hand (wrist → fingers)
-  [15, 17], [15, 19], [15, 21], [17, 19],
-  // Right hand
-  [16, 18], [16, 20], [16, 22], [18, 20],
-  // Left leg
-  [23, 25], [25, 27],
-  // Right leg
-  [24, 26], [26, 28],
-  // Left foot
-  [27, 29], [27, 31], [29, 31],
-  // Right foot
-  [28, 30], [28, 32], [30, 32],
-  // Face
-  [0, 1], [1, 2], [2, 3], [3, 7],
-  [0, 4], [4, 5], [5, 6], [6, 8],
-  [9, 10],
 ];
 
 // Landmark names for label overlay
@@ -117,11 +100,8 @@ const LANDMARK_NAMES: Record<number, string> = {
 // Body region coloring for visual clarity
 const REGION_COLORS: Record<string, [number, number][]> = {
   "#00ff88": [[11, 12], [11, 23], [12, 24], [23, 24]], // torso — green
-  "#00aaff": [[11, 13], [13, 15], [15, 17], [15, 19], [15, 21], [17, 19]], // left arm — blue
-  "#ffaa00": [[12, 14], [14, 16], [16, 18], [16, 20], [16, 22], [18, 20]], // right arm — orange
-  "#aa66ff": [[23, 25], [25, 27], [27, 29], [27, 31], [29, 31]], // left leg — purple
-  "#ff66aa": [[24, 26], [26, 28], [28, 30], [28, 32], [30, 32]], // right leg — pink
-  "#ffffff80": [[0, 1], [1, 2], [2, 3], [3, 7], [0, 4], [4, 5], [5, 6], [6, 8], [9, 10]], // face — faint white
+  "#00aaff": [[11, 13], [13, 15]], // left arm — blue
+  "#ffaa00": [[12, 14], [14, 16]], // right arm — orange
 };
 
 // Build a quick lookup: connection → color
@@ -367,7 +347,7 @@ export function usePoseDetector(
       if (opts.showConfidence) {
         ctx.font = "10px monospace";
         ctx.textBaseline = "bottom";
-        for (const [idx, name] of Object.entries(LANDMARK_NAMES)) {
+        for (const idx of Object.keys(LANDMARK_NAMES)) {
           const i = Number(idx);
           if (i >= lm.length) continue;
           const l = lm[i];

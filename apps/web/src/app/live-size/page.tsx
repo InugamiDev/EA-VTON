@@ -1,7 +1,8 @@
 "use client";
 
 import type { InputHTMLAttributes } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import NextImage from "next/image";
 import Link from "next/link";
 import {
   Bug,
@@ -12,6 +13,7 @@ import {
   Play,
   RotateCcw,
   Ruler,
+  Sparkles,
   Square,
   Upload,
   User,
@@ -19,36 +21,145 @@ import {
   X,
 } from "lucide-react";
 import {
+  getUpperStyleRecommendation,
   getVisualSizeRecommendation,
+  type PopulationKey,
+  type UpperStyleOccasion,
+  type UpperStyleRecommendationResult,
+  type UpperStyleSize,
   type VisualSizeResult,
 } from "@/lib/api";
+import { GARMENTS } from "@/data/garments";
 import { usePoseDetector, type DrawOptions } from "@/hooks/use-pose-detector";
-import { useBodyRatios, extractBodyRatios, estimateWeightFromRatios, type BodyRatios } from "@/hooks/use-body-ratios";
+import { useBodyRatios, extractBodyRatios, type BodyRatios } from "@/hooks/use-body-ratios";
 import { detectPoseFromImage, drawImageSkeleton } from "@/hooks/use-image-pose";
+import type { Garment } from "@/types";
 
-type Population = "universal" | "vietnamese";
+type Population = PopulationKey;
 type InputMode = "webcam" | "upload";
+type StyleSliderAxis = "bold" | "loose" | "warm" | "cover";
+type StyleSliders = Record<StyleSliderAxis, number>;
+type StyleInput = {
+  result: VisualSizeResult;
+  ratios: BodyRatios;
+  height: number;
+};
 
 const POPULATIONS: Array<{ value: Population; label: string }> = [
+  { value: "us_women", label: "US women" },
   { value: "vietnamese", label: "Vietnamese" },
-  { value: "universal", label: "Universal (US)" },
+  { value: "universal", label: "Universal (legacy)" },
 ];
 
-const CATEGORIES = [
-  { value: "dress", label: "Dress" },
-  { value: "top", label: "Top" },
-  { value: "shirt", label: "Shirt" },
-  { value: "outerwear", label: "Outerwear" },
-  { value: "bottom", label: "Bottom" },
+const OCCASIONS: Array<{ value: UpperStyleOccasion; label: string }> = [
+  { value: "casual", label: "Casual" },
+  { value: "work", label: "Work" },
+  { value: "date", label: "Date" },
+  { value: "formal", label: "Formal" },
+  { value: "party", label: "Party" },
 ];
+
+const STYLE_SLIDER_DEFAULTS: StyleSliders = {
+  bold: 0,
+  loose: 0,
+  warm: 0,
+  cover: 0,
+};
+
+const STYLE_SLIDERS: Array<{
+  axis: StyleSliderAxis;
+  label: string;
+  minLabel: string;
+  maxLabel: string;
+}> = [
+  { axis: "bold", label: "Statement", minLabel: "Quiet", maxLabel: "Bold" },
+  { axis: "loose", label: "Fit vibe", minLabel: "Body-hugging", maxLabel: "Oversized" },
+  { axis: "warm", label: "Color mood", minLabel: "Cool", maxLabel: "Warm" },
+  { axis: "cover", label: "Coverage", minLabel: "Open", maxLabel: "Covered" },
+];
+
+const STYLE_LIMIT_OPTIONS = [
+  { value: "5", label: "5 tops" },
+  { value: "8", label: "8 tops" },
+  { value: "10", label: "10 tops" },
+  { value: "15", label: "15 tops" },
+];
+
+// intent: use a stable upper-body model category instead of the noisy generic RTR "top" bucket
+// status: done
+// next: expose garment category as a user choice if we support more top archetypes
+// blockers: RTR generic "top" predictions are less stable than shirt/t-shirt for the US anchor
+// confidence: medium
+const UPPER_BODY_CATEGORY = "shirt";
+
+const USD_FORMATTER = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
+
+const VND_FORMATTER = new Intl.NumberFormat("vi-VN", {
+  style: "currency",
+  currency: "VND",
+  maximumFractionDigits: 0,
+});
+
+const UPPER_STYLE_SIZES: UpperStyleSize[] = ["XS", "S", "M", "L", "XL", "XXL"];
+
+function toUpperStyleSize(size: string | null | undefined): UpperStyleSize | null {
+  if (size === "XXS") return "XS";
+  if (size === "XXXL") return "XXL";
+
+  if (
+    size === "XS" ||
+    size === "S" ||
+    size === "M" ||
+    size === "L" ||
+    size === "XL" ||
+    size === "XXL"
+  ) {
+    return size;
+  }
+  return null;
+}
+
+function getUpperStyleSizeCandidates(size: UpperStyleSize): UpperStyleSize[] {
+  const sizeIndex = UPPER_STYLE_SIZES.indexOf(size);
+  if (sizeIndex === -1) return [size];
+
+  return [...UPPER_STYLE_SIZES].sort(
+    (a, b) => Math.abs(UPPER_STYLE_SIZES.indexOf(a) - sizeIndex) - Math.abs(UPPER_STYLE_SIZES.indexOf(b) - sizeIndex)
+  );
+}
+
+function formatUsd(value: number): string {
+  return USD_FORMATTER.format(value);
+}
+
+function formatVnd(value: number | null | undefined): string | null {
+  return typeof value === "number" ? VND_FORMATTER.format(value) : null;
+}
+
+function scorePct(value: number): string {
+  return `${Math.round(value * 100)}%`;
+}
+
+function getGarmentImage(garment: Garment): string {
+  return garment.images.find((image) => image.type === "display")?.url ?? garment.images[0]?.url ?? "";
+}
+
+function getRealGarmentForStyleItem(itemId: string): Garment | undefined {
+  return GARMENTS.find((garment) => garment.id === itemId);
+}
 
 const LIVE_INTERVAL_MS = 3000;
 
 export default function LiveSizePage() {
   const [inputMode, setInputMode] = useState<InputMode>("webcam");
   const [heightCm, setHeightCm] = useState("165");
-  const [population, setPopulation] = useState<Population>("vietnamese");
-  const [category, setCategory] = useState("dress");
+  const [population, setPopulation] = useState<Population>("us_women");
+  const [occasion, setOccasion] = useState<UpperStyleOccasion>("casual");
+  const [styleSliders, setStyleSliders] = useState<StyleSliders>(STYLE_SLIDER_DEFAULTS);
+  const [styleLimit, setStyleLimit] = useState(5);
 
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -57,6 +168,11 @@ export default function LiveSizePage() {
   const [error, setError] = useState<string | null>(null);
 
   const [visualResult, setVisualResult] = useState<VisualSizeResult | null>(null);
+  const [styleResult, setStyleResult] = useState<UpperStyleRecommendationResult | null>(null);
+  const [styleLoading, setStyleLoading] = useState(false);
+  const [styleError, setStyleError] = useState<string | null>(null);
+  const [lastBodyRatios, setLastBodyRatios] = useState<BodyRatios | null>(null);
+  const [lastStyleInput, setLastStyleInput] = useState<StyleInput | null>(null);
   const [roundTripMs, setRoundTripMs] = useState<number | null>(null);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
 
@@ -71,9 +187,9 @@ export default function LiveSizePage() {
   const [showDebug, setShowDebug] = useState(false);
   const [drawOpts, setDrawOpts] = useState<DrawOptions>({
     showSkeleton: true,
-    showPoints: true,
-    showFaceMesh: true,
-    showBoundingBox: true,
+    showPoints: false,
+    showFaceMesh: false,
+    showBoundingBox: false,
     showLabels: false,
     showConfidence: false,
     mirror: true,
@@ -83,6 +199,8 @@ export default function LiveSizePage() {
   const overlayRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const busyRef = useRef(false);
+  const styleRequestIdRef = useRef(0);
+  const firstReliableFrameQueuedRef = useRef(false);
 
   const { landmarks, worldLandmarks, debug: poseDebug, drawSkeleton } = usePoseDetector(
     videoRef,
@@ -93,6 +211,8 @@ export default function LiveSizePage() {
   const webcamRatios = useBodyRatios(landmarks, worldLandmarks);
   // Use upload ratios when in upload mode, webcam ratios otherwise
   const bodyRatios = inputMode === "upload" ? uploadRatios : webcamRatios;
+  const displayBodyRatios = bodyRatios?.reliable ? bodyRatios : (lastBodyRatios ?? bodyRatios);
+  const isShowingSavedRatios = Boolean(displayBodyRatios && displayBodyRatios === lastBodyRatios && bodyRatios !== lastBodyRatios);
 
   // Overlay draw loop — runs at display refresh rate
   // Accounts for object-cover cropping so skeleton aligns pixel-perfectly with the video
@@ -163,16 +283,20 @@ export default function LiveSizePage() {
     };
   }, []);
 
-  const currentModel = visualResult?.research_model.model ?? "gbm_copula_tempered_a075";
+  const currentModel = visualResult?.research_model.model ?? "population-selected GBM";
   const confidenceScore = visualResult?.research_model.confidence_score;
   const recommendedSize = visualResult?.research_model.predicted_size;
+  const stylePredictedSize =
+    styleResult?.user_state.predicted_size ??
+    toUpperStyleSize(visualResult?.research_model.predicted_size) ??
+    toUpperStyleSize(visualResult?.rule_based.predicted_size);
   const confidenceLabel = visualResult?.research_model.confidence;
   const estimatedWeight = visualResult?.weight_estimation?.estimated_weight_kg;
   const bodyShape = visualResult?.body_shape?.type;
 
   const liveStatus = useMemo(() => {
     if (processing) return "Đang phân tích frame mới";
-    if (liveRunning) return `Đang cập nhật mỗi ${LIVE_INTERVAL_MS / 1000} giây`;
+    if (liveRunning) return `Live refresh mỗi ${LIVE_INTERVAL_MS / 1000} giây`;
     if (cameraActive) return "Camera sẵn sàng";
     return "Chưa bật camera";
   }, [cameraActive, liveRunning, processing]);
@@ -185,9 +309,146 @@ export default function LiveSizePage() {
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
+    firstReliableFrameQueuedRef.current = false;
     setLiveRunning(false);
     setCameraActive(false);
   }, []);
+
+  // intent: bridge last valid upper-body size output into richer style recommendations
+  // status: done
+  // next: persist style preferences in the real profile store when profiles are writable
+  // blockers: style service accepts only XS-XXL, while visual model may emit XXS
+  // confidence: high
+  const runStyleRecommendation = useCallback(
+    async (
+      input: StyleInput,
+      overrides: {
+        occasion?: UpperStyleOccasion;
+        sliders?: StyleSliders;
+        topK?: number;
+      } = {}
+    ) => {
+      const { result, ratios, height } = input;
+      const predicted =
+        toUpperStyleSize(result.research_model.predicted_size) ??
+        toUpperStyleSize(result.rule_based.predicted_size);
+
+      if (!predicted) {
+        setStyleLoading(false);
+        setStyleError("Style recommendations need a supported size from XS to XXL.");
+        return;
+      }
+
+      const nextOccasion = overrides.occasion ?? occasion;
+      const nextSliders = overrides.sliders ?? styleSliders;
+      const nextTopK = overrides.topK ?? styleLimit;
+      const requestId = ++styleRequestIdRef.current;
+      setStyleLoading(true);
+      setStyleError(null);
+
+      try {
+        let nextStyleResult: UpperStyleRecommendationResult | null = null;
+        for (const candidateSize of getUpperStyleSizeCandidates(predicted)) {
+          const candidateResult = await getUpperStyleRecommendation({
+            height_cm: height,
+            predicted_size: candidateSize,
+            population,
+            ratios: {
+              sh: ratios.shoulderToHip,
+              wh: ratios.waistToHip,
+              st: ratios.shoulderToTorso,
+              tl: ratios.torsoToLeg,
+              at: ratios.armToTorso,
+            },
+            context: {
+              occasion: nextOccasion,
+              sliders: nextSliders,
+            },
+            top_k: nextTopK,
+          });
+
+          nextStyleResult ??= candidateResult;
+          if (candidateResult.items.length > 0) {
+            nextStyleResult = candidateResult;
+            break;
+          }
+        }
+
+        if (nextStyleResult && styleRequestIdRef.current === requestId) {
+          startTransition(() => {
+            setStyleResult(nextStyleResult);
+          });
+        }
+      } catch (err) {
+        if (styleRequestIdRef.current === requestId) {
+          setStyleError(err instanceof Error ? err.message : "Style recommendation failed");
+        }
+      } finally {
+        if (styleRequestIdRef.current === requestId) {
+          setStyleLoading(false);
+        }
+      }
+    },
+    [occasion, population, styleLimit, styleSliders]
+  );
+
+  const handleOccasionChange = useCallback(
+    (value: string) => {
+      const nextOccasion = value as UpperStyleOccasion;
+      setOccasion(nextOccasion);
+      setStyleError(null);
+      if (lastStyleInput) {
+        void runStyleRecommendation(lastStyleInput, { occasion: nextOccasion });
+      }
+    },
+    [lastStyleInput, runStyleRecommendation]
+  );
+
+  const handleStyleSliderChange = useCallback(
+    (axis: StyleSliderAxis, value: number) => {
+      const nextSliders = { ...styleSliders, [axis]: value };
+      setStyleSliders(nextSliders);
+      setStyleError(null);
+      if (lastStyleInput) {
+        void runStyleRecommendation(lastStyleInput, { sliders: nextSliders });
+      }
+    },
+    [lastStyleInput, runStyleRecommendation, styleSliders]
+  );
+
+  const handleStyleLimitChange = useCallback(
+    (value: string) => {
+      const nextTopK = Number.parseInt(value, 10);
+      if (!Number.isFinite(nextTopK)) return;
+
+      setStyleLimit(nextTopK);
+      setStyleError(null);
+      if (lastStyleInput) {
+        void runStyleRecommendation(lastStyleInput, { topK: nextTopK });
+      }
+    },
+    [lastStyleInput, runStyleRecommendation]
+  );
+
+  const handleResetStyleSliders = useCallback(() => {
+    const nextSliders = { ...STYLE_SLIDER_DEFAULTS };
+    setStyleSliders(nextSliders);
+    setStyleError(null);
+    if (lastStyleInput) {
+      void runStyleRecommendation(lastStyleInput, { sliders: nextSliders });
+    }
+  }, [lastStyleInput, runStyleRecommendation]);
+
+  const handleRefreshStyleRecommendations = useCallback(() => {
+    if (lastStyleInput) {
+      void runStyleRecommendation(lastStyleInput);
+    }
+  }, [lastStyleInput, runStyleRecommendation]);
+
+  const hasActiveStyleSliders = useMemo(
+    () => Object.values(styleSliders).some((value) => Math.abs(value) > 0.05),
+    [styleSliders]
+  );
 
   // ── Image upload handlers ──
 
@@ -195,7 +456,6 @@ export default function LiveSizePage() {
     setError(null);
     setProcessing(true);
     setUploadRatios(null);
-    setVisualResult(null);
 
     const url = URL.createObjectURL(file);
     setUploadedImage(url);
@@ -212,7 +472,7 @@ export default function LiveSizePage() {
       // Run pose detection (IMAGE mode)
       const pose = await detectPoseFromImage(img);
       if (!pose) {
-        setError("No pose detected — make sure the full body is visible in the photo.");
+        setError("No pose detected — make sure your shoulders and upper torso are visible.");
         setProcessing(false);
         return;
       }
@@ -234,10 +494,11 @@ export default function LiveSizePage() {
       setUploadRatios(ratios);
 
       if (!ratios || !ratios.reliable) {
-        setError("Partial body detected — need full body (shoulders, hips, ankles) visible.");
+        setError("Need both shoulders visible to estimate an upper-body size.");
         setProcessing(false);
         return;
       }
+      setLastBodyRatios(ratios);
 
       // Run size inference
       const height = Number.parseFloat(heightCm);
@@ -256,21 +517,24 @@ export default function LiveSizePage() {
         torso_to_leg: ratios.torsoToLeg,
         arm_to_torso: ratios.armToTorso,
         age: 30,
-        category,
+        category: UPPER_BODY_CATEGORY,
         population,
         confidence: ratios.confidence,
         source: ratios.source,
       });
 
+      const styleInput = { result, ratios, height };
       setVisualResult(result);
+      setLastStyleInput(styleInput);
       setRoundTripMs(Math.round(performance.now() - startedAt));
       setLastUpdatedAt(new Date().toLocaleTimeString());
+      void runStyleRecommendation(styleInput);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Image processing failed");
     } finally {
       setProcessing(false);
     }
-  }, [heightCm, category, population]);
+  }, [heightCm, population, runStyleRecommendation]);
 
   const handleFileDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -291,13 +555,13 @@ export default function LiveSizePage() {
     if (uploadedImage) URL.revokeObjectURL(uploadedImage);
     setUploadedImage(null);
     setUploadRatios(null);
-    setVisualResult(null);
     setError(null);
   }, [uploadedImage]);
 
   const startCamera = useCallback(async () => {
     setCameraError(null);
     setError(null);
+    firstReliableFrameQueuedRef.current = false;
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -309,6 +573,7 @@ export default function LiveSizePage() {
         await videoRef.current.play();
       }
       setCameraActive(true);
+      setLiveRunning(false);
     } catch (err) {
       setCameraError(err instanceof Error ? err.message : "Failed to access camera");
     }
@@ -325,11 +590,12 @@ export default function LiveSizePage() {
     }
 
     if (!bodyRatios || !bodyRatios.reliable) {
-      setError("Need full body visible — step back so shoulders, hips, and ankles are in frame.");
+      setError("Need both shoulders visible — center your upper body in frame.");
       return;
     }
 
     setError(null);
+    setLastBodyRatios(bodyRatios);
     busyRef.current = true;
     setProcessing(true);
     const startedAt = performance.now();
@@ -343,60 +609,84 @@ export default function LiveSizePage() {
         torso_to_leg: bodyRatios.torsoToLeg,
         arm_to_torso: bodyRatios.armToTorso,
         age: 30,
-        category,
+        category: UPPER_BODY_CATEGORY,
         population,
         confidence: bodyRatios.confidence,
         source: bodyRatios.source,
       });
 
+      const styleInput = { result, ratios: bodyRatios, height };
       setVisualResult(result);
+      setLastStyleInput(styleInput);
       setRoundTripMs(Math.round(performance.now() - startedAt));
       setLastUpdatedAt(new Date().toLocaleTimeString());
+      void runStyleRecommendation(styleInput);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Visual inference failed");
     } finally {
       busyRef.current = false;
       setProcessing(false);
     }
-  }, [category, heightCm, population, bodyRatios]);
+  }, [heightCm, population, bodyRatios, runStyleRecommendation]);
+
+  const runInferenceRef = useRef(runInference);
+
+  useEffect(() => {
+    runInferenceRef.current = runInference;
+  }, [runInference]);
+
+  useEffect(() => {
+    if (!cameraActive || !bodyRatios?.reliable || firstReliableFrameQueuedRef.current) return;
+
+    firstReliableFrameQueuedRef.current = true;
+    void runInference();
+  }, [bodyRatios, cameraActive, runInference]);
 
   useEffect(() => {
     if (!cameraActive || !liveRunning) return;
 
-    void runInference();
+    const initialRunId = window.setTimeout(() => {
+      void runInferenceRef.current();
+    }, 750);
     const intervalId = window.setInterval(() => {
-      void runInference();
+      void runInferenceRef.current();
     }, LIVE_INTERVAL_MS);
 
     return () => {
+      window.clearTimeout(initialRunId);
       window.clearInterval(intervalId);
     };
-  }, [cameraActive, liveRunning, runInference]);
+  }, [cameraActive, liveRunning]);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 md:px-6">
-      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <div className="relative isolate mx-auto flex min-h-dvh max-w-[100rem] flex-col bg-background px-3 py-3 md:px-4 lg:h-[calc(100dvh-4rem)] lg:min-h-0 lg:overflow-hidden">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-4 top-3 -z-10 h-28 rounded-full bg-foreground/[0.03] blur-3xl" />
+      <div className="mb-3 flex shrink-0 flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            Visual Size Estimation
-          </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight md:text-5xl">
-            Size Recommendation
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+              Upper-Body Size Console
+            </p>
+            <span className="rounded-full border border-border bg-muted px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Scan ready
+            </span>
+          </div>
+          <h1 className="mt-1 text-2xl font-black tracking-tight md:text-4xl">
+            Live top sizing
           </h1>
-          <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground md:text-base">
-            Dùng webcam hoặc upload ảnh để trích xuất body skeleton, tính tỷ lệ cơ thể,
-            rồi gợi ý size phù hợp. Chỉ cần chiều cao — cân nặng được ước lượng từ tỷ lệ.
+          <p className="mt-1 max-w-3xl text-xs leading-5 text-muted-foreground md:text-sm">
+            One-shot sizing by default. Turn on live refresh only when you want repeated predictions.
           </p>
         </div>
         <div className="flex items-center gap-3">
           {/* Mode toggle */}
-          <div className="inline-flex rounded-xl border border-border bg-muted p-1">
+          <div className="inline-flex rounded-xl border border-foreground/10 bg-background/80 p-1 shadow-lg shadow-black/5 backdrop-blur">
             <button
               onClick={() => setInputMode("webcam")}
               className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors ${
                 inputMode === "webcam"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-foreground text-background shadow-md shadow-black/15"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
               <Camera className="h-3.5 w-3.5" />
@@ -406,8 +696,8 @@ export default function LiveSizePage() {
               onClick={() => setInputMode("upload")}
               className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors ${
                 inputMode === "upload"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-foreground text-background shadow-md shadow-black/15"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
               <ImageIcon className="h-3.5 w-3.5" />
@@ -416,7 +706,7 @@ export default function LiveSizePage() {
           </div>
           <Link
             href="/measure"
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium shadow-sm transition-colors hover:bg-accent"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <Ruler className="h-4 w-4" />
             Manual
@@ -424,9 +714,9 @@ export default function LiveSizePage() {
         </div>
       </div>
 
-      <div className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
-        <section className="rounded-3xl border border-border bg-card p-5 shadow-sm md:p-6">
-          <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(27rem,0.95fr)_minmax(31rem,1.05fr)]">
+        <section className="flex min-h-0 flex-col rounded-3xl border border-border bg-card p-3 shadow-sm md:p-4">
+          <div className="grid shrink-0 gap-3 md:grid-cols-3">
             <Field
               label="Height (cm)"
               value={heightCm}
@@ -439,37 +729,39 @@ export default function LiveSizePage() {
               onChange={(value) => setPopulation(value as Population)}
               options={POPULATIONS}
             />
-            <SelectField
-              label="Category"
-              value={category}
-              onChange={setCategory}
-              options={CATEGORIES}
-            />
+            <div className="rounded-2xl border border-border bg-muted/40 px-3 py-2.5">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">Garment zone</span>
+              <p className="text-sm font-black">Tops / upper body only</p>
+            </div>
           </div>
-          {bodyRatios && (
+          {displayBodyRatios && (
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
-              <span className={`rounded-full px-2.5 py-1 font-mono ${bodyRatios.reliable ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/15 text-amber-600 dark:text-amber-400"}`}>
-                {bodyRatios.reliable ? "Full body detected" : `Partial (${bodyRatios.landmarksUsed}/12)`}
+              <span className="rounded-full border border-border bg-muted px-2.5 py-1 font-mono text-muted-foreground">
+                {isShowingSavedRatios
+                  ? "Showing last valid ratios"
+                  : displayBodyRatios.reliable
+                    ? "Upper body detected"
+                    : `Partial (${displayBodyRatios.landmarksUsed}/12)`}
               </span>
-              <span className={`rounded-full px-2.5 py-1 font-mono ${bodyRatios.source === "world_3d" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/15 text-amber-600 dark:text-amber-400"}`}>
-                {bodyRatios.source === "world_3d" ? "3D world" : "2D image"}
-              </span>
-              <span className="rounded-full bg-muted px-2.5 py-1 font-mono text-muted-foreground">
-                S/H {bodyRatios.shoulderToHip.toFixed(2)}
-              </span>
-              <span className="rounded-full bg-muted px-2.5 py-1 font-mono text-muted-foreground">
-                W/H {bodyRatios.waistToHip.toFixed(2)}
+              <span className="rounded-full border border-border bg-muted px-2.5 py-1 font-mono text-muted-foreground">
+                {displayBodyRatios.source === "world_3d" ? "3D world" : "2D image"}
               </span>
               <span className="rounded-full bg-muted px-2.5 py-1 font-mono text-muted-foreground">
-                T/L {bodyRatios.torsoToLeg.toFixed(2)}
+                S/H {displayBodyRatios.shoulderToHip.toFixed(2)}
+              </span>
+              <span className="rounded-full bg-muted px-2.5 py-1 font-mono text-muted-foreground">
+                W/H {displayBodyRatios.waistToHip.toFixed(2)}
+              </span>
+              <span className="rounded-full bg-muted px-2.5 py-1 font-mono text-muted-foreground">
+                T/L {displayBodyRatios.torsoToLeg.toFixed(2)}
               </span>
               {estimatedWeight && (
-                <span className="rounded-full bg-blue-500/15 px-2.5 py-1 font-mono text-blue-600 dark:text-blue-400">
+                <span className="rounded-full border border-border bg-muted px-2.5 py-1 font-mono text-muted-foreground">
                   ~{estimatedWeight}kg
                 </span>
               )}
               {bodyShape && (
-                <span className="rounded-full bg-purple-500/15 px-2.5 py-1 font-mono text-purple-600 dark:text-purple-400">
+                <span className="rounded-full border border-border bg-muted px-2.5 py-1 font-mono text-muted-foreground">
                   {bodyShape}
                 </span>
               )}
@@ -479,11 +771,11 @@ export default function LiveSizePage() {
           {/* ── Webcam mode ── */}
           {inputMode === "webcam" && (
             <>
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div className="mt-3 flex shrink-0 flex-wrap gap-2">
                 {!cameraActive ? (
                   <button
                     onClick={startCamera}
-                    className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+                    className="inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2.5 text-sm font-semibold text-background shadow-sm transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <Camera className="h-4 w-4" />
                     Start Camera
@@ -493,15 +785,15 @@ export default function LiveSizePage() {
                     <button
                       onClick={() => setLiveRunning(true)}
                       disabled={liveRunning}
-                      className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center gap-2 rounded-xl bg-foreground px-4 py-2.5 text-sm font-semibold text-background shadow-sm transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <Play className="h-4 w-4" />
-                      Start Live
+                      Live refresh
                     </button>
                     <button
                       onClick={() => setLiveRunning(false)}
                       disabled={!liveRunning}
-                      className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-3 text-sm font-semibold shadow-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <Square className="h-4 w-4" />
                       Stop
@@ -509,14 +801,14 @@ export default function LiveSizePage() {
                     <button
                       onClick={() => void runInference()}
                       disabled={processing}
-                      className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-3 text-sm font-semibold shadow-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Video className="h-4 w-4" />}
-                      Once
+                      Analyze once
                     </button>
                     <button
                       onClick={stopCamera}
-                      className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-3 text-sm font-semibold shadow-sm transition-colors hover:bg-accent"
+                      className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
                       <RotateCcw className="h-4 w-4" />
                       Reset
@@ -525,8 +817,8 @@ export default function LiveSizePage() {
                 )}
               </div>
 
-              <div className="mt-6 overflow-hidden rounded-3xl border border-border bg-muted/40">
-                <div className="relative aspect-[4/3]">
+              <div className="mt-3 min-h-0 flex-1 overflow-hidden rounded-3xl border border-border bg-black shadow-sm">
+                <div className="relative h-full min-h-[21rem] lg:min-h-0">
                   <video
                     ref={videoRef}
                     className="h-full w-full object-cover"
@@ -538,6 +830,7 @@ export default function LiveSizePage() {
                     ref={overlayRef}
                     className="pointer-events-none absolute inset-0 h-full w-full"
                   />
+                  <div aria-hidden="true" className="pointer-events-none absolute inset-3 rounded-[1.5rem] border border-white/10" />
                   {!cameraActive && !cameraError && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-muted-foreground">
                       <User className="h-14 w-14" />
@@ -551,35 +844,39 @@ export default function LiveSizePage() {
                   )}
                   {cameraActive && !landmarks && (
                     <div className="pointer-events-none absolute inset-0">
-                      <div className="absolute inset-x-[18%] top-[8%] bottom-[8%] rounded-[28px] border-2 border-dashed border-white/45" />
-                      <p className="absolute bottom-4 left-4 right-4 rounded-full bg-black/50 px-3 py-2 text-center text-xs font-medium text-white">
-                        Đứng chính diện, thấy rõ toàn thân, giữ máy ổn định 2–3 giây.
+                      <div className="absolute inset-x-[18%] bottom-[8%] top-[8%] rounded-[28px] border-2 border-dashed border-white/45" />
+                      <p className="absolute bottom-4 left-4 right-4 rounded-full bg-black/70 px-3 py-2 text-center text-xs font-semibold text-white backdrop-blur">
+                        Keep both shoulders in frame. First reliable reading runs once; live refresh is manual.
                       </p>
                     </div>
                   )}
                   {cameraActive && showDebug && (
-                    <div className="pointer-events-none absolute top-3 left-3 rounded-xl bg-black/70 px-3 py-2 font-mono text-[11px] leading-relaxed text-green-400 backdrop-blur-sm">
+                    <div className="pointer-events-none absolute top-3 left-3 rounded-xl bg-black/70 px-3 py-2 font-mono text-[11px] leading-relaxed text-white/80 backdrop-blur-sm">
                       <p>FPS: {poseDebug.fps}</p>
                       <p>Detect: {poseDebug.detectMs}ms</p>
                       <p>Landmarks: {poseDebug.landmarkCount}/33</p>
                       <p>Confidence: {(poseDebug.avgConfidence * 100).toFixed(0)}%</p>
                       <p>Model: {poseDebug.modelLoaded ? "loaded" : "loading..."}</p>
-                      {poseDebug.error && <p className="text-red-400">Error: {poseDebug.error}</p>}
-                      {roundTripMs !== null && <p className="text-blue-400">API RTT: {roundTripMs}ms</p>}
+                      {poseDebug.error && <p>Error: {poseDebug.error}</p>}
+                      {roundTripMs !== null && <p>API RTT: {roundTripMs}ms</p>}
                     </div>
                   )}
                 </div>
               </div>
 
               {cameraActive && (
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="mt-3 flex shrink-0 flex-wrap gap-2">
                   <ToggleButton active={showDebug} onClick={() => setShowDebug((v) => !v)} icon={<Bug className="h-3.5 w-3.5" />} label="Debug HUD" />
                   <ToggleButton active={drawOpts.showSkeleton ?? true} onClick={() => setDrawOpts((o) => ({ ...o, showSkeleton: !o.showSkeleton }))} icon={<Eye className="h-3.5 w-3.5" />} label="Skeleton" />
-                  <ToggleButton active={drawOpts.showPoints ?? true} onClick={() => setDrawOpts((o) => ({ ...o, showPoints: !o.showPoints }))} label="Points" />
-                  <ToggleButton active={drawOpts.showFaceMesh ?? true} onClick={() => setDrawOpts((o) => ({ ...o, showFaceMesh: !o.showFaceMesh }))} label="Face" />
-                  <ToggleButton active={drawOpts.showBoundingBox ?? true} onClick={() => setDrawOpts((o) => ({ ...o, showBoundingBox: !o.showBoundingBox }))} label="BBox" />
-                  <ToggleButton active={drawOpts.showLabels ?? false} onClick={() => setDrawOpts((o) => ({ ...o, showLabels: !o.showLabels }))} label="Labels" />
-                  <ToggleButton active={drawOpts.showConfidence ?? false} onClick={() => setDrawOpts((o) => ({ ...o, showConfidence: !o.showConfidence }))} label="Conf %" />
+                  {showDebug && (
+                    <>
+                      <ToggleButton active={drawOpts.showPoints ?? false} onClick={() => setDrawOpts((o) => ({ ...o, showPoints: !o.showPoints }))} label="Points" />
+                      <ToggleButton active={drawOpts.showFaceMesh ?? false} onClick={() => setDrawOpts((o) => ({ ...o, showFaceMesh: !o.showFaceMesh }))} label="Face" />
+                      <ToggleButton active={drawOpts.showBoundingBox ?? false} onClick={() => setDrawOpts((o) => ({ ...o, showBoundingBox: !o.showBoundingBox }))} label="BBox" />
+                      <ToggleButton active={drawOpts.showLabels ?? false} onClick={() => setDrawOpts((o) => ({ ...o, showLabels: !o.showLabels }))} label="Labels" />
+                      <ToggleButton active={drawOpts.showConfidence ?? false} onClick={() => setDrawOpts((o) => ({ ...o, showConfidence: !o.showConfidence }))} label="Conf %" />
+                    </>
+                  )}
                 </div>
               )}
             </>
@@ -625,7 +922,7 @@ export default function LiveSizePage() {
                   >
                     <Upload className="h-12 w-12 text-muted-foreground/60" />
                     <div className="text-center">
-                      <p className="text-sm font-medium">Drop a full-body photo here</p>
+                      <p className="text-sm font-medium">Drop an upper-body photo here</p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         or click to browse — JPG, PNG, WebP
                       </p>
@@ -655,29 +952,29 @@ export default function LiveSizePage() {
           )}
 
           {/* ── Status bar (shared) ── */}
-          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+          <div className="mt-3 flex shrink-0 flex-wrap items-center gap-2 text-xs text-muted-foreground">
             {inputMode === "webcam" && (
-              <span className="rounded-full border border-border bg-muted px-3 py-1.5">
+              <span className="rounded-full border border-border bg-muted px-2.5 py-1">
                 {liveStatus}
               </span>
             )}
             {inputMode === "upload" && uploadRatios && (
-              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-emerald-600 dark:text-emerald-400">
+              <span className="rounded-full border border-border bg-muted px-2.5 py-1">
                 Pose detected ({uploadRatios.landmarksUsed}/12 landmarks)
               </span>
             )}
             {poseDebug.modelLoaded && inputMode === "webcam" && (
-              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-emerald-600 dark:text-emerald-400">
+              <span className="rounded-full border border-border bg-muted px-2.5 py-1">
                 Pose model loaded
               </span>
             )}
             {roundTripMs !== null && (
-              <span className="rounded-full border border-border bg-muted px-3 py-1.5">
+              <span className="rounded-full border border-border bg-muted px-2.5 py-1">
                 Round trip {roundTripMs} ms
               </span>
             )}
             {lastUpdatedAt && (
-              <span className="rounded-full border border-border bg-muted px-3 py-1.5">
+              <span className="rounded-full border border-border bg-muted px-2.5 py-1">
                 Cập nhật lúc {lastUpdatedAt}
               </span>
             )}
@@ -690,23 +987,23 @@ export default function LiveSizePage() {
           )}
         </section>
 
-        <section className="space-y-6">
+        <section className="flex min-h-0 flex-col gap-3 overflow-hidden">
           {/* Size prediction hero */}
-          <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-sm">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Predicted size</p>
+                <p className="text-sm font-medium text-muted-foreground">Predicted top size</p>
                 <div className="mt-2 flex items-end gap-3">
-                  <span className="text-6xl font-black tracking-tight">
+                  <span className="text-5xl font-black tracking-tight md:text-6xl">
                     {recommendedSize ?? "--"}
                   </span>
                   <span
                     className={`mb-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
                       confidenceLabel === "high"
-                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+                        ? "bg-foreground text-background"
                         : confidenceLabel === "medium"
-                          ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
-                          : "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                          ? "bg-muted text-foreground"
+                          : "bg-zinc-900 text-white dark:bg-zinc-200 dark:text-zinc-950"
                     }`}
                   >
                     {confidenceLabel ?? "waiting"}
@@ -715,13 +1012,13 @@ export default function LiveSizePage() {
               </div>
               <div className="flex flex-col items-end gap-1.5">
                 {processing && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
-                {bodyRatios && (
-                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${
-                    bodyRatios.source === "world_3d"
-                      ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                      : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                  }`}>
-                    {bodyRatios.source === "world_3d" ? "3D world" : "2D fallback"}
+                {displayBodyRatios && (
+                  <span className="rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {isShowingSavedRatios
+                      ? "last valid"
+                      : displayBodyRatios.source === "world_3d"
+                        ? "3D world"
+                        : "2D fallback"}
                   </span>
                 )}
               </div>
@@ -729,11 +1026,11 @@ export default function LiveSizePage() {
 
             {/* Probability distribution bar */}
             {visualResult?.research_model?.probabilities && (
-              <div className="mt-5">
+              <div className="mt-4">
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Size probability distribution
                 </p>
-                <div className="flex h-8 overflow-hidden rounded-xl">
+                <div className="flex h-8 overflow-hidden rounded-xl border border-border bg-background">
                   {["XXS", "XS", "S", "M", "L", "XL", "XXL"].map((size) => {
                     const prob = visualResult.research_model.probabilities?.[size] ?? 0;
                     if (prob < 0.005) return null;
@@ -758,7 +1055,7 @@ export default function LiveSizePage() {
             )}
 
             {/* Key metrics row */}
-            <div className="mt-5 grid gap-3 sm:grid-cols-4">
+            <div className="mt-4 grid gap-2 sm:grid-cols-4">
               <MetricCard
                 label="Est. weight"
                 value={estimatedWeight ? `${estimatedWeight} kg` : "--"}
@@ -787,7 +1084,7 @@ export default function LiveSizePage() {
 
             {/* Estimated body measurements from rule-based */}
             {visualResult?.rule_based && (
-              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <div className="mt-2 hidden gap-2 xl:grid xl:grid-cols-3">
                 <MetricCard
                   label="Est. chest"
                   value={visualResult.rule_based.estimated_chest_cm ? `${visualResult.rule_based.estimated_chest_cm} cm` : "--"}
@@ -807,123 +1104,34 @@ export default function LiveSizePage() {
             )}
           </div>
 
-          {/* Body ratios from skeleton */}
-          <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-bold tracking-tight">Body ratios</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {bodyRatios?.source === "world_3d"
-                    ? "3D world landmarks (meters) — perspective-corrected, matches real anthropometric data"
-                    : "2D image landmarks — affected by camera perspective, dampened calibration applied"}
-                </p>
-              </div>
-              <div className="flex flex-col items-end gap-1 text-right">
-                {bodyRatios && (
-                  <>
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {bodyRatios.landmarksUsed}/12 landmarks
-                    </span>
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {(bodyRatios.confidence * 100).toFixed(0)}% avg conf
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
+          <StyleRecommendationsCard
+            result={styleResult}
+            loading={styleLoading}
+            error={styleError}
+            occasion={occasion}
+            predictedSize={stylePredictedSize}
+            styleSliders={styleSliders}
+            styleLimit={styleLimit}
+            canRefresh={Boolean(lastStyleInput)}
+            hasActiveStyleSliders={hasActiveStyleSliders}
+            onOccasionChange={handleOccasionChange}
+            onStyleSliderChange={handleStyleSliderChange}
+            onStyleLimitChange={handleStyleLimitChange}
+            onResetStyleSliders={handleResetStyleSliders}
+            onRefresh={handleRefreshStyleRecommendations}
+          />
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <RatioBar
-                label="Shoulder / Hip"
-                value={bodyRatios?.shoulderToHip ?? 0}
-                min={0.7}
-                max={1.6}
-                baseline={bodyRatios?.source === "world_3d" ? 1.1 : 1.5}
-                helper="V-shape vs pear"
-              />
-              <RatioBar
-                label="Waist / Hip"
-                value={bodyRatios?.waistToHip ?? 0}
-                min={0.5}
-                max={1.2}
-                baseline={bodyRatios?.source === "world_3d" ? 0.8 : 0.95}
-                helper="Waist taper"
-              />
-              <RatioBar
-                label="Shoulder / Torso"
-                value={bodyRatios?.shoulderToTorso ?? 0}
-                min={0.3}
-                max={1.5}
-                baseline={0.7}
-                helper="Relative breadth"
-              />
-              <RatioBar
-                label="Torso / Leg"
-                value={bodyRatios?.torsoToLeg ?? 0}
-                min={0.2}
-                max={0.8}
-                baseline={0.45}
-                helper="Proportion"
-              />
-              <RatioBar
-                label="Arm / Torso"
-                value={bodyRatios?.armToTorso ?? 0}
-                min={0.5}
-                max={2.0}
-                baseline={1.1}
-                helper="Relative arm length"
-              />
-              <MetricCard
-                label="Reliable"
-                value={bodyRatios?.reliable ? "Yes" : "No"}
-                helper={bodyRatios?.reliable ? "Full body visible" : "Step back for full body"}
-              />
-            </div>
-          </div>
-
-          {/* Data pipeline summary */}
-          {visualResult && (
-            <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-              <h2 className="text-xl font-bold tracking-tight">Pipeline data</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Full input/output trace for this prediction
-              </p>
-              <div className="mt-4 space-y-3">
-                <PipelineRow
-                  step="1"
-                  label="Pose detection"
-                  detail={`MediaPipe PoseLandmarker (${bodyRatios?.source === "world_3d" ? "world 3D" : "image 2D"})`}
-                  value={`${poseDebug.landmarkCount}/33 landmarks, ${poseDebug.detectMs}ms`}
-                />
-                <PipelineRow
-                  step="2"
-                  label="Ratio extraction"
-                  detail="Client-side, no server call"
-                  value={bodyRatios ? `S/H=${bodyRatios.shoulderToHip.toFixed(2)}, W/H=${bodyRatios.waistToHip.toFixed(2)}` : "--"}
-                />
-                <PipelineRow
-                  step="3"
-                  label="Weight estimation"
-                  detail={`BMI baseline 21.5, ${bodyRatios?.source === "world_3d" ? "anthropometric" : "2D-calibrated"} coefficients`}
-                  value={`${estimatedWeight ?? "--"}kg (BMI ${visualResult.weight_estimation?.estimated_bmi?.toFixed(1) ?? "--"})`}
-                />
-                <PipelineRow
-                  step="4"
-                  label="GBM prediction"
-                  detail={currentModel}
-                  value={`${recommendedSize ?? "--"} (${typeof confidenceScore === "number" ? (confidenceScore * 100).toFixed(1) + "%" : "--"})`}
-                />
-                {roundTripMs !== null && (
-                  <PipelineRow
-                    step="5"
-                    label="Round trip"
-                    detail="Frontend → API gateway → recommendation service"
-                    value={`${roundTripMs}ms`}
-                  />
-                )}
-              </div>
-            </div>
-          )}
+          <CompactDiagnosticsCard
+            ratios={displayBodyRatios}
+            visualResult={visualResult}
+            poseLandmarkCount={poseDebug.landmarkCount}
+            poseDetectMs={poseDebug.detectMs}
+            roundTripMs={roundTripMs}
+            model={currentModel}
+            recommendedSize={recommendedSize}
+            confidenceScore={confidenceScore}
+            isShowingSavedRatios={isShowingSavedRatios}
+          />
         </section>
       </div>
 
@@ -944,12 +1152,12 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm font-medium text-muted-foreground">{label}</span>
+      <span className="mb-1 block text-xs font-medium text-muted-foreground">{label}</span>
       <input
         {...inputProps}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-foreground"
+        className="w-full rounded-2xl border border-border bg-background px-3 py-2.5 text-sm outline-none transition-colors focus:border-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       />
     </label>
   );
@@ -968,11 +1176,11 @@ function SelectField({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm font-medium text-muted-foreground">{label}</span>
+      <span className="mb-1 block text-xs font-medium text-muted-foreground">{label}</span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-foreground"
+        className="w-full rounded-2xl border border-border bg-background px-3 py-2.5 text-sm outline-none transition-colors focus:border-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -1000,13 +1208,400 @@ function ToggleButton({
       onClick={onClick}
       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
         active
-          ? "border border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+          ? "border border-foreground bg-foreground text-background"
           : "border border-border bg-muted text-muted-foreground hover:bg-accent"
       }`}
     >
       {icon}
       {label}
     </button>
+  );
+}
+
+function CompactDiagnosticsCard({
+  ratios,
+  visualResult,
+  poseLandmarkCount,
+  poseDetectMs,
+  roundTripMs,
+  model,
+  recommendedSize,
+  confidenceScore,
+  isShowingSavedRatios,
+}: {
+  ratios: BodyRatios | null | undefined;
+  visualResult: VisualSizeResult | null;
+  poseLandmarkCount: number;
+  poseDetectMs: number;
+  roundTripMs: number | null;
+  model: string;
+  recommendedSize: string | null | undefined;
+  confidenceScore: number | undefined;
+  isShowingSavedRatios: boolean;
+}) {
+  const modelLabel = model.replace("gbm_copula_tempered_a075", "GBM copula a=.75");
+  const weight = visualResult?.weight_estimation?.estimated_weight_kg;
+  const bmi = visualResult?.weight_estimation?.estimated_bmi;
+
+  return (
+    <div className="hidden shrink-0 rounded-3xl border border-border bg-card p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-muted-foreground">Diagnostics</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {isShowingSavedRatios
+              ? "Holding the last valid reading while the camera updates."
+              : "Client ratios, population weight estimate, and served GBM trace."}
+          </p>
+        </div>
+        <span className="rounded-full border border-border bg-muted px-2.5 py-1 font-mono text-[10px] text-muted-foreground">
+          {roundTripMs !== null ? `${roundTripMs}ms` : "idle"}
+        </span>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4">
+        <MiniStat label="Pose" value={`${poseLandmarkCount}/33`} helper={`${poseDetectMs || 0}ms`} />
+        <MiniStat label="Source" value={ratios?.source === "world_3d" ? "3D" : ratios ? "2D" : "--"} helper={ratios?.reliable ? "reliable" : "waiting"} />
+        <MiniStat label="Weight" value={typeof weight === "number" ? `${weight}kg` : "--"} helper={typeof bmi === "number" ? `BMI ${bmi.toFixed(1)}` : "estimated"} />
+        <MiniStat label="Model" value={recommendedSize ?? "--"} helper={typeof confidenceScore === "number" ? `${Math.round(confidenceScore * 100)}% ${modelLabel}` : modelLabel} />
+      </div>
+
+      <div className="mt-3 grid gap-2 md:grid-cols-3">
+        <MiniRatioBar label="S/H" value={ratios?.shoulderToHip ?? 0} min={0.7} max={1.6} baseline={ratios?.source === "world_3d" ? 1.1 : 1.5} />
+        <MiniRatioBar label="W/H" value={ratios?.waistToHip ?? 0} min={0.5} max={1.2} baseline={ratios?.source === "world_3d" ? 0.8 : 0.95} />
+        <MiniRatioBar label="S/T" value={ratios?.shoulderToTorso ?? 0} min={0.3} max={1.5} baseline={0.7} />
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value, helper }: { label: string; value: string; helper: string }) {
+  return (
+    <div className="rounded-2xl border border-border bg-muted/40 px-3 py-2">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-1 truncate font-mono text-sm font-bold">{value}</p>
+      <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{helper}</p>
+    </div>
+  );
+}
+
+function MiniRatioBar({
+  label,
+  value,
+  min,
+  max,
+  baseline,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  baseline: number;
+}) {
+  const range = max - min;
+  const pct = range > 0 ? Math.max(0, Math.min(100, ((value - min) / range) * 100)) : 0;
+  const baselinePct = range > 0 ? Math.max(0, Math.min(100, ((baseline - min) / range) * 100)) : 50;
+
+  return (
+    <div className="rounded-2xl border border-border bg-muted/40 px-3 py-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
+        <span className="font-mono text-xs font-bold">{value > 0 ? value.toFixed(2) : "--"}</span>
+      </div>
+      <div className="relative mt-2 h-1.5 rounded-full bg-muted">
+        <div className="absolute top-0 h-full w-px bg-muted-foreground/50" style={{ left: `${baselinePct}%` }} />
+        {value > 0 && (
+          <div className="absolute left-0 top-0 h-full rounded-full bg-foreground/75" style={{ width: `${pct}%` }} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StyleRecommendationsCard({
+  result,
+  loading,
+  error,
+  occasion,
+  predictedSize,
+  styleSliders,
+  styleLimit,
+  canRefresh,
+  hasActiveStyleSliders,
+  onOccasionChange,
+  onStyleSliderChange,
+  onStyleLimitChange,
+  onResetStyleSliders,
+  onRefresh,
+}: {
+  result: UpperStyleRecommendationResult | null;
+  loading: boolean;
+  error: string | null;
+  occasion: UpperStyleOccasion;
+  predictedSize: UpperStyleSize | null;
+  styleSliders: StyleSliders;
+  styleLimit: number;
+  canRefresh: boolean;
+  hasActiveStyleSliders: boolean;
+  onOccasionChange: (value: string) => void;
+  onStyleSliderChange: (axis: StyleSliderAxis, value: number) => void;
+  onStyleLimitChange: (value: string) => void;
+  onResetStyleSliders: () => void;
+  onRefresh: () => void;
+}) {
+  const bodyShape = result?.user_state.body_shape;
+  const bodyType = result?.user_state.body_type_vn;
+  const items = result?.items ?? [];
+
+  // intent: keep recommendations usable first, with minimal neutral styling
+  // status: done
+  // next: verify scroll behavior against real desktop and mobile viewports
+  // blockers: none
+  // confidence: high
+  return (
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-muted-foreground" />
+            <h2 className="text-xl font-bold tracking-tight">Recommended tops</h2>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Fit-Flatter-Match ranking from the recommendation service.
+          </p>
+        </div>
+        {loading ? (
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        ) : (
+          <span className="rounded-full border border-border bg-muted px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {predictedSize ? `Size ${predictedSize}` : "waiting"}
+          </span>
+        )}
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2 text-xs">
+        <span className="rounded-full bg-muted px-2.5 py-1 font-mono text-muted-foreground">
+          Occasion: {occasion}
+        </span>
+        <span className="rounded-full bg-muted px-2.5 py-1 font-mono text-muted-foreground">
+          Showing up to {styleLimit}
+        </span>
+        {(bodyShape || bodyType) && (
+          <span className="rounded-full bg-muted px-2.5 py-1 font-mono text-muted-foreground">
+            {bodyShape
+              ? `${bodyShape.display_label} (${scorePct(bodyShape.confidence)})`
+              : `${bodyType?.label_vi} (${scorePct(bodyType?.confidence ?? 0)})`}
+          </span>
+        )}
+      </div>
+
+      <details className="mt-3 shrink-0 rounded-2xl border border-border bg-muted/30 p-3">
+        <summary className="cursor-pointer list-none text-sm font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [&::-webkit-details-marker]:hidden">
+          <span className="flex items-center justify-between gap-3">
+            <span>Style controls</span>
+            <span className="text-xs font-normal text-muted-foreground">Adjust ranking</span>
+          </span>
+        </summary>
+
+        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-muted-foreground">
+            Steer the ranking without clearing the last recommendations.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={onRefresh}
+              disabled={!canRefresh || loading}
+              className="rounded-xl border border-border bg-background px-3 py-2 text-xs font-semibold transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Refresh
+            </button>
+            <button
+              type="button"
+              onClick={onResetStyleSliders}
+              disabled={!hasActiveStyleSliders || loading}
+              className="rounded-xl border border-border bg-background px-3 py-2 text-xs font-semibold transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Neutral style
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <SelectField
+            label="Occasion"
+            value={occasion}
+            onChange={onOccasionChange}
+            options={OCCASIONS}
+          />
+          <SelectField
+            label="Result count"
+            value={String(styleLimit)}
+            onChange={onStyleLimitChange}
+            options={STYLE_LIMIT_OPTIONS}
+          />
+        </div>
+
+        <div className="mt-3 grid gap-2 sm:grid-cols-4">
+          {STYLE_SLIDERS.map((slider) => (
+            <StylePreferenceSlider
+              key={slider.axis}
+              slider={slider}
+              value={styleSliders[slider.axis]}
+              onChange={onStyleSliderChange}
+            />
+          ))}
+        </div>
+      </details>
+
+      {error && (
+        <div className="mt-4 rounded-2xl border border-red-300 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
+          {error}
+        </div>
+      )}
+
+      {!error && loading && items.length === 0 && (
+        <div className="mt-4 space-y-3">
+          {[1, 2, 3].map((row) => (
+            <div key={row} className="h-24 animate-pulse rounded-2xl bg-muted" />
+          ))}
+        </div>
+      )}
+
+      {!error && !loading && items.length === 0 && (
+        <div className="mt-4 rounded-2xl border border-dashed border-border bg-muted/40 p-5 text-sm text-muted-foreground">
+          {result
+            ? "No tops matched this body profile, occasion, and fit threshold. Try another occasion or run a new prediction."
+            : "Run a visual size prediction to get style recommendations."}
+        </div>
+      )}
+
+      {items.length > 0 && (
+        <div className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-1">
+          {items.map((item) => {
+            const garment = getRealGarmentForStyleItem(item.item_id);
+            const imageUrl = garment ? getGarmentImage(garment) : item.image_url;
+            const title = garment?.name ?? item.title;
+            const metadata = [
+              garment?.brand ?? item.brand,
+              garment?.type ?? item.category,
+              garment ? formatUsd(garment.price) : formatVnd(item.price_vnd),
+            ].filter(Boolean).join(" - ");
+            const recommendedSize = result?.user_state.predicted_size;
+            const sizeAvailable = recommendedSize ? garment?.sizes.includes(recommendedSize) ?? false : false;
+
+            return (
+              <div key={item.item_id} className="rounded-2xl border border-border bg-muted/30 p-3 transition-colors hover:bg-muted/50">
+                <div className="flex items-start gap-3">
+                  <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded-2xl border border-border bg-background">
+                    {imageUrl && (
+                      <NextImage
+                        src={imageUrl}
+                        alt={title}
+                        fill
+                        sizes="64px"
+                        className="object-cover"
+                      />
+                    )}
+                    <span className="absolute left-1.5 top-1.5 rounded-full bg-background/90 px-2 py-1 text-[10px] font-semibold text-foreground backdrop-blur">
+                      #{item.rank}
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        {garment ? (
+                          <Link
+                            href={`/product/${garment.id}`}
+                            className="line-clamp-2 text-sm font-semibold transition-colors hover:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          >
+                            {title}
+                          </Link>
+                        ) : (
+                          <span className="line-clamp-2 text-sm font-semibold">{title}</span>
+                        )}
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {metadata}
+                        </p>
+                      </div>
+                      <span className="shrink-0 rounded-full bg-foreground px-2.5 py-1 text-xs font-semibold text-background">
+                        {scorePct(item.total_score)}
+                      </span>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <StyleScorePill label="Fit" value={item.explanation.fit.score} />
+                      <StyleScorePill label="Flatter" value={item.explanation.flatter.score} />
+                      <StyleScorePill label="Match" value={item.explanation.match.score} />
+                      {recommendedSize && garment && (
+                        <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${
+                          sizeAvailable
+                            ? "border-border bg-background text-foreground"
+                            : "border-border bg-muted text-muted-foreground"
+                        }`}>
+                          {sizeAvailable ? `Has ${recommendedSize}` : `Nearest to ${recommendedSize}`}
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="mt-2 line-clamp-1 text-xs leading-relaxed text-muted-foreground">
+                      {garment?.description ??
+                        "Ranked from the real catalog by fit, body-shape flattery, occasion, and style preferences."}
+                    </p>
+                    <p className="mt-1 line-clamp-1 text-xs leading-relaxed text-muted-foreground">
+                      {item.explanation.fit.overall_verdict}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StylePreferenceSlider({
+  slider,
+  value,
+  onChange,
+}: {
+  slider: (typeof STYLE_SLIDERS)[number];
+  value: number;
+  onChange: (axis: StyleSliderAxis, value: number) => void;
+}) {
+  return (
+    <label className="rounded-2xl border border-border bg-background p-2.5">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-xs font-medium">{slider.label}</span>
+        <span className="rounded-full bg-muted px-2 py-1 font-mono text-[10px] text-muted-foreground">
+          {Math.abs(value) < 0.05 ? "Neutral" : value > 0 ? `+${value.toFixed(2)}` : value.toFixed(2)}
+        </span>
+      </div>
+      <input
+        type="range"
+        min="-1"
+        max="1"
+        step="0.25"
+        value={value}
+        onChange={(event) => onChange(slider.axis, Number.parseFloat(event.target.value))}
+        className="mt-2 w-full accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        aria-label={`${slider.label} preference`}
+      />
+      <div className="mt-0.5 flex justify-between gap-3 text-[10px] text-muted-foreground">
+        <span>{slider.minLabel}</span>
+        <span>{slider.maxLabel}</span>
+      </div>
+    </label>
+  );
+}
+
+function StyleScorePill({ label, value }: { label: string; value: number }) {
+  return (
+    <span className="rounded-full border border-border bg-background px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+      {label} {scorePct(value)}
+    </span>
   );
 }
 
@@ -1020,81 +1615,10 @@ function MetricCard({
   helper: string;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-muted/40 p-4">
+    <div className="rounded-2xl border border-border bg-muted/40 p-3">
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-2 text-xl font-semibold tracking-tight">{value}</p>
+      <p className="mt-1.5 truncate text-lg font-semibold tracking-tight">{value}</p>
       <p className="mt-1 text-xs text-muted-foreground">{helper}</p>
-    </div>
-  );
-}
-
-function RatioBar({
-  label,
-  value,
-  min,
-  max,
-  baseline,
-  helper,
-}: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  baseline: number;
-  helper: string;
-}) {
-  const range = max - min;
-  const pct = range > 0 ? Math.max(0, Math.min(100, ((value - min) / range) * 100)) : 0;
-  const baselinePct = range > 0 ? Math.max(0, Math.min(100, ((baseline - min) / range) * 100)) : 50;
-
-  return (
-    <div className="rounded-2xl border border-border bg-muted/40 p-4">
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-        <p className="font-mono text-sm font-semibold">{value > 0 ? value.toFixed(3) : "--"}</p>
-      </div>
-      <div className="relative mt-2.5 h-2 rounded-full bg-muted">
-        {/* Baseline marker */}
-        <div
-          className="absolute top-0 h-full w-px bg-muted-foreground/40"
-          style={{ left: `${baselinePct}%` }}
-        />
-        {/* Value fill */}
-        {value > 0 && (
-          <div
-            className="absolute top-0 left-0 h-full rounded-full bg-foreground/70 transition-all duration-300"
-            style={{ width: `${pct}%` }}
-          />
-        )}
-      </div>
-      <p className="mt-1.5 text-[10px] text-muted-foreground">{helper}</p>
-    </div>
-  );
-}
-
-function PipelineRow({
-  step,
-  label,
-  detail,
-  value,
-}: {
-  step: string;
-  label: string;
-  detail: string;
-  value: string;
-}) {
-  return (
-    <div className="flex items-start gap-3 rounded-2xl border border-border bg-muted/40 p-3.5">
-      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-foreground/10 text-[10px] font-bold text-muted-foreground">
-        {step}
-      </span>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline justify-between gap-2">
-          <p className="text-sm font-medium">{label}</p>
-          <p className="shrink-0 font-mono text-xs font-medium">{value}</p>
-        </div>
-        <p className="mt-0.5 truncate text-xs text-muted-foreground">{detail}</p>
-      </div>
     </div>
   );
 }

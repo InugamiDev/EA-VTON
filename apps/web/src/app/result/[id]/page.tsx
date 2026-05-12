@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,7 +11,7 @@ import {
   Ruler,
   ArrowLeft,
 } from "lucide-react";
-import { cn, formatPrice } from "@/lib/utils";
+import { formatPrice } from "@/lib/utils";
 import { GARMENTS } from "@/data/garments";
 
 /* ------------------------------------------------------------------ */
@@ -154,9 +154,9 @@ export default function ResultPage() {
             {/* Before (clipped by slider position) */}
             <div
               className="absolute inset-0 overflow-hidden"
-              style={{ width: `${sliderPos}%` }}
+              style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
             >
-              <div className="relative h-full" style={{ width: containerRef.current ? `${containerRef.current.offsetWidth}px` : "100%" }}>
+              <div className="absolute inset-0">
                 <Image
                   src={DEMO_BEFORE}
                   alt="Before — original photo"

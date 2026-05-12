@@ -16,8 +16,9 @@ type InputMode = "webcam" | "upload";
 type Step = "input" | "capture" | "result";
 
 const POPULATIONS = [
-  { value: "universal", label: "Universal (US)" },
+  { value: "us_women", label: "US women" },
   { value: "vietnamese", label: "Vietnamese" },
+  { value: "universal", label: "Universal (legacy)" },
 ];
 
 const FIT_OPTIONS = [
@@ -33,7 +34,7 @@ export default function MeasurePage() {
   // User inputs
   const [heightCm, setHeightCm] = useState<string>("165");
   const [weightKg, setWeightKg] = useState<string>("55");
-  const [population, setPopulation] = useState("universal");
+  const [population, setPopulation] = useState("us_women");
   const [fitPreference, setFitPreference] = useState("regular");
 
   // Capture state

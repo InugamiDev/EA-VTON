@@ -1,9 +1,17 @@
 import type { NextConfig } from "next";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const webRoot = dirname(fileURLToPath(import.meta.url));
+const workspaceRoot = resolve(webRoot, "../..");
 
 const nextConfig: NextConfig = {
   turbopack: {
-    // Keep Turbopack scoped to the web app package instead of inferring the monorepo root.
-    root: process.cwd(),
+    // intent: keep Turbopack rooted where pnpm hoists workspace dependencies
+    // status: done
+    // next: remove when Next workspace root inference is stable for this monorepo
+    // confidence: high
+    root: workspaceRoot,
   },
   images: {
     remotePatterns: [
