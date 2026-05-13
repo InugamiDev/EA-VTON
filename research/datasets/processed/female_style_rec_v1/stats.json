@@ -1,0 +1,211 @@
+{
+  "interactions": 8194,
+  "output_dir": "research/datasets/processed/female_style_rec_v1",
+  "people": 589,
+  "people_by_split": {
+    "test": 60,
+    "train": 473,
+    "val": 56
+  },
+  "person_split_leakage_checked": true,
+  "records": 8194,
+  "source_manifest": "research/datasets/female_clothing_style_v1/manifest_deepfashion_with_masks_balanced_10_20.jsonl",
+  "splits": {
+    "test": 807,
+    "train": 6609,
+    "val": 778
+  },
+  "top_aesthetic_tags": [
+    [
+      "casual_basic",
+      5681
+    ],
+    [
+      "classic",
+      2513
+    ],
+    [
+      "romantic",
+      1443
+    ],
+    [
+      "soft",
+      1173
+    ],
+    [
+      "minimal",
+      1070
+    ],
+    [
+      "streetwear",
+      118
+    ]
+  ],
+  "top_categories": [
+    [
+      "tank",
+      3906
+    ],
+    [
+      "midi_dress",
+      1214
+    ],
+    [
+      "blouse",
+      1060
+    ],
+    [
+      "sweater",
+      891
+    ],
+    [
+      "cardigan",
+      282
+    ],
+    [
+      "romper",
+      229
+    ],
+    [
+      "coat",
+      219
+    ],
+    [
+      "shorts",
+      129
+    ],
+    [
+      "hoodie",
+      110
+    ],
+    [
+      "skirt",
+      92
+    ],
+    [
+      "leather_jacket",
+      25
+    ],
+    [
+      "denim_jacket",
+      12
+    ],
+    [
+      "trousers",
+      10
+    ],
+    [
+      "jeans",
+      8
+    ],
+    [
+      "parka",
+      6
+    ],
+    [
+      "leggings",
+      1
+    ]
+  ],
+  "top_families": [
+    [
+      "top",
+      6249
+    ],
+    [
+      "dress_jumpsuit",
+      1443
+    ],
+    [
+      "outerwear",
+      262
+    ],
+    [
+      "bottom",
+      240
+    ]
+  ],
+  "top_style_items": [
+    [
+      "style_top|tank|casual|unknown|multi|casual_basic",
+      1841
+    ],
+    [
+      "style_top|tank|casual|unknown|unknown|casual_basic",
+      515
+    ],
+    [
+      "style_top|blouse|casual|unknown|multi|classic+minimal",
+      485
+    ],
+    [
+      "style_top|tank|casual|unknown|black|casual_basic",
+      387
+    ],
+    [
+      "style_top|tank|casual|unknown|beige|casual_basic",
+      327
+    ],
+    [
+      "style_top|sweater|casual|unknown|multi|casual_basic+soft",
+      295
+    ],
+    [
+      "style_dress_jumpsuit|midi_dress|casual|unknown|multi|classic+romantic",
+      285
+    ],
+    [
+      "style_top|sweater|casual|unknown|unknown|casual_basic+soft",
+      264
+    ],
+    [
+      "style_top|tank|casual|unknown|white|casual_basic",
+      239
+    ],
+    [
+      "style_dress_jumpsuit|midi_dress|casual|unknown|black|classic+romantic",
+      210
+    ],
+    [
+      "style_top|tank|casual|unknown|pink|casual_basic",
+      148
+    ],
+    [
+      "style_dress_jumpsuit|midi_dress|casual|unknown|blue|classic+romantic",
+      140
+    ],
+    [
+      "style_top|tank|casual|unknown|blue|casual_basic",
+      139
+    ],
+    [
+      "style_dress_jumpsuit|midi_dress|casual|unknown|unknown|classic+romantic",
+      127
+    ],
+    [
+      "style_top|blouse|casual|unknown|black|classic+minimal",
+      124
+    ],
+    [
+      "style_top|blouse|casual|unknown|white|classic+minimal",
+      122
+    ],
+    [
+      "style_dress_jumpsuit|midi_dress|casual|unknown|red|classic+romantic",
+      116
+    ],
+    [
+      "style_top|tank|casual|unknown|red|casual_basic",
+      115
+    ],
+    [
+      "style_outerwear|coat|casual|unknown|multi|casual_basic",
+      111
+    ],
+    [
+      "style_bottom|shorts|casual|unknown|multi|casual_basic",
+      98
+    ]
+  ],
+  "unique_style_items": 137
+}

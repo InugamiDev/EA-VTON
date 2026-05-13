@@ -1,0 +1,49 @@
+{
+  "aesthetic_tags": {
+    "casual_basic": 0,
+    "classic": 1,
+    "minimal": 2,
+    "romantic": 3,
+    "soft": 4,
+    "streetwear": 5
+  },
+  "color_mood": {
+    "colorful": 0,
+    "neutral": 1,
+    "unknown": 2
+  },
+  "formality": {
+    "casual": 0
+  },
+  "layering": {
+    "light_layering": 0,
+    "single_layer": 1
+  },
+  "occasion": {
+    "casual": 0
+  },
+  "primary_category": {
+    "blouse": 0,
+    "cardigan": 1,
+    "coat": 2,
+    "denim_jacket": 3,
+    "hoodie": 4,
+    "jeans": 5,
+    "leather_jacket": 6,
+    "leggings": 7,
+    "midi_dress": 8,
+    "parka": 9,
+    "romper": 10,
+    "shorts": 11,
+    "skirt": 12,
+    "sweater": 13,
+    "tank": 14,
+    "trousers": 15
+  },
+  "primary_family": {
+    "bottom": 0,
+    "dress_jumpsuit": 1,
+    "outerwear": 2,
+    "top": 3
+  }
+}

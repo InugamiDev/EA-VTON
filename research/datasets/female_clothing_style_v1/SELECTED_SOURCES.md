@@ -46,3 +46,15 @@ They are ReID or public-camera/movie-derived sources and do not pass this datase
 2. Test person-level repeated-image aggregation on `manifest_deepfashion_with_masks_balanced_10_20.jsonl`.
 3. Add Amazon Reviews 2023 product/review metadata as a sidecar after download succeeds.
 4. Fill the final training corpus through participant intake, redaction, labeling, and strict manifest validation.
+
+## Processed Style-Rec Package
+
+The current person-level pilot package is built at:
+
+- `research/datasets/processed/female_style_rec_v1/`
+
+It includes split image JSONL files, flat image labels, garment labels, repeated-image person profiles, positive person-to-style-item observations, class maps, and summary stats. Build or refresh it with:
+
+```bash
+python3 research/datasets/scripts/build_female_style_rec_dataset.py
+```
