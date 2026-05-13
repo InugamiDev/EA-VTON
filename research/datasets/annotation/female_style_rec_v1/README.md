@@ -53,3 +53,14 @@ python3 research/datasets/scripts/auto_label_female_style_rec.py \
   --output-dir research/datasets/annotation/female_style_rec_v1/auto_labels_test
 python3 research/datasets/scripts/start_female_style_labeling.py --batch-size 100
 ```
+
+## OpenAI Vision LLM Pilot
+
+Use this only with redacted images. The default model is `gpt-5-nano`, with `gpt-4.1-nano` as fallback if the account/model route is unavailable.
+
+```bash
+export OPENAI_API_KEY=...
+python3 research/datasets/scripts/llm_label_female_style_rec.py --limit 25
+```
+
+The script defaults to a small 25-record pilot for cost control. Use `--limit 0` only when you intentionally want to label the full selected split.
