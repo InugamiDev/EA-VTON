@@ -1,0 +1,89 @@
+{
+  "accepted": 5757,
+  "confidence": {
+    "max": 0.98,
+    "mean": 0.8479,
+    "min": 0.66
+  },
+  "confidence_threshold": 0.72,
+  "needs_review": 852,
+  "output_dir": "research/datasets/annotation/female_style_rec_v1/auto_labels",
+  "records": 6609,
+  "source": "research/datasets/processed/female_style_rec_v1/images_train.jsonl",
+  "status_counts": {
+    "auto_labeled": 5757,
+    "needs_review": 852
+  },
+  "top_categories": [
+    [
+      "tank",
+      3116
+    ],
+    [
+      "midi_dress",
+      993
+    ],
+    [
+      "blouse",
+      860
+    ],
+    [
+      "sweater",
+      739
+    ],
+    [
+      "cardigan",
+      217
+    ],
+    [
+      "coat",
+      181
+    ],
+    [
+      "romper",
+      167
+    ],
+    [
+      "shorts",
+      119
+    ],
+    [
+      "skirt",
+      92
+    ],
+    [
+      "hoodie",
+      82
+    ],
+    [
+      "leather_jacket",
+      22
+    ],
+    [
+      "denim_jacket",
+      11
+    ],
+    [
+      "trousers",
+      10
+    ]
+  ],
+  "top_review_reasons": [
+    [
+      "color_mood_unknown",
+      852
+    ],
+    [
+      "fit_unknown",
+      852
+    ],
+    [
+      "silhouette_unknown",
+      852
+    ],
+    [
+      "color_family_unknown",
+      852
+    ]
+  ]
+}

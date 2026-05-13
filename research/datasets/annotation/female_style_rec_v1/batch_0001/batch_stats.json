@@ -1,0 +1,24 @@
+{
+  "batch_size": 100,
+  "categories": {
+    "blouse": 8,
+    "cardigan": 8,
+    "coat": 8,
+    "denim_jacket": 8,
+    "hoodie": 8,
+    "leather_jacket": 8,
+    "midi_dress": 8,
+    "romper": 8,
+    "shorts": 8,
+    "skirt": 7,
+    "sweater": 7,
+    "tank": 7,
+    "trousers": 7
+  },
+  "output_dir": "research/datasets/annotation/female_style_rec_v1/batch_0001",
+  "source": "research/datasets/processed/female_style_rec_v1/images_train.jsonl",
+  "splits": {
+    "train": 100
+  },
+  "strategy": "diverse"
+}
