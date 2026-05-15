@@ -116,3 +116,6 @@ htmlcov/
 
 # ── Generated media (Manim output, regenerable) ──
 media/
+
+# ── DeepFashion2 raw images (~16GB, not committed) ──
+research/datasets/raw/deepfashion2/
