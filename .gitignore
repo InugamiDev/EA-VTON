@@ -119,3 +119,5 @@ media/
 
 # ── DeepFashion2 raw images (~16GB, not committed) ──
 research/datasets/raw/deepfashion2/
+research/datasets/processed/deepfashion2/style_catalog.duckdb
+checkpoints/

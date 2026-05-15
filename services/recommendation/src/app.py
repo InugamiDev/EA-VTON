@@ -116,6 +116,8 @@ class StyleUpperRequest(BaseModel):
     user_palette_lab: list[float] | None = Field(default=None, description="User skin-tone palette anchor in CIE LAB (optional)")
     top_k: int = Field(default=10, ge=1, le=50)
     weights: dict[str, float] | None = None
+    catalog_source: Literal["app_garments_v1", "deepfashion2_upper", "merged"] = "app_garments_v1"
+    candidate_pool_size: int = Field(default=300, ge=50, le=2000, description="DF2 sample pool size before scoring")
 
 
 class CompareRequest(BaseModel):
@@ -447,6 +449,56 @@ def recommend_size_visual(req: VisualSizeRequest):
 # confidence: high
 
 
+@app.get("/style/image/{garment_id:path}")
+def get_style_image(garment_id: str):
+    """Serve a cropped garment thumbnail from the DeepFashion2 catalog.
+
+    garment_id format: 'split:image_id:item_idx' (matches DeepFashion2Catalog).
+    """
+    from fastapi.responses import Response
+    from PIL import Image
+    from io import BytesIO
+    from src.deepfashion2_catalog import DeepFashion2Catalog, is_available
+
+    if not is_available():
+        raise HTTPException(status_code=503, detail="DeepFashion2 catalog not built yet")
+
+    catalog = DeepFashion2Catalog.get_instance()
+    item = catalog.get_by_garment_id(garment_id)
+    if not item:
+        raise HTTPException(status_code=404, detail=f"Garment {garment_id} not found")
+
+    local_path = item.get("image_local_path")
+    if not local_path:
+        raise HTTPException(status_code=404, detail="Image path missing")
+
+    try:
+        img = Image.open(local_path).convert("RGB")
+        bbox = item.get("bbox") or []
+        if len(bbox) == 4:
+            x1, y1, x2, y2 = bbox
+            margin_x = (x2 - x1) * 0.05
+            margin_y = (y2 - y1) * 0.05
+            w, h = img.size
+            crop = img.crop((
+                max(0, int(x1 - margin_x)),
+                max(0, int(y1 - margin_y)),
+                min(w, int(x2 + margin_x)),
+                min(h, int(y2 + margin_y)),
+            ))
+        else:
+            crop = img
+
+        # Standardize size for the rec card
+        crop.thumbnail((512, 512))
+        buf = BytesIO()
+        crop.save(buf, format="JPEG", quality=85)
+        return Response(content=buf.getvalue(), media_type="image/jpeg",
+                        headers={"Cache-Control": "public, max-age=86400"})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Image serve failed: {e}")
+
+
 @app.post("/recommend-style/upper")
 def recommend_style_upper(req: StyleUpperRequest):
     """Upper-body style recommendation.
@@ -470,6 +522,8 @@ def recommend_style_upper(req: StyleUpperRequest):
         user_palette_lab=req.user_palette_lab,
         top_k=req.top_k,
         weights=req.weights,
+        catalog_source=req.catalog_source,
+        candidate_pool_size=req.candidate_pool_size,
     )
     return build_response(body, req.predicted_size, ranked, req.weights, req.population)
 

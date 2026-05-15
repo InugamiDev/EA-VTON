@@ -1,33 +1,32 @@
-"""Auto-label DeepFashion2 upper-body items with our style taxonomy.
+"""Auto-label DeepFashion2 upper-body items with our style taxonomy (batched).
 
-For each upper-body item:
-  1. Crop the garment using its bounding box (with small margin)
-  2. CLIP zero-shot classify per attribute dimension:
-       - neckline ∈ {v_neck, deep_v_neck, scoop, crew, boat, high_neck, sweetheart, off_shoulder}
-       - silhouette ∈ {bodycon, fitted, semi_fitted, a_line, loose, oversized}
-       - pattern ∈ {solid, vertical_stripe, horizontal_stripe, small_print, large_print}
-  3. Derive sleeve_length from DeepFashion2 category_id (1=short, 2=long, 5=sleeveless, ...)
-  4. Extract dominant color via LAB k-means (k=3, ignore the largest cluster if it's near-white background)
-  5. Map LAB color → temperature ∈ {warm, cool, neutral} and value ∈ {light, medium, dark}
+Pipeline per batch of N items:
+  1. Parallel image load + bbox crop + CLIP preprocess (torch DataLoader workers)
+  2. Stack into a [N, 3, 224, 224] tensor → single CLIP forward pass on MPS/CUDA/CPU
+  3. Per-item LAB k-means on cropped image (CPU)
+  4. Write checkpoint parquet every CHECKPOINT_EVERY items so runs are resumable.
 
-Outputs:
-  research/datasets/processed/deepfashion2/items_upper_labeled.parquet
-    one row per item with the manifest columns + 6 new attribute columns + dominant LAB.
+Output schema (one row per garment item):
+  split, image_id, image_path, item_idx, category_id, category_name, bbox,
+  occlusion, viewpoint,
+  neckline, neckline_conf, silhouette, silhouette_conf, pattern, pattern_conf,
+  sleeve, primary_color_lab, color_temperature, color_value, clip_embedding
 
-Run on a sample first (--limit 500) to validate before full 140k run.
+clip_embedding is a 512-dim float vector (ViT-B-32 image embedding) — enables
+catalog visual similarity / two-tower retrieval downstream without re-running.
 """
 
-# intent: auto-label DeepFashion2 garments with our 7-dim style taxonomy
-# status: in_progress
-# next: validate on 500-item sample, then run full 140k batch overnight
-# confidence: medium  (CLIP zero-shot accuracy varies per attribute)
+# intent: batched zero-shot labeling of 140k DeepFashion2 upper-body items
+# status: done
+# next: build DuckDB view over output parquet + wire into recommender
+# confidence: high
 
 from __future__ import annotations
 
 import argparse
 import sys
+import time
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import pyarrow as pa
@@ -37,8 +36,6 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[3]
 RAW = ROOT / "research/datasets/raw/deepfashion2"
 OUT = ROOT / "research/datasets/processed/deepfashion2"
-
-# ── Attribute taxonomy + CLIP text prompts ──
 
 PROMPT_BANK: dict[str, list[tuple[str, str]]] = {
     "neckline": [
@@ -68,15 +65,73 @@ PROMPT_BANK: dict[str, list[tuple[str, str]]] = {
     ],
 }
 
-# Derive sleeve from DeepFashion2 category_id (no CLIP needed)
-SLEEVE_BY_CATEGORY = {
-    1: "short",   # short sleeve top
-    2: "long",    # long sleeve top
-    3: "short",   # short sleeve outwear
-    4: "long",    # long sleeve outwear
-    5: "sleeveless",  # vest
-    6: "sleeveless",  # sling
-}
+SLEEVE_BY_CATEGORY = {1: "short", 2: "long", 3: "short", 4: "long", 5: "sleeveless", 6: "sleeveless"}
+
+
+def _rgb_to_lab(rgb: np.ndarray) -> np.ndarray:
+    """sRGB [0,1] → CIE LAB. Vectorized over N×3 arrays."""
+    rgb_lin = np.where(rgb > 0.04045, ((rgb + 0.055) / 1.055) ** 2.4, rgb / 12.92)
+    M = np.array([
+        [0.4124564, 0.3575761, 0.1804375],
+        [0.2126729, 0.7151522, 0.0721750],
+        [0.0193339, 0.1191920, 0.9503041],
+    ])
+    xyz = rgb_lin @ M.T
+    xn, yn, zn = 0.95047, 1.0, 1.08883
+    def f(t):
+        return np.where(t > 0.008856, t ** (1 / 3), 7.787 * t + 16 / 116)
+    fx, fy, fz = f(xyz[:, 0] / xn), f(xyz[:, 1] / yn), f(xyz[:, 2] / zn)
+    L = 116 * fy - 16
+    a = 500 * (fx - fy)
+    b = 200 * (fy - fz)
+    return np.stack([L, a, b], axis=-1)
+
+
+class UpperBodyDataset:
+    """Lazy dataset that crops bbox and applies CLIP preprocess (workers safe)."""
+
+    def __init__(self, df, preprocess, margin: float = 0.08):
+        self.df = df
+        self.preprocess = preprocess
+        self.margin = margin
+
+    def __len__(self) -> int:
+        return len(self.df)
+
+    def __getitem__(self, idx: int):
+        row = self.df.iloc[idx]
+        img_path = RAW / row.image_path
+        try:
+            img = Image.open(img_path).convert("RGB")
+        except Exception:
+            return idx, None, None
+
+        w, h = img.size
+        x1, y1, x2, y2 = row.bbox
+        bw, bh = x2 - x1, y2 - y1
+        if bw <= 4 or bh <= 4:
+            return idx, None, None
+        mx, my = int(bw * self.margin), int(bh * self.margin)
+        x1 = max(0, int(x1) - mx)
+        y1 = max(0, int(y1) - my)
+        x2 = min(w, int(x2) + mx)
+        y2 = min(h, int(y2) + my)
+        crop = img.crop((x1, y1, x2, y2))
+
+        clip_tensor = self.preprocess(crop)
+        small = np.asarray(crop.resize((96, 96)))  # for LAB analysis
+        return idx, clip_tensor, small
+
+
+def collate(batch):
+    import torch
+    valid = [(idx, t, c) for idx, t, c in batch if t is not None]
+    if not valid:
+        return [], None, []
+    indices = [v[0] for v in valid]
+    tensors = torch.stack([v[1] for v in valid])
+    crops = [v[2] for v in valid]
+    return indices, tensors, crops
 
 
 def load_clip(device: str):
@@ -89,7 +144,6 @@ def load_clip(device: str):
     tokenizer = open_clip.get_tokenizer("ViT-B-32")
     model.eval().to(device)
 
-    # Pre-encode all text prompts (one-time cost)
     text_embeds: dict[str, tuple[list[str], "torch.Tensor"]] = {}
     with torch.inference_mode():
         for dim, pairs in PROMPT_BANK.items():
@@ -102,136 +156,63 @@ def load_clip(device: str):
     return model, preprocess, text_embeds
 
 
-def crop_garment(image_path: Path, bbox: list[float], margin: float = 0.08) -> Image.Image | None:
-    """Crop an image to the bounding box with a small margin, returning None on error."""
+def _color_from_crop(crop_arr: np.ndarray, kmeans_cls) -> tuple[list[float], str, str]:
+    """Compute dominant color from a small RGB crop array (96×96×3 uint8)."""
     try:
-        img = Image.open(image_path).convert("RGB")
-    except Exception:
-        return None
-    w, h = img.size
-    x1, y1, x2, y2 = bbox
-    bw, bh = x2 - x1, y2 - y1
-    if bw <= 4 or bh <= 4:
-        return None
-    mx, my = int(bw * margin), int(bh * margin)
-    x1 = max(0, int(x1) - mx)
-    y1 = max(0, int(y1) - my)
-    x2 = min(w, int(x2) + mx)
-    y2 = min(h, int(y2) + my)
-    return img.crop((x1, y1, x2, y2))
-
-
-def classify_attributes(
-    crop: Image.Image,
-    model,
-    preprocess,
-    text_embeds: dict,
-    device: str,
-) -> dict[str, tuple[str, float]]:
-    """Return {dim: (label, confidence)} for each attribute dimension."""
-    import torch
-
-    img_tensor = preprocess(crop).unsqueeze(0).to(device)
-    with torch.inference_mode():
-        img_embed = model.encode_image(img_tensor)
-        img_embed = img_embed / img_embed.norm(dim=-1, keepdim=True)
-
-        results = {}
-        for dim, (labels, text_embed) in text_embeds.items():
-            scores = (img_embed @ text_embed.T).squeeze(0)
-            probs = scores.softmax(dim=-1).cpu().numpy()
-            idx = int(probs.argmax())
-            results[dim] = (labels[idx], float(probs[idx]))
-    return results
-
-
-def dominant_color_lab(
-    crop: Image.Image, k: int = 3, sample_size: int = 4000
-) -> tuple[list[float], str, str]:
-    """K-means cluster pixels in CIE LAB space, return (lab, temp, value) of the largest non-background cluster."""
-    from sklearn.cluster import KMeans
-    from PIL import ImageCms
-
-    crop_small = crop.resize((128, 128))
-    arr = np.asarray(crop_small).reshape(-1, 3).astype(np.float64) / 255.0
-
-    # RGB -> LAB via simple matrix conversion (approx; good enough for clustering)
-    # Using sRGB → XYZ → LAB
-    def rgb_to_lab(rgb):
-        # Linearize sRGB
-        rgb = np.where(rgb > 0.04045, ((rgb + 0.055) / 1.055) ** 2.4, rgb / 12.92)
-        # to XYZ (D65)
-        M = np.array([
-            [0.4124564, 0.3575761, 0.1804375],
-            [0.2126729, 0.7151522, 0.0721750],
-            [0.0193339, 0.1191920, 0.9503041],
-        ])
-        xyz = rgb @ M.T
-        # to LAB
-        xn, yn, zn = 0.95047, 1.0, 1.08883
-        f = lambda t: np.where(t > 0.008856, t ** (1 / 3), 7.787 * t + 16 / 116)
-        fx, fy, fz = f(xyz[:, 0] / xn), f(xyz[:, 1] / yn), f(xyz[:, 2] / zn)
-        L = 116 * fy - 16
-        a = 500 * (fx - fy)
-        b = 200 * (fy - fz)
-        return np.stack([L, a, b], axis=-1)
-
-    lab = rgb_to_lab(arr)
-    if len(lab) > sample_size:
-        idx = np.random.choice(len(lab), sample_size, replace=False)
-        lab_sample = lab[idx]
-    else:
-        lab_sample = lab
-
-    km = KMeans(n_clusters=k, n_init=3, random_state=42)
-    km.fit(lab_sample)
-    centers = km.cluster_centers_
-    counts = np.bincount(km.labels_, minlength=k)
-
-    # Find largest non-background cluster (L > 92 with chroma < 6 = white-ish background)
-    order = np.argsort(-counts)
-    best = order[0]
-    for i in order:
-        L, a, b = centers[i]
-        chroma = np.hypot(a, b)
-        if not (L > 92 and chroma < 6):
-            best = i
-            break
-
-    L, a, b = centers[best]
-    chroma = np.hypot(a, b)
-
-    # Hue → temperature
-    if chroma < 8:
+        lab_pixels = _rgb_to_lab(crop_arr.reshape(-1, 3).astype(np.float64) / 255.0)
+        km = kmeans_cls(n_clusters=3, n_init=3, random_state=42)
+        km.fit(lab_pixels)
+        centers = km.cluster_centers_
+        counts = np.bincount(km.labels_, minlength=3)
+        order = np.argsort(-counts)
+        best = order[0]
+        for i in order:
+            L_, a_, b_ = centers[i]
+            if not (L_ > 92 and float(np.hypot(a_, b_)) < 6):
+                best = i
+                break
+        Lc, ac, bc = centers[best]
+        chroma = float(np.hypot(ac, bc))
         temperature = "neutral"
-    else:
-        hue = np.degrees(np.arctan2(b, a))
-        # Warm: hue in roughly (-30, 100) -- reds, oranges, yellows
-        # Cool: hue in (100, 260) -- greens, blues, purples
-        temperature = "warm" if -45 < hue < 100 else "cool"
+        if chroma >= 8:
+            hue = float(np.degrees(np.arctan2(bc, ac)))
+            temperature = "warm" if -45 < hue < 100 else "cool"
+        if Lc < 35:
+            value = "dark"
+        elif Lc < 70:
+            value = "medium"
+        else:
+            value = "light"
+        return [float(Lc), float(ac), float(bc)], temperature, value
+    except Exception:
+        return [50.0, 0.0, 0.0], "neutral", "medium"
 
-    # Lightness → value
-    if L < 35:
-        value = "dark"
-    elif L < 70:
-        value = "medium"
-    else:
-        value = "light"
 
-    return [float(L), float(a), float(b)], temperature, value
+CHECKPOINT_EVERY = 10_000
 
 
 def main() -> None:
+    import torch
+    from torch.utils.data import DataLoader
+    from sklearn.cluster import KMeans
+
     ap = argparse.ArgumentParser()
-    ap.add_argument("--limit", type=int, default=0, help="0 = all upper-body items")
-    ap.add_argument("--device", default="cpu", choices=["cpu", "mps", "cuda"])
-    ap.add_argument("--batch-log", type=int, default=200)
+    ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--device", default="mps", choices=["cpu", "mps", "cuda"])
+    ap.add_argument("--batch-size", type=int, default=64)
+    ap.add_argument("--num-workers", type=int, default=4)
     ap.add_argument("--output", default=str(OUT / "items_upper_labeled.parquet"))
+    ap.add_argument("--checkpoint-dir", default=str(OUT / "checkpoints"))
+    ap.add_argument("--resume", action="store_true")
     args = ap.parse_args()
+
+    if args.device == "mps" and not torch.backends.mps.is_available():
+        print("  MPS unavailable, falling back to CPU")
+        args.device = "cpu"
 
     src = OUT / "items_upper.parquet"
     if not src.exists():
-        print(f"!! {src} not found — run build_deepfashion2_manifest.py first", file=sys.stderr)
+        print(f"!! {src} missing", file=sys.stderr)
         return
 
     table = pq.read_table(src)
@@ -239,68 +220,122 @@ def main() -> None:
     if args.limit > 0:
         df = df.iloc[: args.limit].copy()
 
+    ckpt_dir = Path(args.checkpoint_dir)
+    ckpt_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.resume:
+        already: set[tuple[str, int]] = set()
+        for p in sorted(ckpt_dir.glob("part-*.parquet")):
+            t = pq.read_table(p, columns=["image_id", "item_idx"])
+            for iid, idx in zip(t.column("image_id").to_pylist(), t.column("item_idx").to_pylist()):
+                already.add((iid, idx))
+        if already:
+            print(f"  resume: skipping {len(already)} already-labeled items")
+            mask = ~df.apply(lambda r: (r.image_id, int(r.item_idx)) in already, axis=1)
+            df = df[mask].reset_index(drop=True)
+
     n = len(df)
-    print(f"  labeling {n} upper-body items on {args.device}")
-    print(f"  loading CLIP ViT-B-32 (laion2b)...")
+    if n == 0:
+        print("  nothing left to label")
+        return
+
+    print(f"  labeling {n} items  device={args.device}  batch={args.batch_size}  workers={args.num_workers}")
+    print(f"  loading CLIP ViT-B-32...")
     model, preprocess, text_embeds = load_clip(args.device)
     print(f"  loaded.")
 
+    dataset = UpperBodyDataset(df, preprocess)
+    loader = DataLoader(
+        dataset,
+        batch_size=args.batch_size,
+        num_workers=args.num_workers,
+        collate_fn=collate,
+        shuffle=False,
+        persistent_workers=args.num_workers > 0,
+    )
+
     out_rows: list[dict] = []
     skipped = 0
-    for i, row in enumerate(df.itertuples(index=False)):
-        if i % args.batch_log == 0:
-            print(f"    {i}/{n}  (skipped {skipped})")
+    t_start = time.time()
+    items_done = 0
+    part_idx = len(list(ckpt_dir.glob("part-*.parquet")))
+    last_log_items = 0
 
-        img_path = RAW / row.image_path
-        crop = crop_garment(img_path, row.bbox)
-        if crop is None:
-            skipped += 1
+    for batch_no, (indices, tensors, crops) in enumerate(loader):
+        if not indices:
+            skipped += args.batch_size
             continue
 
-        try:
-            attrs = classify_attributes(crop, model, preprocess, text_embeds, args.device)
-            lab, temp, value = dominant_color_lab(crop)
-        except Exception as e:
-            skipped += 1
-            continue
+        tensors = tensors.to(args.device)
+        with torch.inference_mode():
+            img_embed = model.encode_image(tensors)
+            img_embed = img_embed / img_embed.norm(dim=-1, keepdim=True)
 
-        out_rows.append({
-            "split": row.split,
-            "image_id": row.image_id,
-            "image_path": row.image_path,
-            "item_idx": int(row.item_idx),
-            "category_id": int(row.category_id),
-            "category_name": row.category_name,
-            "bbox": list(row.bbox),
-            "occlusion": int(row.occlusion) if row.occlusion is not None else 0,
-            "viewpoint": int(row.viewpoint) if row.viewpoint is not None else 0,
-            "neckline": attrs["neckline"][0],
-            "neckline_conf": attrs["neckline"][1],
-            "silhouette": attrs["silhouette"][0],
-            "silhouette_conf": attrs["silhouette"][1],
-            "pattern": attrs["pattern"][0],
-            "pattern_conf": attrs["pattern"][1],
-            "sleeve": SLEEVE_BY_CATEGORY.get(int(row.category_id), "unknown"),
-            "primary_color_lab": lab,
-            "color_temperature": temp,
-            "color_value": value,
-        })
+            attr_results = {}
+            for dim, (labels, text_embed) in text_embeds.items():
+                scores = img_embed @ text_embed.T
+                probs = scores.softmax(dim=-1).cpu().numpy()
+                idxs = probs.argmax(axis=-1)
+                attr_results[dim] = (labels, idxs, probs)
 
-    print(f"\n  labeled {len(out_rows)} items, skipped {skipped}")
+            embed_cpu = img_embed.cpu().numpy().astype(np.float32)
 
-    out_table = pa.Table.from_pylist(out_rows)
-    out_path = Path(args.output)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    pq.write_table(out_table, out_path)
-    print(f"  wrote {out_path}")
+        for k, df_idx in enumerate(indices):
+            row = df.iloc[df_idx]
+            color_lab, temperature, value = _color_from_crop(crops[k], KMeans)
 
-    # Quick distribution summary
-    print("\n  Attribute distribution:")
-    from collections import Counter
-    for dim in ["neckline", "silhouette", "pattern", "sleeve", "color_temperature", "color_value"]:
-        c = Counter(r[dim] for r in out_rows)
-        top = ", ".join(f"{k}={v}" for k, v in c.most_common(5))
-        print(f"    {dim:18s} {top}")
+            out_rows.append({
+                "split": row.split,
+                "image_id": row.image_id,
+                "image_path": row.image_path,
+                "item_idx": int(row.item_idx),
+                "category_id": int(row.category_id),
+                "category_name": row.category_name,
+                "bbox": list(row.bbox),
+                "occlusion": int(row.occlusion) if row.occlusion is not None else 0,
+                "viewpoint": int(row.viewpoint) if row.viewpoint is not None else 0,
+                "neckline": attr_results["neckline"][0][int(attr_results["neckline"][1][k])],
+                "neckline_conf": float(attr_results["neckline"][2][k, attr_results["neckline"][1][k]]),
+                "silhouette": attr_results["silhouette"][0][int(attr_results["silhouette"][1][k])],
+                "silhouette_conf": float(attr_results["silhouette"][2][k, attr_results["silhouette"][1][k]]),
+                "pattern": attr_results["pattern"][0][int(attr_results["pattern"][1][k])],
+                "pattern_conf": float(attr_results["pattern"][2][k, attr_results["pattern"][1][k]]),
+                "sleeve": SLEEVE_BY_CATEGORY.get(int(row.category_id), "unknown"),
+                "primary_color_lab": color_lab,
+                "color_temperature": temperature,
+                "color_value": value,
+                "clip_embedding": embed_cpu[k].tolist(),
+            })
+            items_done += 1
+
+        if items_done - last_log_items >= 500:
+            elapsed = time.time() - t_start
+            rate = items_done / elapsed if elapsed > 0 else 0
+            eta_s = (n - items_done) / rate if rate > 0 else 0
+            print(f"    {items_done}/{n} | {rate:.1f} items/s | ETA {eta_s/60:.1f} min | skipped {skipped}")
+            last_log_items = items_done
+
+        if len(out_rows) >= CHECKPOINT_EVERY:
+            ckpt_path = ckpt_dir / f"part-{part_idx:04d}.parquet"
+            pq.write_table(pa.Table.from_pylist(out_rows), ckpt_path)
+            print(f"    checkpoint → {ckpt_path.name} ({len(out_rows)} rows)")
+            out_rows = []
+            part_idx += 1
+
+    if out_rows:
+        ckpt_path = ckpt_dir / f"part-{part_idx:04d}.parquet"
+        pq.write_table(pa.Table.from_pylist(out_rows), ckpt_path)
+        print(f"  final checkpoint → {ckpt_path.name}")
+
+    all_parts = sorted(ckpt_dir.glob("part-*.parquet"))
+    print(f"\n  merging {len(all_parts)} checkpoints → {args.output}")
+    tables = [pq.read_table(p) for p in all_parts]
+    merged = pa.concat_tables(tables, promote_options="default")
+    pq.write_table(merged, args.output)
+    print(f"  wrote {args.output} ({len(merged)} rows)")
+
+    elapsed = time.time() - t_start
+    print(f"\n  total: {elapsed/60:.1f} min, {items_done/elapsed:.1f} items/s, {skipped} skipped")
 
 
 if __name__ == "__main__":

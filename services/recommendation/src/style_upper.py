@@ -386,11 +386,44 @@ class _DataCache:
 
     @classmethod
     def get_catalog(cls, name: str = "app_garments_v1") -> list[dict]:
+        """Return the cached app catalog (14 hand-curated items).
+
+        For DeepFashion2 (140k items) use _resolve_catalog → query_candidates
+        at request time so we don't load 140k rows into Python memory.
+        """
         if cls._catalog is None:
             with cls._lock:
                 if cls._catalog is None:
                     cls._catalog = {"items": _load_app_catalog_items()}
         return cls._catalog["items"]
+
+
+def _resolve_catalog(source: str, pool_size: int) -> list[dict]:
+    """Resolve the catalog dict-list given a named source.
+
+    source ∈ {"app_garments_v1", "deepfashion2_upper", "merged"}
+    """
+    if source == "app_garments_v1":
+        return _DataCache.get_catalog()
+
+    if source in ("deepfashion2_upper", "merged"):
+        try:
+            from .deepfashion2_catalog import DeepFashion2Catalog, is_available
+        except Exception:
+            return _DataCache.get_catalog()
+
+        if not is_available():
+            # Fall back to app catalog if DB hasn't been built yet
+            return _DataCache.get_catalog()
+
+        df2 = DeepFashion2Catalog.get_instance()
+        df2_items = df2.query_candidates(sample_size=pool_size)
+
+        if source == "merged":
+            return _DataCache.get_catalog() + df2_items
+        return df2_items
+
+    return _DataCache.get_catalog()
 
 
 # ── Component: Flatter ──
@@ -713,13 +746,23 @@ def rank_upper_body(
     weights: dict[str, float] | None = None,
     catalog: list[dict] | None = None,
     population: str | None = "us_women",
+    catalog_source: str = "app_garments_v1",
+    candidate_pool_size: int = 300,
 ) -> tuple[BodyTypeResult, list[RankedItem]]:
     """Rank upper-body items for a user.
+
+    catalog_source ∈ {"app_garments_v1", "deepfashion2_upper", "merged"}
+        - app_garments_v1: 14 hand-curated branded items
+        - deepfashion2_upper: pull ~candidate_pool_size pre-filtered items
+          from the 140k labeled DeepFashion2 catalog (DuckDB-backed)
+        - merged: app catalog + DF2 sample concatenated
 
     Returns (body_type, ranked_items[:top_k]).
     """
     weights = {**DEFAULT_WEIGHTS, **(weights or {})}
-    catalog = catalog if catalog is not None else _DataCache.get_catalog()
+    # Build catalog from source selection
+    if catalog is None:
+        catalog = _resolve_catalog(catalog_source, candidate_pool_size)
 
     if canonical_population(population) == "vietnamese":
         body_type = VNBodyTypeClassifier.get_instance().predict(
