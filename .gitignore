@@ -121,3 +121,4 @@ media/
 research/datasets/raw/deepfashion2/
 research/datasets/processed/deepfashion2/style_catalog.duckdb
 checkpoints/
+research/datasets/processed/deepfashion2/items_upper_labeled.parquet
