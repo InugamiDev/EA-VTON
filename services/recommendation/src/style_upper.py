@@ -604,7 +604,7 @@ class MatchResult:
     occasion_ok: bool
     color_score: float
     color_delta_e: float | None
-    slider_score: float
+    slider_score: float | None  # None when no slider was engaged
     slider_projection: dict[str, float]
 
 
@@ -687,14 +687,21 @@ def compute_match(
     aligned_axes = {axis: round(item_axes.get(axis, 0.0), 3) for axis in SLIDER_AXES}
     active = [a for a in SLIDER_AXES if abs(float(sliders.get(a, 0.0))) > 0.05]
     if not active:
-        slider_score = 0.5  # neutral when no slider engagement
+        slider_score = None  # signal: no slider engagement; treat as "no preference"
     else:
         dot = sum(float(sliders.get(a, 0.0)) * item_axes.get(a, 0.0) for a in active)
         slider_score = 0.5 + 0.5 * (dot / len(active))
 
-    # Combined match: gated by occasion (hard filter), then linear combo
+    # Combined match:
+    #   - Hard-filtered by occasion
+    #   - When user did NOT touch sliders, match is purely color match (1.0 if
+    #     no palette provided, else exp(-ΔE/σ)). This avoids artificially
+    #     capping match at 0.75 when sliders are absent.
+    #   - When user DID move sliders, weight color + slider 50/50.
     if not occasion_ok:
         score = 0.0
+    elif slider_score is None:
+        score = color_score
     else:
         score = 0.5 * color_score + 0.5 * slider_score
 
@@ -703,24 +710,28 @@ def compute_match(
         occasion_ok=occasion_ok,
         color_score=round(color_score, 4),
         color_delta_e=round(delta_e, 2) if delta_e is not None else None,
-        slider_score=round(slider_score, 4),
+        slider_score=round(slider_score, 4) if slider_score is not None else None,
         slider_projection=aligned_axes,
     )
 
 
 def match_to_dict(result: MatchResult) -> dict[str, Any]:
-    return {
+    out: dict[str, Any] = {
         "score": result.score,
         "occasion_ok": result.occasion_ok,
         "color": {
             "score": result.color_score,
             "delta_e76": result.color_delta_e,
         },
-        "sliders": {
+    }
+    # Only surface sliders block when the user actually moved a slider.
+    # Keeps the explanation DAG clean for the default (no-slider) UX.
+    if result.slider_score is not None:
+        out["sliders"] = {
             "score": result.slider_score,
             "item_projection": result.slider_projection,
-        },
-    }
+        }
+    return out
 
 
 # ── Top-level orchestration ──

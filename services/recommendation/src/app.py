@@ -101,9 +101,19 @@ class StyleUpperRatios(BaseModel):
 
 
 class StyleUpperContext(BaseModel):
-    """Context: occasion + steerable sliders."""
+    """Context for upper-body style recommendation.
+
+    Default UX is occasion-only — recommendations work cleanly without sliders.
+    Sliders are an advanced/optional knob retained for power users; passing an
+    empty dict (the default) yields recommendations driven purely by body type,
+    occasion, and color palette.
+    """
     occasion: Literal["work", "casual", "date", "formal", "party"] = "casual"
-    sliders: dict[str, float] = Field(default_factory=dict, description="Slider axes ∈ [-1, 1]: bold, loose, warm, cover")
+    sliders: dict[str, float] = Field(
+        default_factory=dict,
+        description="ADVANCED — optional slider axes in [-1, 1]: bold, loose, warm, cover. "
+                    "Leave empty for default UX.",
+    )
 
 
 class StyleUpperRequest(BaseModel):
