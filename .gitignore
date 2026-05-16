@@ -122,3 +122,21 @@ research/datasets/raw/deepfashion2/
 research/datasets/processed/deepfashion2/style_catalog.duckdb
 checkpoints/
 research/datasets/processed/deepfashion2/items_upper_labeled.parquet
+
+# ── Combined catalog parquet (~640MB, regenerable from per-source parquets) ──
+research/datasets/processed/combined/items_upper_combined.parquet
+research/datasets/processed/combined/images/
+
+# Per-source labeled parquets (large; regenerable from raw + labeler scripts)
+research/datasets/processed/deepfashion_with_masks/items_upper_labeled.parquet
+research/datasets/processed/deepfashion_with_masks/checkpoints/
+research/datasets/processed/fashionpedia/items_upper_labeled.parquet
+research/datasets/processed/fashionpedia/checkpoints/
+research/datasets/processed/fashion_products_small/items_upper_labeled.parquet
+research/datasets/processed/fashion_products_small/checkpoints/
+
+# Raw downloads (gitignored)
+research/datasets/raw/female_clothing_style_v1/deepfashion_with_masks/data/
+research/datasets/raw/fashionpedia/
+research/datasets/raw/fashion_products_small/
+research/datasets/raw/vn_brands/

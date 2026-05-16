@@ -180,9 +180,10 @@ class DeepFashion2Catalog:
             clauses.append(f"neckline_conf > {min_attr_conf}")
             clauses.append(f"silhouette_conf > {min_attr_conf}")
 
+        # Drop items with no resolved image path (broken extraction etc.)
+        clauses.append("image_path IS NOT NULL")
         where = " AND ".join(clauses) if clauses else "1=1"
 
-        # Use SAMPLE to spread across the catalog; ORDER BY hash for stable seed
         # Deterministic shuffle via hash(garment_id + seed) — DuckDB has hash()
         query = f"""
             SELECT *
@@ -229,15 +230,41 @@ class DeepFashion2Catalog:
             row["color_value"], row["pattern"],
         )
 
+        # Image path resolution — combined parquet stores repo-relative paths
+        # in image_path (e.g. "research/datasets/processed/combined/images/...");
+        # DF2-only rows from the older schema had image_path like
+        # "train/image/000026.jpg" relative to raw/deepfashion2/.
+        ipath = row.get("image_path")
+        source = row.get("source", "deepfashion2")
+        if not ipath:
+            local = None
+        elif ipath.startswith("research/"):
+            # repo-relative — combined catalog convention
+            local = str(REPO_ROOT / ipath)
+        else:
+            # legacy DF2 path
+            local = str(DEFAULT_RAW / ipath)
+
+        # Brand label per source
+        brand_label = {
+            "deepfashion2": "DeepFashion2",
+            "deepfashion_with_masks": "DeepFashion (with masks)",
+            "fashionpedia": "Fashionpedia",
+            "fashion_products_small": "Myntra (catalog)",
+        }.get(source, source)
+
+        # Title — use stored title if present (multi-source catalog), else synthesize
+        title = row.get("title") or f"{row['category_name'].replace('_', ' ')} — {row['neckline']} {silhouette}"
+
         return {
             "item_id": row["garment_id"],
-            "title": f"{row['category_name'].replace('_', ' ')} — {row['neckline']} {silhouette}",
+            "title": title,
             "category": "top" if family == "top" else "outwear",
             "target_gender": "female",
             "garment_family": "tops",
-            "brand": "DeepFashion2",
+            "brand": brand_label,
             "image_url": f"/api/style/image/{row['garment_id']}",  # served lazily
-            "image_local_path": str(DEFAULT_RAW / row["image_path"]),
+            "image_local_path": local,
             "bbox": row["bbox"],
             "price_vnd": None,
             "available_sizes": list(size_chart.keys()),
