@@ -20,8 +20,9 @@ DB = ROOT / "research/datasets/processed/deepfashion2/style_catalog.duckdb"
 RAW = ROOT / "research/datasets/raw/deepfashion2"
 OUT = ROOT / "reports/df2_label_inspection.html"
 
-PER_LABEL = 6  # items per attribute value
-THUMB_SIZE = 200
+PER_LABEL = 12         # successful cards per attribute value
+CANDIDATE_POOL = 60    # rows to try per label (covers crop/render failures)
+THUMB_SIZE = 220
 
 
 def thumbnail_data_uri(image_path: Path, bbox: list[float] | None) -> str | None:
@@ -42,26 +43,42 @@ def thumbnail_data_uri(image_path: Path, bbox: list[float] | None) -> str | None
 
 
 def build_section(con, title: str, column: str) -> str:
-    """Build one section of N items per unique value in `column`."""
+    """Build one section of PER_LABEL successful items per unique value.
+
+    We over-fetch (CANDIDATE_POOL rows) and accept the first PER_LABEL that
+    render successfully. Uses ORDER BY hash() — deterministic and reliable
+    (DuckDB's USING SAMPLE under-returns with selective filters).
+    """
     values = [r[0] for r in con.execute(
         f"SELECT DISTINCT {column} FROM items ORDER BY {column}"
     ).fetchall()]
 
     html_blocks = [f'<h2>{title} ({column})</h2>']
     for v in values:
+        # over-fetch, then keep first PER_LABEL successful thumbnails
         rows = con.execute(f"""
             SELECT image_id, item_idx, category_name, neckline, silhouette, sleeve,
                    pattern, color_temperature, color_value, image_path, bbox
             FROM items
             WHERE {column} = ?
-            USING SAMPLE {PER_LABEL} ROWS
-        """, [v]).fetchall()
+            ORDER BY hash(image_id || CAST(item_idx AS VARCHAR) || ?)
+            LIMIT {CANDIDATE_POOL}
+        """, [v, v]).fetchall()
+
+        total_in_db = con.execute(
+            f"SELECT COUNT(*) FROM items WHERE {column} = ?", [v]
+        ).fetchone()[0]
 
         cards = []
+        tried = failed = 0
         for r in rows:
+            if len(cards) >= PER_LABEL:
+                break
+            tried += 1
             iid, iidx, cat, nck, sil, slv, pat, ct, cv, ipath, bbox = r
             img_data = thumbnail_data_uri(RAW / ipath, list(bbox) if bbox else None)
             if not img_data:
+                failed += 1
                 continue
             label_html = (
                 f"<div class='lbl'>{cat}</div>"
@@ -71,7 +88,12 @@ def build_section(con, title: str, column: str) -> str:
             )
             cards.append(f"<div class='card'><img src='{img_data}'/>{label_html}</div>")
 
-        html_blocks.append(f"<h3 class='val'>{v}</h3>")
+        print(f"    {column}={v}: {len(cards)} shown ({tried} tried, {failed} failed) — DB has {total_in_db:,}")
+
+        meta = f"{len(cards)} shown · {total_in_db:,} in catalog"
+        if failed:
+            meta += f" · {failed} crops failed"
+        html_blocks.append(f"<h3 class='val'>{v} <span class='meta'>({meta})</span></h3>")
         html_blocks.append(f"<div class='grid'>{''.join(cards)}</div>")
 
     return "\n".join(html_blocks)
