@@ -604,13 +604,107 @@ class MatchResult:
     occasion_ok: bool
     color_score: float
     color_delta_e: float | None
+    color_matched_anchor_idx: int | None  # which palette anchor matched best
     slider_score: float | None  # None when no slider was engaged
     slider_projection: dict[str, float]
 
 
 def _delta_e76(lab_a: list[float], lab_b: list[float]) -> float:
-    """CIE76 color distance in LAB space."""
+    """CIE76 color distance in LAB space (kept for back-compat)."""
     return math.sqrt(sum((a - b) ** 2 for a, b in zip(lab_a, lab_b)))
+
+
+def _delta_e2000(lab_a: list[float], lab_b: list[float]) -> float:
+    """CIEDE2000 — the modern perceptual color difference standard.
+
+    Better than ΔE76 near pure blue/red boundaries; corrects for hue rotation
+    and chroma weighting. Reference: Sharma et al. 2005.
+    """
+    L1, a1, b1 = lab_a
+    L2, a2, b2 = lab_b
+    kL = kC = kH = 1.0
+
+    C1 = math.sqrt(a1 * a1 + b1 * b1)
+    C2 = math.sqrt(a2 * a2 + b2 * b2)
+    Cbar = (C1 + C2) / 2.0
+    G = 0.5 * (1 - math.sqrt(Cbar ** 7 / (Cbar ** 7 + 25 ** 7))) if Cbar > 0 else 0
+    a1p = a1 * (1 + G)
+    a2p = a2 * (1 + G)
+    C1p = math.sqrt(a1p * a1p + b1 * b1)
+    C2p = math.sqrt(a2p * a2p + b2 * b2)
+    h1p = math.degrees(math.atan2(b1, a1p)) % 360 if (a1p or b1) else 0
+    h2p = math.degrees(math.atan2(b2, a2p)) % 360 if (a2p or b2) else 0
+
+    dLp = L2 - L1
+    dCp = C2p - C1p
+    if C1p * C2p == 0:
+        dhp = 0
+    else:
+        diff = h2p - h1p
+        if diff > 180: diff -= 360
+        elif diff < -180: diff += 360
+        dhp = diff
+    dHp = 2 * math.sqrt(C1p * C2p) * math.sin(math.radians(dhp / 2))
+
+    Lbarp = (L1 + L2) / 2
+    Cbarp = (C1p + C2p) / 2
+    if C1p * C2p == 0:
+        hbarp = h1p + h2p
+    else:
+        if abs(h1p - h2p) <= 180:
+            hbarp = (h1p + h2p) / 2
+        else:
+            hbarp = (h1p + h2p + 360) / 2 if (h1p + h2p) < 360 else (h1p + h2p - 360) / 2
+
+    T = (1 - 0.17 * math.cos(math.radians(hbarp - 30))
+           + 0.24 * math.cos(math.radians(2 * hbarp))
+           + 0.32 * math.cos(math.radians(3 * hbarp + 6))
+           - 0.20 * math.cos(math.radians(4 * hbarp - 63)))
+    SL = 1 + (0.015 * (Lbarp - 50) ** 2) / math.sqrt(20 + (Lbarp - 50) ** 2)
+    SC = 1 + 0.045 * Cbarp
+    SH = 1 + 0.015 * Cbarp * T
+    RT = (-2 * math.sqrt(Cbarp ** 7 / (Cbarp ** 7 + 25 ** 7))
+          * math.sin(math.radians(60 * math.exp(-((hbarp - 275) / 25) ** 2)))) if Cbarp > 0 else 0
+
+    return math.sqrt(
+        (dLp / (kL * SL)) ** 2
+        + (dCp / (kC * SC)) ** 2
+        + (dHp / (kH * SH)) ** 2
+        + RT * (dCp / (kC * SC)) * (dHp / (kH * SH))
+    )
+
+
+def _load_seasonal_palette(season: str) -> list[list[float]] | None:
+    """Resolve a season key (e.g. 'soft_autumn') to its LAB anchor list."""
+    path = _DATA_DIR / "seasonal_palettes.json"
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            palettes = json.load(f).get("palettes", {})
+    except Exception:
+        return None
+    entry = palettes.get(season.lower())
+    return entry["anchors"] if entry else None
+
+
+def _resolve_palette_anchors(
+    season: str | None,
+    palette_anchors: list[list[float]] | None,
+    palette_lab: list[float] | None,
+) -> list[list[float]] | None:
+    """Decide which anchor list to score against. Priority:
+       1. explicit list of anchors
+       2. season name → preset anchors
+       3. single LAB point (back-compat) → list of one
+    """
+    if palette_anchors:
+        return [a for a in palette_anchors if len(a) == 3]
+    if season:
+        anchors = _load_seasonal_palette(season)
+        if anchors:
+            return anchors
+    if palette_lab and len(palette_lab) == 3:
+        return [palette_lab]
+    return None
 
 
 def _attribute_to_axes(attrs: dict[str, str]) -> dict[str, float]:
@@ -668,17 +762,32 @@ def compute_match(
     occasion: str,
     sliders: dict[str, float] | None = None,
     user_palette_lab: list[float] | None = None,
+    user_palette_anchors: list[list[float]] | None = None,
+    season: str | None = None,
 ) -> MatchResult:
-    """Compute match score combining occasion, color, and slider projection."""
+    """Compute match score combining occasion, color, and slider projection.
+
+    Color matching priority:
+      1. user_palette_anchors (explicit list of LAB anchors)
+      2. season (e.g. 'soft_autumn' → load 8 anchors from preset palette)
+      3. user_palette_lab (single LAB point — back-compat)
+
+    Item color score = max over anchors of exp(-(ΔE2000 / σ)²).
+    """
     sliders = sliders or {}
     occ_tags = item.get("occasion_tags", [])
     occasion_ok = bool(occ_tags) and occasion in occ_tags
 
-    # Color score
+    # Color score — multi-anchor max with CIEDE2000
     delta_e = None
     color_score = 0.5
-    if user_palette_lab is not None and "primary_color_lab" in item:
-        delta_e = _delta_e76(item["primary_color_lab"], user_palette_lab)
+    matched_anchor_idx = None
+    anchors = _resolve_palette_anchors(season, user_palette_anchors, user_palette_lab)
+    item_lab = item.get("primary_color_lab")
+    if anchors and item_lab and len(item_lab) == 3:
+        per_anchor = [_delta_e2000(item_lab, anchor) for anchor in anchors]
+        delta_e = min(per_anchor)
+        matched_anchor_idx = per_anchor.index(delta_e)
         color_score = math.exp(-(delta_e / COLOR_DELTA_E_SIGMA) ** 2)
 
     # Slider projection — only count axes the user actually moved, so a single
@@ -710,6 +819,7 @@ def compute_match(
         occasion_ok=occasion_ok,
         color_score=round(color_score, 4),
         color_delta_e=round(delta_e, 2) if delta_e is not None else None,
+        color_matched_anchor_idx=matched_anchor_idx,
         slider_score=round(slider_score, 4) if slider_score is not None else None,
         slider_projection=aligned_axes,
     )
@@ -721,7 +831,8 @@ def match_to_dict(result: MatchResult) -> dict[str, Any]:
         "occasion_ok": result.occasion_ok,
         "color": {
             "score": result.color_score,
-            "delta_e76": result.color_delta_e,
+            "delta_e2000": result.color_delta_e,
+            "matched_anchor_idx": result.color_matched_anchor_idx,
         },
     }
     # Only surface sliders block when the user actually moved a slider.
@@ -753,6 +864,8 @@ def rank_upper_body(
     occasion: str,
     sliders: dict[str, float] | None = None,
     user_palette_lab: list[float] | None = None,
+    user_palette_anchors: list[list[float]] | None = None,
+    season: str | None = None,
     top_k: int = 10,
     weights: dict[str, float] | None = None,
     catalog: list[dict] | None = None,
@@ -811,7 +924,12 @@ def rank_upper_body(
             continue
 
         flatter = compute_flatter(body_type, item.get("attributes", {}), population)
-        match = compute_match(item, occasion, sliders, user_palette_lab)
+        match = compute_match(
+            item, occasion, sliders,
+            user_palette_lab=user_palette_lab,
+            user_palette_anchors=user_palette_anchors,
+            season=season,
+        )
 
         if not match.occasion_ok:
             # Hard filter on occasion

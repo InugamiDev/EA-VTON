@@ -116,6 +116,14 @@ class StyleUpperContext(BaseModel):
     )
 
 
+SeasonLiteral = Literal[
+    "light_spring", "true_spring", "bright_spring",
+    "light_summer", "true_summer", "soft_summer",
+    "soft_autumn", "true_autumn", "deep_autumn",
+    "deep_winter", "true_winter", "bright_winter",
+]
+
+
 class StyleUpperRequest(BaseModel):
     """Request for upper-body style recommendation."""
     height_cm: float = Field(gt=100, lt=250)
@@ -123,7 +131,19 @@ class StyleUpperRequest(BaseModel):
     population: PopulationLiteral = "us_women"
     ratios: StyleUpperRatios
     context: StyleUpperContext = Field(default_factory=StyleUpperContext)
-    user_palette_lab: list[float] | None = Field(default=None, description="User skin-tone palette anchor in CIE LAB (optional)")
+    # Color match — three ways to specify (priority: anchors > season > single lab):
+    season: SeasonLiteral | None = Field(
+        default=None,
+        description="Pick a 12-season palette (preferred UX). Resolves to 8 LAB anchors internally.",
+    )
+    user_palette_anchors: list[list[float]] | None = Field(
+        default=None,
+        description="Explicit list of LAB anchors. Score = max(color_score over anchors).",
+    )
+    user_palette_lab: list[float] | None = Field(
+        default=None,
+        description="Single LAB point (back-compat). Use 'season' for typical UX.",
+    )
     top_k: int = Field(default=10, ge=1, le=50)
     weights: dict[str, float] | None = None
     catalog_source: Literal["app_garments_v1", "deepfashion2_upper", "merged"] = "app_garments_v1"
@@ -530,6 +550,8 @@ def recommend_style_upper(req: StyleUpperRequest):
         occasion=req.context.occasion,
         sliders=req.context.sliders,
         user_palette_lab=req.user_palette_lab,
+        user_palette_anchors=req.user_palette_anchors,
+        season=req.season,
         top_k=req.top_k,
         weights=req.weights,
         catalog_source=req.catalog_source,

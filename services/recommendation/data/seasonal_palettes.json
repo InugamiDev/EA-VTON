@@ -1,0 +1,127 @@
+{
+  "_doc": "12-season color palette anchors in CIE LAB (D65). Each palette has 8 representative colors drawn from the Sci\\ART system (Christine Scaman), expressed as Lab triplets. The recommender matches a garment color to the closest palette anchor; max color_score across anchors is the user's color match.",
+  "_source": "Sci\\ART 12-season color analysis (light/warm/dark/cool/muted/clear axes)",
+  "_format": "season_key: {label, family ∈ {Spring, Summer, Autumn, Winter}, axis, anchors: [[L,a,b], ...]}",
+  "palettes": {
+    "light_spring": {
+      "label": "Light Spring",
+      "label_vi": "Mùa xuân nhạt",
+      "family": "Spring",
+      "axis": "light + warm",
+      "anchors": [
+        [88, 8, 22], [84, 16, 14], [80, 2, 22], [78, 6, -8],
+        [94, 0, 10], [70, 18, 30], [86, -12, 18], [82, 22, 18]
+      ]
+    },
+    "true_spring": {
+      "label": "True Spring",
+      "label_vi": "Mùa xuân tươi",
+      "family": "Spring",
+      "axis": "warm + bright",
+      "anchors": [
+        [62, 38, 38], [76, 18, 60], [56, 20, 38], [68, -22, 30],
+        [88, 4, 12], [54, 28, 28], [70, 22, 52], [44, 38, 24]
+      ]
+    },
+    "bright_spring": {
+      "label": "Bright Spring",
+      "label_vi": "Mùa xuân rực",
+      "family": "Spring",
+      "axis": "bright + warm",
+      "anchors": [
+        [58, 62, 38], [38, 8, -52], [70, -40, 22], [72, 32, 52],
+        [52, 48, -32], [88, 4, 78], [62, 62, 18], [30, 18, -54]
+      ]
+    },
+    "light_summer": {
+      "label": "Light Summer",
+      "label_vi": "Mùa hè nhạt",
+      "family": "Summer",
+      "axis": "light + cool",
+      "anchors": [
+        [88, 4, -10], [82, -4, -16], [82, 14, 4], [78, 0, -22],
+        [86, 12, 0], [76, -10, -10], [72, 4, -6], [90, 2, 4]
+      ]
+    },
+    "true_summer": {
+      "label": "True Summer",
+      "label_vi": "Mùa hè dịu",
+      "family": "Summer",
+      "axis": "cool + muted",
+      "anchors": [
+        [50, 8, -32], [44, 22, -8], [60, -18, -10], [38, 16, -22],
+        [68, -2, -18], [54, -8, -28], [42, 36, 8], [32, 4, -22]
+      ]
+    },
+    "soft_summer": {
+      "label": "Soft Summer",
+      "label_vi": "Mùa hè êm",
+      "family": "Summer",
+      "axis": "muted + cool",
+      "anchors": [
+        [58, 6, -8], [52, -10, -8], [62, 4, -2], [44, -8, -14],
+        [68, -8, 6], [50, 14, 6], [62, -16, -2], [42, 4, -14]
+      ]
+    },
+    "soft_autumn": {
+      "label": "Soft Autumn",
+      "label_vi": "Mùa thu nhẹ",
+      "family": "Autumn",
+      "axis": "muted + warm",
+      "anchors": [
+        [54, 18, 32], [44, 6, 26], [60, -8, 24], [50, 22, 22],
+        [68, 6, 24], [40, 14, 18], [58, -14, 30], [46, 10, 30]
+      ]
+    },
+    "true_autumn": {
+      "label": "True Autumn",
+      "label_vi": "Mùa thu nồng",
+      "family": "Autumn",
+      "axis": "warm + muted",
+      "anchors": [
+        [40, 32, 36], [32, 6, 32], [50, 16, 50], [58, -18, 44],
+        [44, 24, 26], [36, 12, 26], [52, 26, 42], [28, 18, 22]
+      ]
+    },
+    "deep_autumn": {
+      "label": "Deep Autumn",
+      "label_vi": "Mùa thu sâu",
+      "family": "Autumn",
+      "axis": "deep + warm",
+      "anchors": [
+        [22, 28, 14], [28, 8, 22], [30, 12, 14], [20, 8, 18],
+        [36, 22, 36], [24, 16, 18], [32, -10, 22], [18, 12, 8]
+      ]
+    },
+    "deep_winter": {
+      "label": "Deep Winter",
+      "label_vi": "Mùa đông sâu",
+      "family": "Winter",
+      "axis": "deep + cool",
+      "anchors": [
+        [12, 2, -2], [22, 36, 6], [18, 4, -32], [26, -22, -8],
+        [94, 0, 0], [16, 38, 12], [28, 8, -36], [20, -8, -22]
+      ]
+    },
+    "true_winter": {
+      "label": "True Winter",
+      "label_vi": "Mùa đông lạnh",
+      "family": "Winter",
+      "axis": "cool + bright",
+      "anchors": [
+        [40, -52, 6], [28, 10, -52], [46, 56, 22], [94, 0, -2],
+        [62, -34, -12], [30, 26, -52], [50, 64, -8], [24, 8, -44]
+      ]
+    },
+    "bright_winter": {
+      "label": "Bright Winter",
+      "label_vi": "Mùa đông rực",
+      "family": "Winter",
+      "axis": "bright + cool",
+      "anchors": [
+        [56, 64, -20], [38, 12, -62], [52, -38, -32], [94, 0, 0],
+        [62, 70, 40], [44, -12, -52], [60, 56, 18], [22, 6, -10]
+      ]
+    }
+  }
+}
