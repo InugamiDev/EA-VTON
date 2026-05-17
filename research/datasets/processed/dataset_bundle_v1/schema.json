@@ -1,0 +1,22 @@
+{
+  "garment_id": "string — '<source>:<image_id>:<item_idx>' (unique key)",
+  "source": "string — one of {deepfashion2, deepfashion_with_masks, fashionpedia, fashion_products_small}",
+  "image_id": "string — source-specific image identifier (use download_images.py to fetch)",
+  "item_idx": "int — object index within the source image (multiple garments per image)",
+  "category_id": "int (1-6) — garment category (see taxonomy.json)",
+  "category_name": "string — human-readable category label",
+  "bbox": "list[float] of length 4 — [x1, y1, x2, y2] in source image pixels",
+  "neckline": "string — one of 8 neckline labels (CLIP zero-shot)",
+  "neckline_conf": "float — softmax confidence for neckline label",
+  "silhouette": "string — one of 6 silhouette labels (CLIP zero-shot)",
+  "silhouette_conf": "float — softmax confidence for silhouette label",
+  "sleeve": "string — one of 4 sleeve labels (CLIP zero-shot or category-derived)",
+  "sleeve_conf": "float — softmax confidence (0 when category-derived)",
+  "pattern": "string — one of 5 pattern labels (CLIP zero-shot)",
+  "pattern_conf": "float — softmax confidence",
+  "primary_color_lab": "list[float] of length 3 — [L, a, b] in CIE LAB color space, D65 white point",
+  "color_temperature": "string — {warm, cool, neutral} derived from primary_color_lab hue angle",
+  "color_value": "string — {light, medium, dark} derived from primary_color_lab L*",
+  "occasion_tags": "list[string] — inferred occasion suggestions",
+  "clip_embedding": "list[float] of length 512 — OpenCLIP ViT-B-32 (laion2b_s34b_b79k) image embedding, L2-normalized"
+}

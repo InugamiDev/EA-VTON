@@ -1,0 +1,19 @@
+Creative Commons Attribution 4.0 International License (CC BY 4.0)
+
+The contents of this repository — including labels.parquet, taxonomy.json,
+schema.json, seasonal_palettes.json, vn_body_centroids.json, body_rules_vn.json,
+METHODOLOGY.md, and all original source code — are released under CC BY 4.0.
+
+You are free to share and adapt this work for any purpose, including
+commercial, provided that you give appropriate credit and indicate if changes
+were made.
+
+Citation:
+  EA-VTON Team. (2026). EA-VTON Upper-Body Garment Attribute Labels: A 207k
+  multi-source CLIP-derived catalog for population-aware style recommendation.
+  https://github.com/InugamiDev/EA-VTON
+
+For the source images themselves, see LICENSE.SOURCES.md — each source dataset
+has its own license that you must comply with separately.
+
+Full text: https://creativecommons.org/licenses/by/4.0/legalcode

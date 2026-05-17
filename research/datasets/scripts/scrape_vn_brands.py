@@ -158,51 +158,55 @@ def _download_image(url: str, brand: str, *, session: requests.Session) -> str |
 # ── Per-brand scrapers ──
 
 def scrape_ivy_moda(session: requests.Session, max_items: int) -> Iterable[Product]:
-    """Ivy Moda — women's tops."""
+    """Ivy Moda — women's tops (selectors verified May 2026)."""
     base = "https://ivymoda.com"
     if not _robots_allows(base, "/"):
         print("  ivy_moda: robots.txt disallows; skipping"); return
-    # Women's tops collection landing page (Vietnamese: ao-nu)
     list_url = f"{base}/danh-muc/ao-nu"
     html = _polite_get(list_url, session=session)
     if not html:
         return
     soup = BeautifulSoup(html, "html.parser")
 
-    # Selectors are best-effort against the live DOM; tweak if site updates.
-    cards = soup.select("div.product-item, div.product-card, article.product")
-    print(f"  ivy_moda: {len(cards)} cards on listing page")
-    seen = set()
+    # Real selectors from live DOM (May 2026):
+    # Each card is an <a> linking to /sanpham/<slug>-ms-<code>-<id>
+    # Inside the card: <h3> for title, plus price + img.
+    all_links = soup.find_all("a", href=True)
+    product_links = [a for a in all_links if "/sanpham/" in a.get("href", "")]
+    # Dedupe by href
+    seen_href = set()
+    cards = []
+    for a in product_links:
+        href = a["href"]
+        if href in seen_href: continue
+        seen_href.add(href)
+        cards.append(a)
+    print(f"  ivy_moda: {len(cards)} product links on listing")
+
     yielded = 0
     for card in cards:
         if yielded >= max_items: break
-        link = card.select_one("a[href]")
-        if not link: continue
-        href = link["href"]
+        href = card["href"]
         full = urllib.parse.urljoin(base, href)
-        if full in seen: continue
-        seen.add(full)
 
-        prod_html = _polite_get(full, session=session)
-        if not prod_html: continue
-        ps = BeautifulSoup(prod_html, "html.parser")
+        # Most info is already on the listing card — avoid extra page hits
+        h3 = card.find("h3")
+        title = h3.get_text(strip=True) if h3 else ""
+        if not title:
+            # Sometimes title is plain text in the link
+            title = card.get_text(strip=True).split("\n")[0][:80]
 
-        title_el = ps.select_one("h1, h1.product-title")
-        title = title_el.get_text(strip=True) if title_el else ""
-        price_el = ps.select_one(".product-price, .price, span.price")
-        price = _parse_price_vnd(price_el.get_text(strip=True) if price_el else "")
-        img_el = ps.select_one("img.product-image, .product-gallery img, img[itemprop=image]")
-        img_url = img_el["src"] if img_el else None
-        if img_url and not img_url.startswith("http"):
-            img_url = urllib.parse.urljoin(base, img_url)
-        desc_el = ps.select_one(".product-description, .description")
-        desc = desc_el.get_text(" ", strip=True) if desc_el else None
+        # Price from card text (regex out "534.000đ" patterns)
+        m = re.search(r"([\d.,]+)\s*đ", card.get_text())
+        price = _parse_price_vnd(m.group(0)) if m else None
 
-        sizes = []
-        for s in ps.select(".size-option, .product-size, label.size"):
-            t = s.get_text(strip=True).upper()
-            if t in {"XS","S","M","L","XL","XXL"}:
-                sizes.append(t)
+        # Image from <img> inside the card
+        img_el = card.find("img")
+        img_url = None
+        if img_el:
+            img_url = img_el.get("data-src") or img_el.get("src")
+            if img_url and not img_url.startswith("http"):
+                img_url = urllib.parse.urljoin(base, img_url)
 
         img_local = _download_image(img_url, "ivy_moda", session=session) if img_url else None
 
@@ -215,9 +219,9 @@ def scrape_ivy_moda(session: requests.Session, max_items: int) -> Iterable[Produ
             image_local_path=img_local,
             category="top",
             color=None,
-            sizes=sorted(set(sizes)),
+            sizes=[],
             size_chart_cm=None,
-            description=desc,
+            description=None,
             scraped_at=time.strftime("%Y-%m-%d"),
         )
         yielded += 1
@@ -270,48 +274,68 @@ def scrape_coolmate(session: requests.Session, max_items: int) -> Iterable[Produ
 
 
 def scrape_dottie(session: requests.Session, max_items: int) -> Iterable[Product]:
-    """Dottie — Vietnamese women's brand."""
-    base = "https://dottie.com.vn"
+    """Dottie — Vietnamese women's brand. Shopify-style.
+
+    Use Shopify's /products.json endpoint for clean structured data instead of
+    parsing rendered HTML (which lazy-loads images).
+    """
+    base = "https://dottie.vn"
     if not _robots_allows(base, "/"):
         print("  dottie: robots.txt disallows; skipping"); return
-    list_url = f"{base}/collections/ao-nu"
-    html = _polite_get(list_url, session=session)
-    if not html: return
-    soup = BeautifulSoup(html, "html.parser")
-    cards = soup.select("a.product-item, div.product-card a, a[href*='/products/']")
-    print(f"  dottie: {len(cards)} cards")
-    seen = set(); yielded = 0
-    for card in cards:
+
+    # Shopify exposes structured product feeds at /collections/<name>/products.json
+    collections = [
+        "all-tops", "ao-so-mi", "ao-thun-classic", "ao-kieu-classic", "ao-khoac-classic",
+    ]
+    yielded = 0
+    seen = set()
+    for col in collections:
         if yielded >= max_items: break
-        href = card.get("href")
-        if not href: continue
-        full = urllib.parse.urljoin(base, href)
-        if full in seen: continue
-        seen.add(full)
+        feed_url = f"{base}/collections/{col}/products.json?limit=50"
+        html = _polite_get(feed_url, session=session)
+        if not html: continue
+        try:
+            data = json.loads(html)
+        except Exception:
+            continue
+        products = data.get("products", [])
+        print(f"  dottie/{col}: {len(products)} products")
+        for prod in products:
+            if yielded >= max_items: break
+            handle = prod.get("handle")
+            if not handle: continue
+            full = f"{base}/products/{handle}"
+            if full in seen: continue
+            seen.add(full)
 
-        prod_html = _polite_get(full, session=session)
-        if not prod_html: continue
-        ps = BeautifulSoup(prod_html, "html.parser")
-        title_el = ps.select_one("h1, .product-title")
-        title = title_el.get_text(strip=True) if title_el else ""
-        price_el = ps.select_one(".product-price, .price")
-        price = _parse_price_vnd(price_el.get_text(strip=True) if price_el else "")
-        img_el = ps.select_one("img.product-image, .product__media img")
-        img_url = img_el.get("src") if img_el else None
-        if img_url and not img_url.startswith("http"):
-            img_url = urllib.parse.urljoin(base, img_url)
-        sizes = [s.get_text(strip=True).upper() for s in ps.select(".size-option, label.swatch")
-                 if s.get_text(strip=True).upper() in {"XS","S","M","L","XL","XXL"}]
-        img_local = _download_image(img_url, "dottie", session=session) if img_url else None
+            title = prod.get("title", "")
+            # Price in cents-equivalent VND from Shopify
+            variants = prod.get("variants", [])
+            price = None
+            if variants:
+                try:
+                    price = int(float(variants[0].get("price", 0)))
+                    if price and price < 1000:  # sometimes stored in major unit
+                        price *= 1000
+                except Exception:
+                    pass
+            images = prod.get("images", [])
+            img_url = images[0]["src"] if images else None
+            sizes = []
+            for v in variants:
+                opt = (v.get("option1") or "").upper()
+                if opt in {"XS","S","M","L","XL","XXL"}:
+                    sizes.append(opt)
+            img_local = _download_image(img_url, "dottie", session=session) if img_url else None
 
-        yield Product(
-            brand="dottie", url=full, title=title, price_vnd=price,
-            image_url=img_url, image_local_path=img_local,
-            category="top", color=None, sizes=sorted(set(sizes)),
-            size_chart_cm=None, description=None,
-            scraped_at=time.strftime("%Y-%m-%d"),
-        )
-        yielded += 1
+            yield Product(
+                brand="dottie", url=full, title=title, price_vnd=price,
+                image_url=img_url, image_local_path=img_local,
+                category="top", color=None, sizes=sorted(set(sizes)),
+                size_chart_cm=None, description=None,
+                scraped_at=time.strftime("%Y-%m-%d"),
+            )
+            yielded += 1
 
 
 SCRAPERS: dict[str, Callable] = {

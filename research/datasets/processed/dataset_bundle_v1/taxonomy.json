@@ -1,0 +1,64 @@
+{
+  "neckline": [
+    "v_neck",
+    "deep_v_neck",
+    "scoop",
+    "crew",
+    "boat",
+    "high_neck",
+    "sweetheart",
+    "off_shoulder"
+  ],
+  "silhouette": [
+    "bodycon",
+    "fitted",
+    "semi_fitted",
+    "a_line",
+    "loose",
+    "oversized"
+  ],
+  "sleeve": [
+    "sleeveless",
+    "short",
+    "three_quarter",
+    "long"
+  ],
+  "pattern": [
+    "solid",
+    "vertical_stripe",
+    "horizontal_stripe",
+    "small_print",
+    "large_print"
+  ],
+  "color_temperature": [
+    "warm",
+    "cool",
+    "neutral"
+  ],
+  "color_value": [
+    "light",
+    "medium",
+    "dark"
+  ],
+  "category_id": {
+    "1": "short_sleeve_top",
+    "2": "long_sleeve_top",
+    "3": "short_sleeve_outwear",
+    "4": "long_sleeve_outwear",
+    "5": "vest",
+    "6": "sling"
+  },
+  "source": [
+    "deepfashion2",
+    "deepfashion_with_masks",
+    "fashionpedia",
+    "fashion_products_small"
+  ],
+  "occasion_tags": [
+    "work",
+    "casual",
+    "date",
+    "formal",
+    "party"
+  ]
+}

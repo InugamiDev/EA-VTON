@@ -140,3 +140,6 @@ research/datasets/raw/female_clothing_style_v1/deepfashion_with_masks/data/
 research/datasets/raw/fashionpedia/
 research/datasets/raw/fashion_products_small/
 research/datasets/raw/vn_brands/
+
+# Dataset bundle — labels.parquet is 640MB regenerable from per-source parquets
+research/datasets/processed/dataset_bundle_v1/labels.parquet
