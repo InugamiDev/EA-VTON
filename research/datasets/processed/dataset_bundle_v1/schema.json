@@ -18,5 +18,16 @@
   "color_temperature": "string — {warm, cool, neutral} derived from primary_color_lab hue angle",
   "color_value": "string — {light, medium, dark} derived from primary_color_lab L*",
   "occasion_tags": "list[string] — inferred occasion suggestions",
+  "suits_g1": "int — polarity-sum match against VN body cluster 1 (short_thin_small_shoulder)",
+  "suits_g2": "int — polarity-sum match against VN body cluster 2 (tall_slim_broad_shoulder)",
+  "suits_g3": "int — polarity-sum match against VN body cluster 3 (medium_balanced)",
+  "suits_g4": "int — polarity-sum match against VN body cluster 4 (short_fuller_mid_shoulder)",
+  "suits_g5": "int — polarity-sum match against VN body cluster 5 (fuller_broad_shoulder)",
+  "best_suits_cluster": "int (1-5) — argmax of suits_g1..g5",
+  "best_suits_score": "int — score for best_suits_cluster",
+  "best_season": "string — closest 12-Sci\\ART season palette by ΔE2000 on primary_color_lab",
+  "season_family": "string — Spring / Summer / Autumn / Winter (parent of best_season)",
+  "season_distance_de2000": "float — ΔE2000 from primary_color_lab to the matched season anchor",
+  "style_personality": "string — heuristic personality bucket from attribute combo: classic / romantic / sporty / dramatic / natural",
   "clip_embedding": "list[float] of length 512 — OpenCLIP ViT-B-32 (laion2b_s34b_b79k) image embedding, L2-normalized"
 }

@@ -143,3 +143,9 @@ research/datasets/raw/vn_brands/
 
 # Dataset bundle — labels.parquet is 640MB regenerable from per-source parquets
 research/datasets/processed/dataset_bundle_v1/labels.parquet
+
+# Face-redacted thumbnails (regenerable via redact_faces.py)
+research/datasets/processed/combined/images_redacted/
+
+# MediaPipe model files (downloaded by scripts, not source-controlled)
+research/models/*.tflite
