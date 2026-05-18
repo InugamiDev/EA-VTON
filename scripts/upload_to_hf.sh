@@ -21,7 +21,11 @@
 #
 # Prereqs (one-time on the lead's machine):
 #   pip install -U "huggingface_hub[cli]" zstandard
-#   huggingface-cli login              # paste a write-scoped token
+#   .venv/bin/hf auth login            # paste a write-scoped token
+#
+# Note: HF rebranded the CLI from `huggingface-cli` to `hf`. Both ship with
+# huggingface_hub[cli] but only `hf` is supported going forward. This script
+# uses `hf` directly (preferring the venv install at .venv/bin/hf).
 #
 # Usage:
 #   bash scripts/upload_to_hf.sh <hf-username> <dataset-name>
@@ -92,8 +96,12 @@ datasets (DeepFashion2, Fashionpedia, etc.) — do not redistribute.
 ## Extraction on the A100
 
 \`\`\`bash
-# 1. From the cloned repo root
-huggingface-cli download ${REPO_ID} --repo-type dataset \\
+# 0. Install + auth (one-time)
+pip install -U "huggingface_hub[cli]" zstandard
+hf auth login
+
+# 1. From the cloned repo root, pull the dataset (~14-15 GB)
+hf download ${REPO_ID} --repo-type dataset \\
     --local-dir .hf_collab_pull
 
 # 2. Place the parquets
@@ -119,15 +127,23 @@ EOF
 
 echo "── Uploading to https://huggingface.co/datasets/${REPO_ID}"
 echo "   (HF will create the dataset if it doesn't exist; default visibility = PRIVATE)"
-huggingface-cli upload "${REPO_ID}" "${STAGING}" \
+
+# Resolve hf binary: prefer venv install, fall back to PATH.
+HF_BIN="${ROOT}/.venv/bin/hf"
+if [ ! -x "${HF_BIN}" ]; then
+    if command -v hf >/dev/null 2>&1; then
+        HF_BIN="hf"
+    else
+        echo "!! could not find the 'hf' CLI."
+        echo "   Install with: pip install -U \"huggingface_hub[cli]\""
+        echo "   Then auth:    .venv/bin/hf auth login"
+        exit 1
+    fi
+fi
+
+"${HF_BIN}" upload "${REPO_ID}" "${STAGING}" . \
     --repo-type dataset --private \
-    --commit-message "Initial private upload — labels + redacted images for collaborator A100 training" \
-    --commit-description "$(cat <<EOC
-208,069-row labeled catalog + CLIP embeddings + person-categorization labels +
-face-mesh-redacted images (177k pairs). PRIVATE — source licenses prohibit
-public redistribution of DeepFashion2 imagery.
-EOC
-)"
+    --commit-message "Initial private upload — labels + redacted images for collaborator A100 training"
 
 echo ""
 echo "── Done. Next step:"

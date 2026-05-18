@@ -93,10 +93,11 @@ Skip this step if you only plan to run the primary BodyM task.
 ```bash
 # 1. Install HF CLI + auth (one-time)
 pip install -U "huggingface_hub[cli]"
-huggingface-cli login   # paste your HF token; the lead will have added you to the private dataset
+hf auth login   # paste your HF token; the lead will have added you to the private dataset
+                # (HF renamed the CLI from `huggingface-cli` to `hf` — use `hf` directly.)
 
 # 2. Pull the dataset (~14-15 GB, ~10-25 min depending on link)
-huggingface-cli download <hf-username>/<dataset-name> --repo-type dataset \
+hf download <hf-username>/<dataset-name> --repo-type dataset \
     --local-dir .hf_collab_pull
 
 # 3. Place the labels
