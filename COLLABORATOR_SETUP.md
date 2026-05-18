@@ -97,7 +97,9 @@ hf auth login   # paste your HF token; the lead will have added you to the priva
                 # (HF renamed the CLI from `huggingface-cli` to `hf` — use `hf` directly.)
 
 # 2. Pull the dataset (~14-15 GB, ~10-25 min depending on link)
-hf download <hf-username>/<dataset-name> --repo-type dataset \
+# Our private repo was created as model-type (functionally identical to dataset
+# for the download path); just omit --repo-type.
+hf download InugamiDev/eavton-internal-v1 \
     --local-dir .hf_collab_pull
 
 # 3. Place the labels
