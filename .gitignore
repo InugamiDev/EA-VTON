@@ -39,6 +39,39 @@ research/datasets/raw/rtr_raw.json
 research/datasets/raw/rtr_raw.json.gz
 research/datasets/processed/*.parquet
 research/datasets/processed/*.csv
+# Combined catalog (642 MB parquets + 16 GB images directories)
+research/datasets/processed/combined/*.parquet
+research/datasets/processed/combined/images/
+research/datasets/processed/combined/images_redacted/
+# Bundle backup labels (640 MB CLIP embeddings)
+research/datasets/processed/dataset_bundle_v1/labels.parquet
+research/datasets/processed/dataset_bundle_v1/examples/
+# Per-source labeled parquets (in original .gitignore intent but explicit here)
+research/datasets/processed/deepfashion2/*.parquet
+research/datasets/processed/deepfashion2/checkpoints/
+research/datasets/processed/deepfashion2/*.duckdb
+research/datasets/processed/fashionpedia/*.parquet
+research/datasets/processed/fashionpedia/checkpoints/
+research/datasets/processed/deepfashion_with_masks/*.parquet
+research/datasets/processed/deepfashion_with_masks/checkpoints/
+research/datasets/processed/fashion_products_small/*.parquet
+research/datasets/processed/fashion_products_small/checkpoints/
+# BodyM + ModCloth raw downloads (re-downloadable via scripts)
+research/datasets/raw/bodym/
+research/datasets/raw/modcloth/
+research/datasets/raw/deepfashion2/
+research/datasets/raw/fashionpedia/
+research/datasets/raw/deepfashion_with_masks/
+research/datasets/raw/fashion_products_small/
+research/datasets/raw/vn_brands/
+# CLIP feature cache from W1 secondary task
+research/models/redaction_invariant/features.npz
+research/models/redaction_invariant/checkpoints/
+research/models/redaction_invariant/cluster_text_embeds.npy
+# Trained model checkpoints
+research/models/variants/*.pt
+research/eval/*.png
+research/eval/*.jpg
 research/datasets/female_clothing_style_v1/.DS_Store
 research/datasets/female_clothing_style_v1/redacted/**
 research/datasets/raw/female_clothing_style_v1/**/*.csv

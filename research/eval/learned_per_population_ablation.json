@@ -1,0 +1,25 @@
+{
+  "test_mse_by_variant": {
+    "full": 8.519052062183619e-05,
+    "no_pop": 0.00017868902068585157,
+    "no_identity": 0.0002071039198199287
+  },
+  "ndcg_by_pop_by_variant": {
+    "vn_female": {
+      "full": 1.0,
+      "no_pop": 1.0,
+      "no_identity": 1.0
+    },
+    "us_female": {
+      "full": 1.0,
+      "no_pop": 1.0,
+      "no_identity": 1.0
+    },
+    "kr_female": {
+      "full": 1.0,
+      "no_pop": 1.0,
+      "no_identity": 1.0
+    }
+  },
+  "interpretation": "Compare full vs no_pop vs no_identity NDCG@10. If full \u2248 no_pop \u2248 no_identity, the population+cluster identity adds NO signal \u2014 the MLP is just CLIP-cosine reconstruction. If full > no_pop > no_identity, population AND cluster identity each carry real signal."
+}

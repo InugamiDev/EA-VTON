@@ -1,0 +1,30 @@
+{
+  "n_items": 200,
+  "per_attribute_agreement": {
+    "neckline": {
+      "n_agreed": 184,
+      "rate": 0.92
+    },
+    "silhouette": {
+      "n_agreed": 176,
+      "rate": 0.88
+    },
+    "sleeve": {
+      "n_agreed": 197,
+      "rate": 0.985
+    },
+    "pattern": {
+      "n_agreed": 196,
+      "rate": 0.98
+    }
+  },
+  "clip_cosine_redacted_vs_original": {
+    "mean": 0.9739396917819977,
+    "median": 0.9976410567760468,
+    "p5": 0.8635917186737061,
+    "p95": 0.999634963274002,
+    "min": 0.6543915271759033,
+    "max": 0.9998396039009094
+  },
+  "interpretation": "If per-attribute agreement is >= 0.85 across all 4 dims AND median CLIP cosine >= 0.95, then redaction-first labels are practically identical to labels from non-redacted images, validating the release stance empirically."
+}

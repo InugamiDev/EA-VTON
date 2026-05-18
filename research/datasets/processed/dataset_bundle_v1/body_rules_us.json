@@ -1,0 +1,85 @@
+{
+  "_doc": "Upper-body styling rules per US-female body cluster. Polarity ∈ {+1, 0, -1} for recommend/neutral/avoid. Cluster definitions are from Lee et al. 2007 (FFIT taxonomy); polarity assignments follow the body-clothing fit methodology of Hidayati et al. MM 2018 ('What Dress Fits Me Best?', https://dl.acm.org/doi/10.1145/3240508.3240546) — that paper formalizes per-body-type clothing preferences as polarity-coded attribute rules and is the methodological reference for this kind of styling-rule encoding. Our specific polarities are aligned with the Lee/Hidayati framework. Rules are CC BY 4.0; we strongly encourage downstream researchers to cite both Lee 2007 (clusters) and Hidayati 2018 (rule methodology).",
+  "_source_clusters": {
+    "citation": "Lee, J.Y., Istook, C.L., Nam, Y.J., Park, S.M. (2007). IJCST 19(5).",
+    "method": "FFIT female figure identification technique on US CAESAR-adjacent sample (n=222 US women).",
+    "url": "https://www.emerald.com/insight/content/doi/10.1108/09556220710819492/full/html"
+  },
+  "_source_polarities": {
+    "citation": "Hidayati, S. C., Hsu, C.-C., Chang, Y.-T., Hua, K.-L., Fu, J., Cheng, W.-H. (2018). 'What Dress Fits Me Best? Fashion Recommendation on the Clothing Style for Personal Body Shape', ACM MM 2018.",
+    "doi": "10.1145/3240508.3240546",
+    "method": "Per-body-type clothing-attribute preferences encoded as polarity rules (recommend / neutral / avoid). Our 6-attribute schema follows this methodology directly; specific polarity values are this paper's derivation calibrated against the FFIT shape descriptions in Lee 2007.",
+    "url": "https://dl.acm.org/doi/10.1145/3240508.3240546"
+  },
+  "_attribute_taxonomy": {
+    "neckline": ["v_neck", "deep_v_neck", "scoop", "crew", "boat", "high_neck", "sweetheart", "off_shoulder"],
+    "silhouette": ["bodycon", "fitted", "semi_fitted", "a_line", "loose", "oversized"],
+    "sleeve": ["sleeveless", "cap", "short", "three_quarter", "long", "puff", "drop_shoulder"],
+    "length": ["crop", "regular", "tunic"],
+    "pattern": ["solid", "vertical_stripe", "horizontal_stripe", "small_print", "large_print"],
+    "color_temperature": ["warm", "cool", "neutral"],
+    "color_value": ["light", "medium", "dark"]
+  },
+  "rules": {
+    "1": {
+      "_label": "hourglass",
+      "_population_share": 0.08,
+      "_strategy": "Balanced bust-waist-hip with defined waist. Emphasize the natural waist; avoid silhouettes that hide it.",
+      "neckline":   {"v_neck": 1, "deep_v_neck": 1, "scoop": 1, "crew": 0, "boat": 0, "high_neck": 0, "sweetheart": 1, "off_shoulder": 1},
+      "silhouette": {"bodycon": 1, "fitted": 1, "semi_fitted": 1, "a_line": 0, "loose": -1, "oversized": -1},
+      "sleeve":     {"sleeveless": 1, "cap": 1, "short": 1, "three_quarter": 1, "long": 1, "puff": 0, "drop_shoulder": -1},
+      "length":     {"crop": 1, "regular": 1, "tunic": 0},
+      "pattern":    {"solid": 1, "vertical_stripe": 1, "horizontal_stripe": 0, "small_print": 1, "large_print": 0},
+      "color_temperature": {"warm": 1, "cool": 1, "neutral": 1},
+      "color_value": {"light": 1, "medium": 1, "dark": 1}
+    },
+    "2": {
+      "_label": "bottom_hourglass",
+      "_population_share": 0.12,
+      "_strategy": "Smaller bust, defined waist, fuller hips. Add visual interest at top; keep bottom-line clean.",
+      "neckline":   {"v_neck": 1, "deep_v_neck": 0, "scoop": 1, "crew": 1, "boat": 1, "high_neck": 0, "sweetheart": 1, "off_shoulder": 1},
+      "silhouette": {"bodycon": 0, "fitted": 1, "semi_fitted": 1, "a_line": 1, "loose": 0, "oversized": -1},
+      "sleeve":     {"sleeveless": 1, "cap": 1, "short": 1, "three_quarter": 1, "long": 1, "puff": 1, "drop_shoulder": 0},
+      "length":     {"crop": 1, "regular": 1, "tunic": 0},
+      "pattern":    {"solid": 0, "vertical_stripe": 0, "horizontal_stripe": 1, "small_print": 1, "large_print": 1},
+      "color_temperature": {"warm": 1, "cool": 1, "neutral": 1},
+      "color_value": {"light": 1, "medium": 1, "dark": 0}
+    },
+    "3": {
+      "_label": "spoon",
+      "_population_share": 0.20,
+      "_strategy": "Narrow waist, prominent hips, slim torso. Add upper-body width; keep lower clean.",
+      "neckline":   {"v_neck": 0, "deep_v_neck": -1, "scoop": 1, "crew": 1, "boat": 1, "high_neck": 1, "sweetheart": 1, "off_shoulder": 1},
+      "silhouette": {"bodycon": 0, "fitted": 1, "semi_fitted": 1, "a_line": 0, "loose": -1, "oversized": -1},
+      "sleeve":     {"sleeveless": 0, "cap": 1, "short": 1, "three_quarter": 1, "long": 1, "puff": 1, "drop_shoulder": 1},
+      "length":     {"crop": 1, "regular": 1, "tunic": -1},
+      "pattern":    {"solid": 0, "vertical_stripe": -1, "horizontal_stripe": 1, "small_print": 1, "large_print": 1},
+      "color_temperature": {"warm": 1, "cool": 1, "neutral": 1},
+      "color_value": {"light": 1, "medium": 1, "dark": 0}
+    },
+    "4": {
+      "_label": "rectangle",
+      "_population_share": 0.46,
+      "_strategy": "Straight figure, minimal waist definition. Create curves with shaped silhouettes; layer for dimension.",
+      "neckline":   {"v_neck": 1, "deep_v_neck": 1, "scoop": 1, "crew": 0, "boat": 1, "high_neck": 0, "sweetheart": 1, "off_shoulder": 1},
+      "silhouette": {"bodycon": -1, "fitted": 0, "semi_fitted": 1, "a_line": 1, "loose": 0, "oversized": 0},
+      "sleeve":     {"sleeveless": 1, "cap": 1, "short": 1, "three_quarter": 1, "long": 1, "puff": 1, "drop_shoulder": 0},
+      "length":     {"crop": 1, "regular": 1, "tunic": 1},
+      "pattern":    {"solid": 0, "vertical_stripe": 0, "horizontal_stripe": 1, "small_print": 1, "large_print": 1},
+      "color_temperature": {"warm": 1, "cool": 1, "neutral": 1},
+      "color_value": {"light": 1, "medium": 1, "dark": 1}
+    },
+    "5": {
+      "_label": "inverted_triangle",
+      "_population_share": 0.14,
+      "_strategy": "Broad shoulders, narrower hips. De-emphasize upper width; deep necklines elongate.",
+      "neckline":   {"v_neck": 1, "deep_v_neck": 1, "scoop": 1, "crew": -1, "boat": -1, "high_neck": -1, "sweetheart": 1, "off_shoulder": -1},
+      "silhouette": {"bodycon": 0, "fitted": -1, "semi_fitted": 1, "a_line": 1, "loose": 1, "oversized": 0},
+      "sleeve":     {"sleeveless": -1, "cap": -1, "short": 0, "three_quarter": 1, "long": 1, "puff": -1, "drop_shoulder": -1},
+      "length":     {"crop": 0, "regular": 1, "tunic": 1},
+      "pattern":    {"solid": 1, "vertical_stripe": 1, "horizontal_stripe": -1, "small_print": 1, "large_print": -1},
+      "color_temperature": {"warm": 0, "cool": 1, "neutral": 1},
+      "color_value": {"light": 0, "medium": 1, "dark": 1}
+    }
+  }
+}

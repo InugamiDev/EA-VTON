@@ -1,5 +1,5 @@
 {
-  "_doc": "Upper-body styling rules per VN body cluster. Polarity ∈ {+1, 0, -1} for recommend/neutral/avoid. Sourced from styling literature + cluster definitions in Trieu et al. 2024.",
+  "_doc": "Upper-body styling rules per VN body cluster. Polarity ∈ {+1, 0, -1} for recommend/neutral/avoid. Cluster definitions: Trieu et al. 2024 (Vlákna a Textil 2024(1)) — 5-cluster k-means on 480 VN-female 3D scans. Polarity-rule methodology: Hidayati et al. ACM MM 2018, 'What Dress Fits Me Best?' (DOI 10.1145/3240508.3240546). Specific polarity values are this paper's derivation calibrated against the Trieu 2024 cluster descriptions, following the Hidayati 2018 encoding schema.",
   "_attribute_taxonomy": {
     "neckline": ["v_neck", "deep_v_neck", "scoop", "crew", "boat", "high_neck", "sweetheart", "off_shoulder"],
     "silhouette": ["bodycon", "fitted", "semi_fitted", "a_line", "loose", "oversized"],

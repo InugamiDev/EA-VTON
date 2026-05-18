@@ -1,0 +1,27 @@
+{
+  "random": {
+    "ndcg@10": 0.4190035753216732,
+    "mrr": 0.4318789908921488,
+    "recall@10": 0.02096
+  },
+  "color_only": {
+    "ndcg@10": 0.4309029641083755,
+    "mrr": 0.5150791153291153,
+    "recall@10": 0.02096
+  },
+  "FFM (this paper)": {
+    "ndcg@10": 0.47968741763886596,
+    "mrr": 0.525,
+    "recall@10": 0.025600000000000005
+  },
+  "CLIP-archetype oracle": {
+    "ndcg@10": 1.0,
+    "mrr": 1.0,
+    "recall@10": 0.07999999999999999
+  },
+  "_diagnostics": {
+    "ffm_silver_spearman_rho_mean": 0.15712970973006285,
+    "ffm_silver_spearman_rho_std": 0.05876252898169911,
+    "_doc": "Spearman \u03c1 between FFM score and CLIP-archetype silver score per user, averaged across users. High \u03c1 = body rules agree with CLIP's notion of shape-suitability. Low \u03c1 = the two signals diverge meaningfully."
+  }
+}

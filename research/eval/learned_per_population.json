@@ -1,0 +1,35 @@
+{
+  "results_by_pop": {
+    "vn_female": {
+      "n_clusters": 5,
+      "ndcg@10_learned": 1.0,
+      "ndcg@10_us_rules": 0.42634557587609445,
+      "ndcg@10_matched_rules": 0.4883497449089738,
+      "learned_beats_us": 0.5736544241239055,
+      "learned_beats_matched": 0.5116502550910262
+    },
+    "us_female": {
+      "n_clusters": 5,
+      "ndcg@10_learned": 1.0,
+      "ndcg@10_us_rules": 0.46207437407377716,
+      "ndcg@10_matched_rules": 0.46207437407377716,
+      "learned_beats_us": 0.5379256259262228,
+      "learned_beats_matched": 0.5379256259262228
+    },
+    "kr_female": {
+      "n_clusters": 4,
+      "ndcg@10_learned": 1.0,
+      "ndcg@10_us_rules": 0.3693434845358487,
+      "ndcg@10_matched_rules": 0.41763093425359066,
+      "learned_beats_us": 0.6306565154641512,
+      "learned_beats_matched": 0.5823690657464093
+    }
+  },
+  "n_train_items": 1600,
+  "n_test_items": 400,
+  "eval_pool_size": 500,
+  "n_train_pairs": 22400,
+  "n_test_pairs": 5600,
+  "model": "PerPopMLP",
+  "epochs": 30
+}

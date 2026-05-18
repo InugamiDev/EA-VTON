@@ -1,0 +1,17 @@
+{
+  "total_rows": 50,
+  "kept": 36,
+  "dropped": 14,
+  "drop_rate": 0.28,
+  "reasons": {
+    "ok": 36,
+    "no_pose": 12,
+    "shoulders_only_no_hip": 2
+  },
+  "filter_criteria": {
+    "both_shoulders_visibility_gte": 0.5,
+    "at_least_one_hip_visibility_gte": 0.5,
+    "pose_detection_confidence_min": 0.4
+  },
+  "use_redacted_for_detection": true
+}

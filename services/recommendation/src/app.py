@@ -150,6 +150,42 @@ class StyleUpperRequest(BaseModel):
     candidate_pool_size: int = Field(default=300, ge=50, le=2000, description="DF2 sample pool size before scoring")
 
 
+SeasonLiteralForCal = Literal[
+    "light_spring", "true_spring", "bright_spring",
+    "light_summer", "true_summer", "soft_summer",
+    "soft_autumn", "true_autumn", "deep_autumn",
+    "bright_winter", "true_winter", "deep_winter",
+]
+
+
+class SeedItemsRequest(BaseModel):
+    """Stratified-diverse calibration set request.
+
+    Returns ~18 visually-distinct items spanning the (neckline × silhouette ×
+    color_temperature) attribute space so the user can express style preference
+    by picking a few favorites — a cold-start signal that bypasses the need for
+    historical user-item interactions.
+    """
+    predicted_size: Literal["XS", "S", "M", "L", "XL", "XXL"] = "M"
+    season: SeasonLiteralForCal | None = None
+    max_items: int = Field(default=18, ge=6, le=36)
+
+
+class CalibrateRequest(BaseModel):
+    """Re-rank candidates using the user's liked-item CLIP centroid as a preference vector."""
+    height_cm: float = Field(gt=100, lt=250)
+    predicted_size: Literal["XS", "S", "M", "L", "XL", "XXL"]
+    population: PopulationLiteral = "vietnamese"
+    ratios: StyleUpperRatios
+    context: StyleUpperContext = Field(default_factory=StyleUpperContext)
+    liked_garment_ids: list[str] = Field(min_length=1, max_length=20)
+    season: SeasonLiteralForCal | None = None
+    top_k: int = Field(default=10, ge=1, le=50)
+    candidate_pool_size: int = Field(default=300, ge=50, le=2000)
+    preference_weight: float = Field(default=0.30, ge=0.0, le=1.0,
+                                     description="δ in score = (1-δ)·FFM + δ·sim(item, user_centroid)")
+
+
 class CompareRequest(BaseModel):
     """Request for comparing all 6 model variants."""
     height_cm: float = Field(gt=100, lt=250)
@@ -560,6 +596,132 @@ def recommend_style_upper(req: StyleUpperRequest):
     return build_response(body, req.predicted_size, ranked, req.weights, req.population)
 
 
+# ── Calibration UX (cold-start preference elicitation) ──
+# Two endpoints power the camera → size → style flow without requiring any
+# historical user data:
+#   POST /recommend-style/upper/seed-items
+#       → 18 attribute-diverse seed items the user picks favorites from
+#   POST /recommend-style/upper/calibrate
+#       → re-ranks recommendations using the CLIP-centroid of those picks
+#
+# intent: cold-start preference signal via stratified-diverse seed → CLIP centroid → re-rank
+# status: done
+# confidence: high
+
+
+@app.post("/recommend-style/upper/seed-items")
+def recommend_style_upper_seeds(req: SeedItemsRequest):
+    """Return ~18 attribute-diverse items spanning (neckline × silhouette × color_temp).
+
+    These are SEED items for cold-start preference elicitation — the user picks
+    3+ they like, the calibrate endpoint uses those picks to personalize.
+    """
+    from src.deepfashion2_catalog import DeepFashion2Catalog, is_available
+
+    if not is_available():
+        raise HTTPException(status_code=503, detail="Style catalog not built")
+    cat = DeepFashion2Catalog.get_instance()
+    items = cat.seed_diverse_items(
+        size=req.predicted_size,
+        season=req.season,
+        max_items=req.max_items,
+    )
+    return {
+        "items": items,
+        "total": len(items),
+        "stratification": "neckline × silhouette × color_temperature",
+        "instructions": "Pick at least 3 items you find appealing.",
+    }
+
+
+@app.post("/recommend-style/upper/calibrate")
+def recommend_style_upper_calibrate(req: CalibrateRequest):
+    """Re-rank top items with a CLIP-similarity preference boost.
+
+    Pipeline:
+      1. Fetch CLIP embeddings for liked_garment_ids → mean → L2-normalize = preference vector v*
+      2. Call rank_upper_body() with a wide top_k to get base FFM scores
+      3. For each base item, compute sim = cos(item_emb, v*) ∈ [-1, 1]; normalize to [0, 1]
+      4. new_score = (1 - δ) * FFM_score + δ * preference_score, with δ = req.preference_weight
+      5. Re-sort and truncate to req.top_k.
+    """
+    import math
+    from src.deepfashion2_catalog import DeepFashion2Catalog, is_available
+    from src.style_upper import rank_upper_body, build_response
+
+    if not is_available():
+        raise HTTPException(status_code=503, detail="Style catalog not built")
+    cat = DeepFashion2Catalog.get_instance()
+
+    # 1. Preference vector
+    liked_embs = cat.get_clip_embeddings(req.liked_garment_ids)
+    if not liked_embs:
+        raise HTTPException(
+            status_code=400,
+            detail=f"None of the liked garment_ids resolved to embeddings: {req.liked_garment_ids}",
+        )
+    dim = len(next(iter(liked_embs.values())))
+    centroid = [0.0] * dim
+    for emb in liked_embs.values():
+        for i, v in enumerate(emb):
+            centroid[i] += v
+    n = len(liked_embs)
+    centroid = [v / n for v in centroid]
+    norm = math.sqrt(sum(v * v for v in centroid)) or 1.0
+    pref_vec = [v / norm for v in centroid]
+
+    # 2. Wide base ranking — ask for more so the re-rank has room to reshuffle
+    wide_k = max(req.top_k * 5, 50)
+    body, ranked = rank_upper_body(
+        height_cm=req.height_cm,
+        predicted_size=req.predicted_size,
+        population=req.population,
+        ratios=req.ratios.model_dump(),
+        occasion=req.context.occasion,
+        sliders=req.context.sliders,
+        season=req.season,
+        top_k=wide_k,
+        catalog_source="deepfashion2_upper",
+        candidate_pool_size=req.candidate_pool_size,
+    )
+
+    # 3-4. CLIP-similarity boost
+    candidate_ids = [r.item["item_id"] for r in ranked]
+    cand_embs = cat.get_clip_embeddings(candidate_ids)
+    delta = req.preference_weight
+    pref_by_id: dict[str, float] = {}
+    base_by_id: dict[str, float] = {r.item["item_id"]: r.total_score for r in ranked}
+    for r in ranked:
+        emb = cand_embs.get(r.item["item_id"])
+        if emb is None:
+            pref_score = 0.5  # neutral when embedding missing
+        else:
+            inorm = math.sqrt(sum(v * v for v in emb)) or 1.0
+            cos = sum(a * b for a, b in zip(emb, pref_vec)) / inorm
+            pref_score = (cos + 1.0) / 2.0  # → [0, 1]
+        pref_by_id[r.item["item_id"]] = round(pref_score, 4)
+        r.total_score = round((1.0 - delta) * r.total_score + delta * pref_score, 4)
+
+    ranked.sort(key=lambda r: r.total_score, reverse=True)
+    ranked = ranked[:req.top_k]
+    for i, r in enumerate(ranked, start=1):
+        r.rank = i
+
+    response = build_response(body, req.predicted_size, ranked, None, req.population)
+    # Attach per-item preference_score and base FFM score for transparency
+    for entry in response["items"]:
+        gid = entry["item_id"]
+        entry["preference_score"] = pref_by_id.get(gid)
+        entry["base_ffm_score"] = base_by_id.get(gid)
+    response["calibration"] = {
+        "n_liked_resolved": len(liked_embs),
+        "n_liked_requested": len(req.liked_garment_ids),
+        "preference_weight": delta,
+        "base_pool_size": wide_k,
+    }
+    return response
+
+
 # intent: compare trained research variants side-by-side + rule-based baseline
 # status: done
 # next: add latency tracking per model
@@ -713,8 +875,11 @@ def _research_model_candidates(population: str | None) -> list[str]:
     # next: tune direct population-specific models when target labels exist
     # blockers: no labeled Vietnamese garment-fit feedback dataset yet
     # confidence: high
+    # Female upper-body specialized model is preferred when we know the user
+    # is female and shopping for upper-body — that's our paper's primary model.
     if population == "vietnamese":
         return [
+            "gbm_female_upper_vn",          # paper's primary model
             "gbm_indep_tempered_a05",
             "gbm_copula_tempered_a075",
             "gbm_copula",
@@ -722,6 +887,7 @@ def _research_model_candidates(population: str | None) -> list[str]:
             "gbm_uniform",
         ]
     return [
+        "gbm_female_upper_vn",              # still best for female upper-body
         "gbm_uniform_current",
         "gbm_uniform",
         "gbm_indep_tempered_a05",

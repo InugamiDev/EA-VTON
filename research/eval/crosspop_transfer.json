@@ -1,0 +1,65 @@
+{
+  "vn_female__vn_female": {
+    "ndcg@10_mean": 0.42363079641909607,
+    "ndcg@10_std": 0.10666966879839879,
+    "spearman_rho_mean": 0.11035545115050571,
+    "spearman_rho_std": 0.038465066904620274,
+    "is_matched": true
+  },
+  "vn_female__us_female": {
+    "ndcg@10_mean": 0.3521232156633917,
+    "ndcg@10_std": 0.06662304406248179,
+    "spearman_rho_mean": -0.010611387389287972,
+    "spearman_rho_std": 0.0650351852970871,
+    "is_matched": false
+  },
+  "vn_female__kr_female": {
+    "ndcg@10_mean": 0.46715364788696745,
+    "ndcg@10_std": 0.10378104938703556,
+    "spearman_rho_mean": 0.09733950194597582,
+    "spearman_rho_std": 0.07535326959948267,
+    "is_matched": false
+  },
+  "us_female__vn_female": {
+    "ndcg@10_mean": 0.46987225400505095,
+    "ndcg@10_std": 0.08227022301512249,
+    "spearman_rho_mean": 0.11161269925080859,
+    "spearman_rho_std": 0.03618241389413447,
+    "is_matched": false
+  },
+  "us_female__us_female": {
+    "ndcg@10_mean": 0.43695120758803907,
+    "ndcg@10_std": 0.11214415003845808,
+    "spearman_rho_mean": 0.08069083753419362,
+    "spearman_rho_std": 0.10436956333013213,
+    "is_matched": true
+  },
+  "us_female__kr_female": {
+    "ndcg@10_mean": 0.4897720945606734,
+    "ndcg@10_std": 0.05635277863982108,
+    "spearman_rho_mean": 0.11220567538334678,
+    "spearman_rho_std": 0.05950558019524536,
+    "is_matched": false
+  },
+  "kr_female__vn_female": {
+    "ndcg@10_mean": 0.4354276394334326,
+    "ndcg@10_std": 0.1137482399426977,
+    "spearman_rho_mean": 0.07420526402814578,
+    "spearman_rho_std": 0.06318359135974627,
+    "is_matched": false
+  },
+  "kr_female__us_female": {
+    "ndcg@10_mean": 0.3683720216426447,
+    "ndcg@10_std": 0.1256600821819942,
+    "spearman_rho_mean": 0.07221181125736219,
+    "spearman_rho_std": 0.10783629845188676,
+    "is_matched": false
+  },
+  "kr_female__kr_female": {
+    "ndcg@10_mean": 0.43316304408411044,
+    "ndcg@10_std": 0.099849033038582,
+    "spearman_rho_mean": 0.10652347438750058,
+    "spearman_rho_std": 0.08289788711654193,
+    "is_matched": true
+  }
+}

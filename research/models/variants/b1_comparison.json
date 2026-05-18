@@ -1,0 +1,38 @@
+{
+  "modcloth_uniform_upper": {
+    "exact": 0.2957248473159756,
+    "within1": 0.6023786563805851,
+    "mae": 1.683381549341048,
+    "rows_by_feature_set": {
+      "with_circ": {
+        "feature_cols": [
+          "height_cm",
+          "bust_cm",
+          "waist_cm",
+          "hips_cm",
+          "category_enc"
+        ],
+        "exact": 0.9906782385085182,
+        "within1": 0.9958212793314047,
+        "mae": 0.015107682417229186,
+        "n_train": 12442,
+        "n_test": 3111
+      },
+      "h_only": {
+        "feature_cols": [
+          "height_cm",
+          "category_enc"
+        ],
+        "exact": 0.2957248473159756,
+        "within1": 0.6023786563805851,
+        "mae": 1.683381549341048,
+        "n_train": 12442,
+        "n_test": 3111
+      }
+    },
+    "dataset": "modcloth",
+    "scope": "female_upper_body_fit_only",
+    "reweighting": "uniform (ModCloth has no weight field)",
+    "note": "h_only is the apples-to-apples comparison vs RTR (which lacks bust/waist/hips)."
+  }
+}

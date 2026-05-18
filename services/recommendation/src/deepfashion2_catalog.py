@@ -196,6 +196,89 @@ class DeepFashion2Catalog:
         cols = [d[0] for d in self.con.description]
         return [self._row_to_item(dict(zip(cols, r))) for r in rows]
 
+    def seed_diverse_items(
+        self,
+        size: str,
+        season: str | None = None,
+        n_per_cell: int = 1,
+        max_items: int = 18,
+    ) -> list[dict]:
+        """Return a stratified-diverse calibration set.
+
+        Cells = (neckline × silhouette × color_temperature) combos. We take
+        n_per_cell items per non-empty cell, capped at max_items total.
+        Output is shuffled so the user doesn't see a predictable grid.
+        """
+        clauses = ["image_path IS NOT NULL"]
+        # We don't filter strictly by size here — calibration shows a visual
+        # range and the user picks aesthetic preferences, not size.
+        if season:
+            clauses.append(f"best_season = '{season}'")
+        where = " AND ".join(clauses)
+
+        # Pick 1 best item per (neckline, silhouette, color_temp) cell using
+        # the row with highest combined attribute confidence as the
+        # representative.
+        query = f"""
+            WITH ranked AS (
+                SELECT garment_id, neckline, silhouette, color_temperature,
+                       row_number() OVER (
+                         PARTITION BY neckline, silhouette, color_temperature
+                         ORDER BY neckline_conf + silhouette_conf DESC,
+                                  hash(garment_id) ASC
+                       ) AS rn
+                FROM items
+                WHERE {where}
+            )
+            SELECT garment_id FROM ranked WHERE rn <= {n_per_cell}
+        """
+        seed_ids = [r[0] for r in self.con.execute(query).fetchall()]
+        if len(seed_ids) > max_items:
+            # Deterministic shuffle then truncate so we get a diverse spread
+            import random as _r
+            _r.Random(42).shuffle(seed_ids)
+            seed_ids = seed_ids[:max_items]
+
+        if not seed_ids:
+            return []
+        placeholders = ",".join(f"'{g}'" for g in seed_ids)
+        rows = self.con.execute(
+            f"SELECT * FROM items WHERE garment_id IN ({placeholders})"
+        ).fetchall()
+        cols = [d[0] for d in self.con.description]
+        return [self._row_to_item(dict(zip(cols, r))) for r in rows]
+
+    def get_clip_embeddings(self, garment_ids: list[str]) -> dict[str, list[float]]:
+        """Fetch the 512-d CLIP embedding for each garment_id.
+
+        The combined catalog stores clip_embedding directly on the items view
+        (one column per row, as a FLOAT[512] list). Returns {} for ids whose
+        embedding is NULL or missing.
+        """
+        if not garment_ids:
+            return {}
+        placeholders = ",".join(f"'{g}'" for g in garment_ids)
+        rows = self.con.execute(
+            f"SELECT garment_id, clip_embedding FROM items "
+            f"WHERE garment_id IN ({placeholders}) AND clip_embedding IS NOT NULL"
+        ).fetchall()
+        return {r[0]: list(r[1]) for r in rows}
+
+    def query_candidates_with_embeddings(
+        self,
+        recommended_attrs: dict[str, list[str]] | None = None,
+        sample_size: int = 500,
+        seed: int = 42,
+    ) -> tuple[list[dict], dict[str, list[float]]]:
+        """Like query_candidates but also returns each item's CLIP embedding
+        so the caller can re-rank by cosine similarity to a preference vector."""
+        items = self.query_candidates(
+            recommended_attrs=recommended_attrs,
+            sample_size=sample_size, seed=seed,
+        )
+        embeds = self.get_clip_embeddings([it["item_id"] for it in items])
+        return items, embeds
+
     def get_by_garment_id(self, garment_id: str) -> dict | None:
         rows = self.con.execute(
             "SELECT * FROM items WHERE garment_id = ?", [garment_id]

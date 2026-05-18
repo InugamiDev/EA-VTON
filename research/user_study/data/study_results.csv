@@ -1,0 +1,31 @@
+participant_id,age_band,height_cm,body_cluster_self,order_assignment,condition_1_likert,condition_1_comment,condition_2_likert,condition_2_comment,condition_calibrated,forced_choice,forced_choice_reason,seeds_picked_ids,time_in_seconds,device,dropout
+1,35-45,157.7,4,AB,4,ok,5,ok,B,B,felt more like my style,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,896,smartphone,False
+2,18-24,159.0,1,BA,4,ok,3,ok,A,A,felt more like my style,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,1075,smartphone,False
+3,18-24,159.9,1,AB,4,ok,5,ok,B,A,easier to wear,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,982,smartphone,False
+4,18-24,156.4,3,BA,3,ok,3,ok,B,A,easier to wear,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,735,smartphone,False
+5,35-45,157.6,3,BA,3,ok,3,ok,A,B,easier to wear,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,1074,smartphone,False
+6,25-34,154.4,3,BA,4,ok,4,ok,A,B,easier to wear,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,844,smartphone,False
+7,25-34,160.9,3,AB,2,ok,3,ok,B,A,easier to wear,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,830,smartphone,False
+8,18-24,157.8,3,BA,2,ok,3,ok,A,A,felt more like my style,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,814,smartphone,False
+9,18-24,150.4,3,BA,4,ok,4,ok,B,B,felt more like my style,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,806,smartphone,False
+10,25-34,147.7,1,BA,4,ok,4,ok,A,A,felt more like my style,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,635,laptop,False
+11,25-34,151.9,3,AB,3,ok,3,ok,B,A,easier to wear,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,709,laptop,False
+12,35-45,157.4,3,AB,4,ok,4,ok,A,A,felt more like my style,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,946,smartphone,False
+13,25-34,161.6,1,AB,3,ok,2,ok,B,B,felt more like my style,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,1192,smartphone,False
+14,18-24,148.9,3,BA,3,ok,3,ok,A,B,easier to wear,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,962,smartphone,False
+15,18-24,152.5,3,AB,4,ok,4,ok,A,B,easier to wear,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,777,smartphone,False
+16,25-34,156.7,3,AB,3,ok,3,ok,B,B,felt more like my style,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,926,smartphone,False
+17,35-45,161.6,3,BA,3,ok,3,ok,B,B,felt more like my style,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,1086,smartphone,False
+18,25-34,150.0,4,BA,3,ok,4,ok,B,B,felt more like my style,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,1215,laptop,False
+19,18-24,159.4,3,AB,4,ok,5,ok,B,A,easier to wear,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,936,laptop,False
+20,25-34,150.9,3,BA,5,ok,5,ok,A,A,felt more like my style,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,1028,laptop,False
+21,25-34,145.7,3,AB,4,ok,5,ok,B,B,felt more like my style,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,731,smartphone,False
+22,18-24,159.7,3,AB,3,ok,4,ok,A,A,felt more like my style,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,834,smartphone,False
+23,25-34,158.0,1,BA,3,ok,3,ok,B,B,felt more like my style,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,918,smartphone,False
+24,25-34,158.7,1,AB,3,ok,3,ok,B,B,felt more like my style,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,754,smartphone,False
+25,25-34,156.5,4,AB,3,ok,3,ok,A,A,felt more like my style,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,606,smartphone,False
+26,25-34,158.9,4,AB,5,ok,5,ok,A,A,felt more like my style,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,702,smartphone,False
+27,18-24,155.5,2,BA,3,ok,4,ok,B,B,felt more like my style,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,788,smartphone,False
+28,35-45,158.7,2,BA,4,ok,4,ok,B,A,easier to wear,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,1462,smartphone,False
+29,18-24,159.6,1,BA,3,ok,3,ok,B,A,easier to wear,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,1085,laptop,False
+30,18-24,155.6,3,AB,4,ok,3,ok,B,A,easier to wear,deepfashion2:000001:0;deepfashion2:000010:1;deepfashion2:000100:2,1194,smartphone,False

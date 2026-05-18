@@ -1,0 +1,61 @@
+{
+  "study": "PRISM-UB Calibration Effect (pre-registered)",
+  "n_total": 30,
+  "n_excluded": 0,
+  "n_analysis": 30,
+  "H1_primary": {
+    "test": "paired t-test, one-sided (calibrated > baseline)",
+    "n": 30,
+    "mean_diff_likert": 0.13333333333333333,
+    "ci95": [
+      -0.09168351575908221,
+      0.3583501824257489
+    ],
+    "t_statistic": 1.1613945106217463,
+    "df": 29,
+    "p_one_sided": 0.1274759750937869,
+    "cohens_dz": 0.21204065720973075,
+    "result": "fail to reject H0"
+  },
+  "H3_secondary": {
+    "test": "one-proportion z-test, one-sided (P(choose calibrated) > 0.5)",
+    "n_decisive": 30,
+    "n_chose_calibrated": 18,
+    "p_hat": 0.6,
+    "z": 1.0954451150103321,
+    "p_one_sided": 0.13666083914614902,
+    "result": "fail to reject H0"
+  },
+  "exploratory": {
+    "by_body_cluster": {
+      "1": {
+        "n": 7,
+        "mean_calibrated": 3.4285714285714284,
+        "mean_baseline": 3.2857142857142856,
+        "diff_mean": 0.14285714285714285
+      },
+      "3": {
+        "n": 17,
+        "mean_calibrated": 3.5294117647058822,
+        "mean_baseline": 3.5294117647058822,
+        "diff_mean": 0.0
+      },
+      "4": {
+        "n": 4,
+        "mean_calibrated": 4.25,
+        "mean_baseline": 3.75,
+        "diff_mean": 0.5
+      }
+    },
+    "by_order_assignment": {
+      "AB": {
+        "n": 15,
+        "mean_diff": 0.13333333333333333
+      },
+      "BA": {
+        "n": 15,
+        "mean_diff": 0.13333333333333333
+      }
+    }
+  }
+}

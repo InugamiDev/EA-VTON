@@ -47,6 +47,8 @@ GBM_VARIANTS = [
     "gbm_copula",
     "gbm_indep_tempered_a05",
     "gbm_copula_tempered_a075",
+    # Female upper-body specialized (paper's primary model)
+    "gbm_female_upper_vn",
 ]
 
 # MLP variant names that have .pt files (require torch)

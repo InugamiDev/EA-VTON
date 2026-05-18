@@ -17,11 +17,14 @@ const RECOMMENDATION_URL =
  */
 router.post("/upper", async (req, res) => {
   try {
-    const response = await fetch(`${RECOMMENDATION_URL}/recommend-style/upper`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(req.body),
-    });
+    const response = await fetch(
+      `${RECOMMENDATION_URL}/recommend-style/upper`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req.body),
+      },
+    );
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
@@ -32,7 +35,61 @@ router.post("/upper", async (req, res) => {
 
     res.json(await response.json());
   } catch (err) {
-    res.status(502).json({ detail: `Style recommendation error: ${err.message}` });
+    res
+      .status(502)
+      .json({ detail: `Style recommendation error: ${err.message}` });
+  }
+});
+
+/**
+ * POST /api/style/upper/seed-items — return 18 stratified-diverse seed items
+ * for cold-start preference elicitation. No body params required.
+ */
+router.post("/upper/seed-items", async (req, res) => {
+  try {
+    const response = await fetch(
+      `${RECOMMENDATION_URL}/recommend-style/upper/seed-items`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req.body || {}),
+      },
+    );
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      return res
+        .status(response.status)
+        .json({ detail: err.detail || "Seed items request failed" });
+    }
+    res.json(await response.json());
+  } catch (err) {
+    res.status(502).json({ detail: `Seed items error: ${err.message}` });
+  }
+});
+
+/**
+ * POST /api/style/upper/calibrate — re-rank top-K via CLIP-centroid of liked items.
+ * Body: same as /upper plus liked_garment_ids: string[] (3-20 items).
+ */
+router.post("/upper/calibrate", async (req, res) => {
+  try {
+    const response = await fetch(
+      `${RECOMMENDATION_URL}/recommend-style/upper/calibrate`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req.body),
+      },
+    );
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      return res
+        .status(response.status)
+        .json({ detail: err.detail || "Calibration failed" });
+    }
+    res.json(await response.json());
+  } catch (err) {
+    res.status(502).json({ detail: `Calibration error: ${err.message}` });
   }
 });
 

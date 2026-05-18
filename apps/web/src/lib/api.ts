@@ -135,7 +135,7 @@ export interface TryOnJob {
 
 export async function createTryOnJob(
   photoId: string,
-  garmentId: string
+  garmentId: string,
 ): Promise<{ job_id: string; status: string }> {
   const form = new FormData();
   form.append("photo_id", photoId);
@@ -186,7 +186,7 @@ export function getUploadedPhotoUrl(filename: string): string {
 export async function createSimpleTryOn(
   person: File,
   garment: File,
-  garmentType: string = "upper_body"
+  garmentType: string = "upper_body",
 ): Promise<{ job_id: string; status: string }> {
   const form = new FormData();
   form.append("person", person);
@@ -373,7 +373,7 @@ export async function estimateBodyMeasurements(
   heightCm: number,
   weightKg: number,
   population: string = "us_women",
-  fitPreference: string = "regular"
+  fitPreference: string = "regular",
 ): Promise<BodyMeasurementResult> {
   const form = new FormData();
   form.append("photo", photo, "capture.jpg");
@@ -398,7 +398,7 @@ export async function estimateBodyMeasurements(
 export async function getLiveBodyMeasurements(
   photo: Blob,
   heightCm: number,
-  weightKg: number
+  weightKg: number,
 ): Promise<LiveBodyMeasurementResult> {
   const form = new FormData();
   form.append("photo", photo, "live-capture.jpg");
@@ -544,7 +544,12 @@ export async function getVisualSizeRecommendation(params: {
 // confidence: high
 
 export type UpperStyleSize = "XS" | "S" | "M" | "L" | "XL" | "XXL";
-export type UpperStyleOccasion = "work" | "casual" | "date" | "formal" | "party";
+export type UpperStyleOccasion =
+  | "work"
+  | "casual"
+  | "date"
+  | "formal"
+  | "party";
 export type PopulationKey = "us_women" | "universal" | "vietnamese";
 
 export interface UpperStyleRecommendationRequest {
@@ -648,7 +653,7 @@ export interface UpperStyleRecommendationItem {
 }
 
 export async function getUpperStyleRecommendation(
-  params: UpperStyleRecommendationRequest
+  params: UpperStyleRecommendationRequest,
 ): Promise<UpperStyleRecommendationResult> {
   const res = await fetch(`${API_BASE}/api/style/upper`, {
     method: "POST",
@@ -665,13 +670,99 @@ export async function getUpperStyleRecommendation(
 }
 
 /* ------------------------------------------------------------------ */
+/*  Cold-start calibration                                             */
+/* ------------------------------------------------------------------ */
+
+export interface StyleSeedItem {
+  item_id: string;
+  title: string;
+  brand: string;
+  image_url: string;
+  category: string;
+  primary_color_hex: string;
+  attributes: {
+    neckline: string;
+    silhouette: string;
+    sleeve: string;
+    pattern: string;
+    color_temperature: string;
+    color_value: string;
+  };
+}
+
+export interface StyleSeedResponse {
+  items: StyleSeedItem[];
+  total: number;
+  stratification: string;
+  instructions: string;
+}
+
+export async function getStyleSeedItems(
+  predictedSize: UpperStyleSize = "M",
+  maxItems = 18,
+  season?: string,
+): Promise<StyleSeedResponse> {
+  const res = await fetch(`${API_BASE}/api/style/upper/seed-items`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      predicted_size: predictedSize,
+      max_items: maxItems,
+      ...(season ? { season } : {}),
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || "Failed to get seed items");
+  }
+  return res.json();
+}
+
+export interface UpperStyleCalibrateRequest extends UpperStyleRecommendationRequest {
+  liked_garment_ids: string[];
+  preference_weight?: number;
+  season?: string;
+}
+
+export interface UpperStyleCalibrateResult extends UpperStyleRecommendationResult {
+  calibration: {
+    n_liked_resolved: number;
+    n_liked_requested: number;
+    preference_weight: number;
+    base_pool_size: number;
+  };
+  items: (UpperStyleRecommendationItem & {
+    preference_score?: number;
+    base_ffm_score?: number;
+  })[];
+}
+
+export async function calibrateUpperStyle(
+  params: UpperStyleCalibrateRequest,
+): Promise<UpperStyleCalibrateResult> {
+  const res = await fetch(`${API_BASE}/api/style/upper/calibrate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || "Calibration failed");
+  }
+  return res.json();
+}
+
+/* ------------------------------------------------------------------ */
 /*  Full Pipeline                                                       */
 /* ------------------------------------------------------------------ */
 
 export interface PipelineResult {
   job_id: string;
   status: "processing" | "completed" | "failed";
-  stages: Record<string, { status: string; durationMs?: number; error?: string }>;
+  stages: Record<
+    string,
+    { status: string; durationMs?: number; error?: string }
+  >;
   body_measurements: BodyMeasurementResult | null;
   size_recommendation: SizeRecommendationResult | null;
   tryon_result: {
@@ -692,7 +783,7 @@ export async function startPipeline(
     weightKg?: number;
     population?: string;
     fitPreference?: string;
-  }
+  },
 ): Promise<{ job_id: string; status: string }> {
   const form = new FormData();
   form.append("person", person, "person.jpg");
@@ -701,7 +792,8 @@ export async function startPipeline(
   if (options?.garmentId) form.append("garment_id", options.garmentId);
   if (options?.weightKg) form.append("weight_kg", options.weightKg.toString());
   if (options?.population) form.append("population", options.population);
-  if (options?.fitPreference) form.append("fit_preference", options.fitPreference);
+  if (options?.fitPreference)
+    form.append("fit_preference", options.fitPreference);
 
   const res = await fetch(`${API_BASE}/api/pipeline`, {
     method: "POST",
@@ -756,11 +848,14 @@ export async function quickPipeline(params: {
 /* ------------------------------------------------------------------ */
 
 export interface ModelComparisonResult {
-  models: Record<string, {
-    predicted_size: string;
-    confidence: number;
-    method: string;
-  }>;
+  models: Record<
+    string,
+    {
+      predicted_size: string;
+      confidence: number;
+      method: string;
+    }
+  >;
   recommended: string;
 }
 
