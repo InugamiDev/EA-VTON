@@ -59,15 +59,14 @@ python3 -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device
 
 | Asset | Size | Source | Needed for |
 |---|---|---|---|
-| BodyM photos | ~2 GB | **You download from Meta's public release** (see step 4) | Primary training task |
-| `dataset_bundle_v1/labels.parquet` | 640 MB | rsync / Drive from your lead | Secondary task (CLIP-feature classifier) |
-| `combined/images_redacted/` | ~13 GB | rsync from lead | Optional vision tasks on the catalog |
+| BodyM photos | ~2 GB | **You download from Meta's public release** (see step 4a) | Primary BodyM training task |
+| Catalog images (labels + redacted JPEGs) | ~15 GB | **Private Hugging Face dataset** the lead uploaded — see step 4b | Secondary task (catalog-based training) |
 
-For the primary BodyM task, the only external download is **BodyM photos**. Everything else is in the repo or comes from your lead.
+For the **primary BodyM task** you only need step 4a (BodyM photos). Step 4b is only required if you also want to run the secondary CLIP-feature attribute classifier on the 208k catalog.
 
 ---
 
-## 4. Download BodyM photos (~2 GB, ~10 min)
+## 4a. Download BodyM photos (~2 GB, ~10 min)
 
 The repo already has the subject-to-photo mapping CSVs:
 ```
@@ -84,6 +83,41 @@ research/datasets/raw/bodym/testB/photos/<photo_id>.jpg
 ```
 
 Source: <https://github.com/facebookresearch/bodym> — follow their download instructions (BodyM is publicly released by Meta under CC BY-NC 4.0; license matters for *commercial* use but is fine for academic).
+
+---
+
+## 4b. (Optional) Pull the labeled catalog + redacted images from Hugging Face
+
+Skip this step if you only plan to run the primary BodyM task.
+
+```bash
+# 1. Install HF CLI + auth (one-time)
+pip install -U "huggingface_hub[cli]"
+huggingface-cli login   # paste your HF token; the lead will have added you to the private dataset
+
+# 2. Pull the dataset (~14-15 GB, ~10-25 min depending on link)
+huggingface-cli download <hf-username>/<dataset-name> --repo-type dataset \
+    --local-dir .hf_collab_pull
+
+# 3. Place the labels
+mkdir -p research/datasets/processed/combined research/datasets/processed/dataset_bundle_v1
+cp .hf_collab_pull/items_upper_combined.parquet research/datasets/processed/combined/
+cp .hf_collab_pull/labels_bundle.parquet research/datasets/processed/dataset_bundle_v1/labels.parquet
+
+# 4. Extract images (zstd -d, multithreaded, ~3-5 min on A100 SSD)
+tar --use-compress-program=zstd -xf .hf_collab_pull/images_redacted.tar.zst \
+    -C research/datasets/processed/combined/
+tar --use-compress-program=zstd -xf .hf_collab_pull/images.tar.zst \
+    -C research/datasets/processed/combined/
+
+# 5. Rebuild the DuckDB view over the recovered parquet
+python research/datasets/scripts/build_style_catalog_duckdb.py
+
+# 6. (Optional) free the staging dir
+rm -rf .hf_collab_pull
+```
+
+**License posture:** the catalog images are bound by their upstream source licenses (DeepFashion2 is CUHK-research-only, etc.). The HF dataset is **PRIVATE**. Do NOT re-upload or redistribute publicly.
 
 ---
 
