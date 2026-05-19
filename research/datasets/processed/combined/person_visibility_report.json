@@ -1,12 +1,15 @@
 {
-  "total_rows": 50,
-  "kept": 36,
-  "dropped": 14,
-  "drop_rate": 0.28,
+  "total_rows": 208069,
+  "kept": 131915,
+  "dropped": 76154,
+  "drop_rate": 0.36600358534909094,
   "reasons": {
-    "ok": 36,
-    "no_pose": 12,
-    "shoulders_only_no_hip": 2
+    "ok": 131915,
+    "no_pose": 34864,
+    "shoulders_only_no_hip": 3182,
+    "shoulders_not_visible": 156,
+    "error:AttributeError": 37875,
+    "file_missing": 77
   },
   "filter_criteria": {
     "both_shoulders_visibility_gte": 0.5,
