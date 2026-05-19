@@ -1,0 +1,93 @@
+{
+  "history": [
+    {
+      "epoch": 1,
+      "train_mse_normalized": 0.5841341529573713,
+      "testA_mae_cm": 4.296262741088867,
+      "testB_mae_cm": 4.565753936767578
+    },
+    {
+      "epoch": 2,
+      "train_mse_normalized": 0.23780869934465979,
+      "testA_mae_cm": 3.1217844486236572,
+      "testB_mae_cm": 3.592621326446533
+    },
+    {
+      "epoch": 3,
+      "train_mse_normalized": 0.17297454071896418,
+      "testA_mae_cm": 2.593853235244751,
+      "testB_mae_cm": 3.090245485305786
+    }
+  ],
+  "final": {
+    "testA": {
+      "mae_per_target_cm": {
+        "chest_girth_cm": 4.709956645965576,
+        "waist_girth_cm": 3.4042534828186035,
+        "hip_girth_cm": 3.6242969036102295,
+        "shoulder_breadth_cm": 0.8440133333206177,
+        "arm_length_cm": 1.1745761632919312,
+        "leg_length_cm": 1.806021809577942
+      },
+      "mae_avg_cm": 2.593853235244751,
+      "n": 827
+    },
+    "testB": {
+      "mae_per_target_cm": {
+        "chest_girth_cm": 4.862659454345703,
+        "waist_girth_cm": 4.457114219665527,
+        "hip_girth_cm": 4.7360758781433105,
+        "shoulder_breadth_cm": 0.9225596189498901,
+        "arm_length_cm": 1.340682029724121,
+        "leg_length_cm": 2.222381830215454
+      },
+      "mae_avg_cm": 3.090245485305786,
+      "n": 687
+    },
+    "size_chain_testA": {
+      "exact": 0.5864570737605804,
+      "within1": 0.8464328899637243,
+      "n": 827,
+      "modcloth_feature_cols": [
+        "height_cm",
+        "bust_cm",
+        "waist_cm",
+        "hips_cm",
+        "category_enc"
+      ]
+    },
+    "size_chain_testB": {
+      "exact": 0.5618631732168851,
+      "within1": 0.8064046579330422,
+      "n": 687,
+      "modcloth_feature_cols": [
+        "height_cm",
+        "bust_cm",
+        "waist_cm",
+        "hips_cm",
+        "category_enc"
+      ]
+    }
+  },
+  "config": {
+    "epochs": 3,
+    "batch_size": 32,
+    "lr_backbone": 0.0001,
+    "lr_head": 0.001,
+    "weight_decay": 0.0001,
+    "workers": 8,
+    "fp16": false,
+    "backbone": "resnet50",
+    "image_size": 224,
+    "gender": "female",
+    "device": "mps"
+  },
+  "target_cols": [
+    "chest_girth_cm",
+    "waist_girth_cm",
+    "hip_girth_cm",
+    "shoulder_breadth_cm",
+    "arm_length_cm",
+    "leg_length_cm"
+  ]
+}

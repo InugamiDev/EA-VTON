@@ -1,0 +1,55 @@
+{
+  "started_at": 1779222233.0,
+  "completed_at": 1779222233.0,
+  "best_within1": 0.8064046579330422,
+  "best_exact": 0.5618631732168851,
+  "status": "target_met_smoke",
+  "note": "User target was within-1 >= 0.70. Achieved 0.806 (80.6%) within-1 / 0.562 (56.2%) exact on testB chain via a 3-epoch smoke run that completed cleanly. Subsequent 25-epoch full-train attempts produced MPS-side training divergence (loss = 4.8e31, weights exploded) despite grad clipping, NaN guard, deterministic seed, and reduced learning rates. The 3-epoch smoke checkpoint is the deliverable: body_vision_encoder_smoke.pt + body_vision_encoder_smoke_results.json (and a copy promoted to body_vision_encoder.pt for the live API).",
+  "phases": [
+    {
+      "name": "download",
+      "rc": 0,
+      "n_masks_after": 8978
+    },
+    {
+      "name": "smoke",
+      "rc": 0,
+      "epochs": 3,
+      "testA_mae_cm": 2.59,
+      "testB_mae_cm": 3.09,
+      "size_chain_testA": {
+        "exact": 0.586,
+        "within1": 0.846
+      },
+      "size_chain_testB": {
+        "exact": 0.562,
+        "within1": 0.806
+      },
+      "per_target_mae_cm_testB": {
+        "chest": 4.86,
+        "waist": 4.46,
+        "hip": 4.74,
+        "shoulder": 0.92,
+        "arm": 1.34,
+        "leg": 2.22
+      }
+    },
+    {
+      "name": "full_attempts",
+      "rc": "aborted",
+      "reason": "MPS-side training divergence \u2014 loss spiked to 1e31+ within first epoch despite grad clipping at max_norm=1.0 and lr 5e-5/5e-4. Investigated: masks all valid (4.5-8KB), forward pass on initial weights produces sane outputs (-0.06 to 0.05), but training divergence persists across 3 retry attempts with different seeds and hyperparameters. Likely an MPS-specific backward-pass instability with ResNet50 + small batch. Not worth burning more compute given the 3-epoch smoke already exceeded the user target by 10+ pp."
+    }
+  ],
+  "deliverables": {
+    "primary_checkpoint": "research/models/variants/body_vision_encoder.pt",
+    "primary_results": "research/eval/body_vision_encoder_results.json",
+    "preserved_smoke_checkpoint": "research/models/variants/body_vision_encoder_smoke.pt",
+    "preserved_smoke_results": "research/eval/body_vision_encoder_smoke_results.json",
+    "training_log": "research/eval/overnight_path_a.log"
+  },
+  "next_actions_for_morning": [
+    "Result is publishable as-is at the 80.6% within-1 / 56.2% exact bar.",
+    "To push higher, the divergence needs root-cause analysis: instrument batch-level loss + grad-norm, try CUDA (Colab) instead of MPS, or use ViT-B/16 backbone which may behave differently under MPS.",
+    "For paper text, frame as: \"Photo-to-measurement vision encoder trained on BodyM (3 epochs, ResNet50, Apple Silicon MPS) chained to ModCloth-trained size GBM achieves 80.6% within-1 size accuracy from camera + height alone \u2014 comfortably above the 70% target the user set, well above the 60.2% h-only baseline.\""
+  ]
+}
