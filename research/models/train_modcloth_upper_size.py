@@ -101,22 +101,25 @@ def main() -> None:
             "n_train": int(len(X_train)), "n_test": int(len(X_test)),
         }
         if fname == "h_only":
-            best_model = m
-            best_cols = cols
-            best_metrics = (exact, within1, mae)
+            h_only_model = m
+            h_only_cols = cols
+            h_only_metrics = (exact, within1, mae)
+        elif fname == "with_circ":
+            with_circ_model = m
+            with_circ_cols = cols
+            with_circ_metrics = (exact, within1, mae)
 
-    # The h_only variant is the saved bundle (apples-to-apples vs RTR).
-    assert best_model is not None and best_metrics is not None
-    exact, within1, mae = best_metrics
-    model = best_model
+    # Save BOTH variants — h_only for the paper's apples-to-apples baseline,
+    # with_circ for the photo→measurements→size chain (Path A).
+    assert h_only_model is not None and with_circ_model is not None
 
-    bundle = {
-        "model": model,
+    h_only_bundle = {
+        "model": h_only_model,
         "cat_enc": cat_enc,
         "size_enc": size_enc,
-        "feature_cols": best_cols,
+        "feature_cols": h_only_cols,
         "results": {
-            "exact": exact, "within1": within1, "mae": mae,
+            "exact": h_only_metrics[0], "within1": h_only_metrics[1], "mae": h_only_metrics[2],
             "rows_by_feature_set": rows,
             "dataset": "modcloth", "scope": "female_upper_body_fit_only",
             "reweighting": "uniform (ModCloth has no weight field)",
@@ -124,13 +127,30 @@ def main() -> None:
         },
     }
     out = VARIANTS / "gbm_modcloth_upper.pkl"
-    out.write_bytes(pickle.dumps(bundle))
+    out.write_bytes(pickle.dumps(h_only_bundle))
     print(f"\n  wrote {out} ({out.stat().st_size/1024/1024:.1f} MB)")
+
+    with_circ_bundle = {
+        "model": with_circ_model,
+        "cat_enc": cat_enc,
+        "size_enc": size_enc,
+        "feature_cols": with_circ_cols,
+        "results": {
+            "exact": with_circ_metrics[0], "within1": with_circ_metrics[1], "mae": with_circ_metrics[2],
+            "dataset": "modcloth", "scope": "female_upper_body_fit_only",
+            "feature_set": "with_circ",
+            "note": "with_circ is the ceiling — uses bust+waist+hip directly. Used by the BodyM photo→measurements→size chain.",
+        },
+    }
+    out2 = VARIANTS / "gbm_modcloth_upper_with_circ.pkl"
+    out2.write_bytes(pickle.dumps(with_circ_bundle))
+    print(f"  wrote {out2} ({out2.stat().st_size/1024/1024:.1f} MB)")
 
     # Append to a comparison JSON so the paper's Table 4.2 lands cleanly
     cmp_path = VARIANTS / "b1_comparison.json"
     cmp = json.loads(cmp_path.read_text()) if cmp_path.exists() else {}
-    cmp["modcloth_uniform_upper"] = bundle["results"]
+    cmp["modcloth_uniform_upper"] = h_only_bundle["results"]
+    cmp["modcloth_uniform_upper_with_circ"] = with_circ_bundle["results"]
     cmp_path.write_text(json.dumps(cmp, indent=2))
     print(f"  appended to {cmp_path}")
 

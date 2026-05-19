@@ -281,19 +281,26 @@ def evaluate(model, loader, device, target_mean, target_std) -> dict:
 
 
 def chain_size_eval(preds: np.ndarray, raws: np.ndarray,
-                    target_names: list[str]) -> dict:
+                    target_names: list[str], heights_cm: np.ndarray | None = None) -> dict:
     """Feed predicted (bust=chest, waist, hip) into ModCloth size predictor
-    and compare predicted-size vs ground-truth-size (from raw measurements)."""
-    if not MODCLOTH_SIZE_MODEL.exists():
-        return {"error": f"ModCloth size model missing at {MODCLOTH_SIZE_MODEL}"}
+    and compare predicted-size vs ground-truth-size (from raw measurements).
+    Prefers the with_circ model (saved as gbm_modcloth_upper_with_circ.pkl).
+    Falls back to gbm_modcloth_upper.pkl if that file has bust/waist/hip cols."""
+    with_circ_path = ROOT / "research/models/variants/gbm_modcloth_upper_with_circ.pkl"
+    if with_circ_path.exists():
+        chosen_path = with_circ_path
+    elif MODCLOTH_SIZE_MODEL.exists():
+        chosen_path = MODCLOTH_SIZE_MODEL
+    else:
+        return {"error": f"ModCloth size model missing (looked at {with_circ_path} and {MODCLOTH_SIZE_MODEL})"}
 
-    bundle = pickle.loads(MODCLOTH_SIZE_MODEL.read_bytes())
-    # Find which feature set the bundle was trained on (h_only vs with_circ)
+    bundle = pickle.loads(chosen_path.read_bytes())
     feat_cols = bundle.get("feature_cols", [])
     if "bust_cm" not in feat_cols or "waist_cm" not in feat_cols or "hips_cm" not in feat_cols:
         return {
             "error": "ModCloth model trained on h_only feature set — re-run "
-                     "research/models/train_modcloth_upper_size.py with feat=with_circ"
+                     "research/models/train_modcloth_upper_size.py to also save the "
+                     "with_circ variant (gbm_modcloth_upper_with_circ.pkl)."
         }
 
     cat_enc = bundle["cat_enc"]
@@ -309,27 +316,26 @@ def chain_size_eval(preds: np.ndarray, raws: np.ndarray,
     cat_default = "tops" if "tops" in cat_enc.classes_ else cat_enc.classes_[0]
     cat_enc_val = int(cat_enc.transform([cat_default])[0])
 
-    def measurements_to_size(measurements_row: np.ndarray) -> int:
-        X = np.array([[
-            measurements_row[chest_i] / 2.54,  # ModCloth uses inches for bust
-            measurements_row[waist_i] / 2.54,
-            measurements_row[hip_i] / 2.54,
-            cat_enc_val,
-        ]])
-        # Actually the trained model used the order h+bust+waist+hip+category
-        # let's match feat_cols order
+    # Default height = mean US-female (163 cm) if subject heights not supplied.
+    # The chain works fine without true height but accuracy is slightly worse.
+    default_h = 163.0
+
+    def measurements_to_size(measurements_row: np.ndarray, height_cm: float) -> int:
         feature_values = {
-            "height_cm":   None,  # not available at this point in the chain
-            "bust_cm":     measurements_row[chest_i],
-            "waist_cm":    measurements_row[waist_i],
-            "hips_cm":     measurements_row[hip_i],
+            "height_cm":    float(height_cm),
+            "bust_cm":      float(measurements_row[chest_i]),
+            "waist_cm":     float(measurements_row[waist_i]),
+            "hips_cm":      float(measurements_row[hip_i]),
             "category_enc": cat_enc_val,
         }
-        X = np.array([[feature_values[c] for c in feat_cols]])
+        X = np.array([[feature_values[c] for c in feat_cols]], dtype=np.float32)
         return int(model.predict(X)[0])
 
-    preds_size_idx = np.array([measurements_to_size(preds[i]) for i in range(len(preds))])
-    truth_size_idx = np.array([measurements_to_size(raws[i]) for i in range(len(raws))])
+    if heights_cm is None:
+        heights_cm = np.full(len(preds), default_h, dtype=np.float32)
+
+    preds_size_idx = np.array([measurements_to_size(preds[i], heights_cm[i]) for i in range(len(preds))])
+    truth_size_idx = np.array([measurements_to_size(raws[i], heights_cm[i]) for i in range(len(raws))])
     exact = float((preds_size_idx == truth_size_idx).mean())
     within1 = float((np.abs(preds_size_idx - truth_size_idx) <= 1).mean())
     return {
@@ -463,8 +469,11 @@ def main() -> None:
     print(f"   per-target testB MAE: {evB['mae_per_target_cm']}")
 
     print("\n  chaining photo→measurements→size via ModCloth GBM…")
-    size_chainA = chain_size_eval(evA["preds"], evA["targets"], TARGETS)
-    size_chainB = chain_size_eval(evB["preds"], evB["targets"], TARGETS)
+    # Heights line up row-by-row because the test DataLoaders have shuffle=False
+    testA_heights = testA_rows["height_cm"].values.astype(np.float32)
+    testB_heights = testB_rows["height_cm"].values.astype(np.float32)
+    size_chainA = chain_size_eval(evA["preds"], evA["targets"], TARGETS, testA_heights)
+    size_chainB = chain_size_eval(evB["preds"], evB["targets"], TARGETS, testB_heights)
     print(f"   size chain testA: {size_chainA}")
     print(f"   size chain testB: {size_chainB}")
 
