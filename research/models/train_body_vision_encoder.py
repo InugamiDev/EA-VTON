@@ -90,9 +90,12 @@ def build_photo_index() -> pd.DataFrame:
 
 
 def find_photo_path(split: str, photo_id: str) -> Path | None:
-    """Resolve photo on disk. BodyM convention: <split>/photos/<photo_id>.jpg.
-    Some releases use front/back subdirs; we accept either."""
+    """Resolve photo on disk. BodyM's AWS Open Data Registry release uses
+    <split>/mask/<photo_id>.png (8-bit grayscale silhouette, 720×960)."""
     candidates = [
+        # Primary — AWS Open Data Registry layout (downloaded by download_bodym_photos.py)
+        BODYM_RAW / split / "mask" / f"{photo_id}.png",
+        # Legacy layouts (defensive — script previously assumed JPG)
         BODYM_RAW / split / "photos" / f"{photo_id}.jpg",
         BODYM_RAW / split / "photo_front" / f"{photo_id}.jpg",
         BODYM_RAW / split / "photo_left" / f"{photo_id}.jpg",
@@ -336,13 +339,26 @@ def main() -> None:
     ap.add_argument("--weight-decay", type=float, default=1e-4)
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--fp16", action="store_true",
-                    help="Mixed-precision (A100 supports bf16/fp16)")
+                    help="Mixed-precision. CUDA only; ignored on MPS/CPU.")
     ap.add_argument("--backbone", default="resnet50")
     ap.add_argument("--image-size", type=int, default=224)
     ap.add_argument("--gender", default="both", choices=["female", "male", "both"],
                     help="Restrict to one gender; default uses both")
-    ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+
+    # Device auto-detect: CUDA → MPS (Apple Silicon) → CPU
+    _default_device = "cpu"
+    if torch.cuda.is_available():
+        _default_device = "cuda"
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        _default_device = "mps"
+    ap.add_argument("--device", default=_default_device,
+                    choices=["cuda", "mps", "cpu"])
     args = ap.parse_args()
+
+    # MPS doesn't support fp16 amp the same way CUDA does — silently disable.
+    if args.fp16 and args.device != "cuda":
+        print(f"  note: --fp16 only supported on CUDA; running in fp32 on {args.device}.")
+        args.fp16 = False
 
     # ── Data ──
     print("  loading BodyM measurements + photo map…")
