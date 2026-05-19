@@ -239,16 +239,25 @@ def train_one_epoch(model, loader, opt, scaler, device, target_mean, target_std,
                 pred = model(x_img, aux)
                 loss = nn.functional.mse_loss(pred, t_norm)
             scaler.scale(loss).backward()
+            scaler.unscale_(opt)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             scaler.step(opt)
             scaler.update()
         else:
             pred = model(x_img, aux)
             loss = nn.functional.mse_loss(pred, t_norm)
+            # Guard: skip the backward if the loss is already nan/inf (one bad
+            # batch shouldn't wreck the whole run on MPS).
+            if not torch.isfinite(loss):
+                continue
             loss.backward()
+            # Gradient clipping defends against the occasional MPS-induced spike
+            # that previously caused weights to diverge to billions.
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             opt.step()
         total += loss.item() * x_img.size(0)
         n += x_img.size(0)
-    return total / n
+    return total / max(n, 1)
 
 
 @torch.inference_mode()
@@ -369,7 +378,13 @@ def main() -> None:
         _default_device = "mps"
     ap.add_argument("--device", default=_default_device,
                     choices=["cuda", "mps", "cpu"])
+    ap.add_argument("--seed", type=int, default=42,
+                    help="RNG seed for reproducibility (torch + numpy)")
     args = ap.parse_args()
+
+    # Set seeds early so weight init + DataLoader shuffle are reproducible.
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
 
     # MPS doesn't support fp16 amp the same way CUDA does — silently disable.
     if args.fp16 and args.device != "cuda":

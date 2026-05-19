@@ -164,10 +164,14 @@ def main() -> None:
         return
 
     # ── Phase 2 — full train ──
+    # Slightly lower lr than the script's defaults (1e-4 / 1e-3) because the
+    # higher rate caused MPS NaN divergence on the prior run. 5e-5 / 5e-4 is
+    # the variant phase's safe profile.
     rc = run(
         [PY, str(MODELS / "train_body_vision_encoder.py"),
          "--epochs", "25", "--batch-size", "32", "--gender", "female",
-         "--workers", "0"],
+         "--workers", "0",
+         "--lr-backbone", "5e-5", "--lr-head", "5e-4"],
         "full", PHASE_TIMEOUTS_S["full"],
     )
     full_results = EVAL / "body_vision_encoder_results.json"
