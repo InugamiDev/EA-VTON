@@ -146,9 +146,14 @@ def main() -> None:
         record["phases"].append({"name": "download", "rc": "skipped", "n_masks_after": masks_before})
 
     # ── Phase 1 — smoke train ──
+    # --workers 0 because macOS DataLoader fork-workers die mid-training under
+    # MPS (verified empirically: 8 workers all <defunct> after ~6 epochs).
+    # No data-loading parallelism is fine here — silhouettes are 720x960
+    # 8-bit grayscale and preprocess is cheap.
     rc = run(
         [PY, str(MODELS / "train_body_vision_encoder.py"),
-         "--epochs", "3", "--batch-size", "32", "--gender", "female"],
+         "--epochs", "3", "--batch-size", "32", "--gender", "female",
+         "--workers", "0"],
         "smoke", PHASE_TIMEOUTS_S["smoke"],
     )
     record["phases"].append({"name": "smoke", "rc": rc})
@@ -161,7 +166,8 @@ def main() -> None:
     # ── Phase 2 — full train ──
     rc = run(
         [PY, str(MODELS / "train_body_vision_encoder.py"),
-         "--epochs", "25", "--batch-size", "32", "--gender", "female"],
+         "--epochs", "25", "--batch-size", "32", "--gender", "female",
+         "--workers", "0"],
         "full", PHASE_TIMEOUTS_S["full"],
     )
     full_results = EVAL / "body_vision_encoder_results.json"
@@ -193,7 +199,8 @@ def main() -> None:
     rc = run(
         [PY, str(MODELS / "train_body_vision_encoder.py"),
          "--epochs", "50", "--batch-size", "32", "--gender", "both",
-         "--lr-backbone", "5e-5", "--lr-head", "5e-4"],
+         "--lr-backbone", "5e-5", "--lr-head", "5e-4",
+         "--workers", "0"],
         "variant", PHASE_TIMEOUTS_S["variant"],
     )
     w1_var = get_within1(full_results)
