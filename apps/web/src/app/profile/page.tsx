@@ -89,7 +89,7 @@ export default function ProfilePage() {
         <h1 className="mb-8 text-3xl font-bold text-foreground">Your Profile</h1>
 
         {/* Profile Info Card */}
-        <div className="mb-8 rounded-xl border border-border bg-card p-6 shadow-sm">
+        <div className="mb-8 rounded-2xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
               <User className="h-7 w-7 text-primary" />
@@ -115,7 +115,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Measurements Form */}
-        <div className="mb-8 rounded-xl border border-border bg-card p-6 shadow-sm">
+        <div className="mb-8 rounded-2xl border border-border bg-card p-6 shadow-sm">
           <h2 className="mb-6 text-xl font-semibold text-foreground">Measurements</h2>
 
           <div className="grid gap-6 sm:grid-cols-2">
@@ -213,7 +213,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Try-On History */}
-        <div className="mb-8 rounded-xl border border-border bg-card p-6 shadow-sm">
+        <div className="mb-8 rounded-2xl border border-border bg-card p-6 shadow-sm">
           <h2 className="mb-6 flex items-center gap-2 text-xl font-semibold text-foreground">
             <Clock className="h-5 w-5 text-muted-foreground" />
             Try-On History
@@ -238,7 +238,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Danger Zone */}
-        <div className="rounded-xl border border-destructive/30 bg-card p-6 shadow-sm">
+        <div className="rounded-2xl border border-destructive/30 bg-card p-6 shadow-sm">
           <h2 className="mb-2 text-xl font-semibold text-destructive">Danger Zone</h2>
           <p className="mb-6 text-base text-muted-foreground">
             Permanently delete all your profile data, measurements, and try-on history.

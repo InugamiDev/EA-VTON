@@ -67,7 +67,7 @@ function QualityIndicator({ quality }: { quality: QualityAssessment }) {
   };
 
   return (
-    <div className="mx-auto max-w-sm rounded-xl border border-border bg-card p-5 shadow-sm">
+    <div className="mx-auto max-w-sm rounded-2xl border border-border bg-card p-5 shadow-sm">
       <p className="mb-3 text-sm font-semibold">Photo Quality Assessment</p>
       <div className="space-y-2">
         {items.map((item) => {
@@ -600,7 +600,7 @@ function TryOnWizard() {
                 <button
                   type="button"
                   onClick={startCamera}
-                  className="group flex flex-col items-center gap-4 rounded-xl border border-border bg-card p-8 shadow-sm transition-all duration-200 hover:border-primary hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
+                  className="group flex flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 shadow-sm transition-all duration-200 hover:border-primary hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
                 >
                   <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent transition-all duration-200 group-hover:bg-primary group-hover:text-primary-foreground">
                     <Camera className="h-7 w-7" />
@@ -612,7 +612,7 @@ function TryOnWizard() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="group flex flex-col items-center gap-4 rounded-xl border border-border bg-card p-8 shadow-sm transition-all duration-200 hover:border-primary hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
+                  className="group flex flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 shadow-sm transition-all duration-200 hover:border-primary hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
                 >
                   <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent transition-all duration-200 group-hover:bg-primary group-hover:text-primary-foreground">
                     <Upload className="h-7 w-7" />
@@ -633,7 +633,7 @@ function TryOnWizard() {
             {/* Camera viewfinder */}
             {cameraActive && (
               <div className="space-y-4">
-                <div className="relative mx-auto aspect-[3/4] max-w-sm overflow-hidden rounded-xl border border-border shadow-sm">
+                <div className="relative mx-auto aspect-[3/4] max-w-sm overflow-hidden rounded-2xl border border-border shadow-sm">
                   <video ref={videoRef} autoPlay playsInline muted className="h-full w-full object-cover" />
                   {/* Face detection canvas overlay */}
                   <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full" />
@@ -696,7 +696,7 @@ function TryOnWizard() {
 
             {/* Upload error */}
             {uploadError && (
-              <div className="mx-auto flex max-w-sm items-start gap-3 rounded-xl border border-red-300 bg-red-50 p-5 text-sm text-red-800 dark:border-red-700 dark:bg-red-950/30 dark:text-red-200">
+              <div className="mx-auto flex max-w-sm items-start gap-3 rounded-2xl border border-red-300 bg-red-50 p-5 text-sm text-red-800 dark:border-red-700 dark:bg-red-950/30 dark:text-red-200">
                 <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
                   <p className="font-medium">Upload failed</p>
@@ -714,7 +714,7 @@ function TryOnWizard() {
             {/* Photo preview + quality results */}
             {userPhotoPreview && !uploading && !uploadError && (
               <div className="space-y-6">
-                <div className="relative mx-auto aspect-[3/4] max-w-sm overflow-hidden rounded-xl border border-border shadow-sm">
+                <div className="relative mx-auto aspect-[3/4] max-w-sm overflow-hidden rounded-2xl border border-border shadow-sm">
                   <Image src={userPhotoPreview} alt="Your photo" fill className="object-cover" unoptimized />
                 </div>
 
@@ -722,7 +722,7 @@ function TryOnWizard() {
                 {quality && <QualityIndicator quality={quality} />}
 
                 {quality?.overall === "fail" && (
-                  <div className="mx-auto flex max-w-sm items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 p-5 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200">
+                  <div className="mx-auto flex max-w-sm items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                     <div>
                       <p className="font-medium">Low quality photo detected</p>
@@ -775,7 +775,7 @@ function TryOnWizard() {
                     type="button"
                     onClick={() => setSelectedGarment(g)}
                     className={cn(
-                      "group relative overflow-hidden rounded-xl border bg-card p-4 text-left shadow-sm transition-all duration-200 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                      "group relative overflow-hidden rounded-2xl border bg-card p-4 text-left shadow-sm transition-all duration-200 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                       isSelected ? "border-primary ring-2 ring-primary" : "border-border hover:border-primary/50",
                     )}
                   >
@@ -802,7 +802,7 @@ function TryOnWizard() {
             </div>
 
             {/* Consent */}
-            <label className="mx-auto flex max-w-xl cursor-pointer items-start gap-3 rounded-xl border border-border bg-card p-6 shadow-sm transition-all duration-200 hover:bg-accent/50">
+            <label className="mx-auto flex max-w-xl cursor-pointer items-start gap-3 rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-200 hover:bg-accent/50">
               <input
                 type="checkbox"
                 checked={consentChecked}
@@ -868,7 +868,7 @@ function TryOnWizard() {
                   {elapsedSeconds}s elapsed
                 </div>
                 {selectedGarment && (
-                  <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-sm">
+                  <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm">
                     <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg">
                       <Image
                         src={selectedGarment.images[0]?.url ?? ""}
@@ -956,7 +956,7 @@ function TryOnWizard() {
 
                 {/* Pipeline stages */}
                 {jobResult.stages && jobResult.stages.length > 0 && (
-                  <div className="mx-auto max-w-lg rounded-xl border border-border bg-card p-6 shadow-sm">
+                  <div className="mx-auto max-w-lg rounded-2xl border border-border bg-card p-6 shadow-sm">
                     <p className="mb-4 text-sm font-semibold">Pipeline Stages</p>
                     <div className="space-y-3">
                       {jobResult.stages.map((stage) => {
@@ -997,7 +997,7 @@ function TryOnWizard() {
                 <div className="grid gap-6 sm:grid-cols-2">
                   <div className="space-y-2">
                     <p className="text-center text-sm font-medium text-muted-foreground">Your Photo</p>
-                    <div className="relative aspect-[3/4] overflow-hidden rounded-xl border border-border shadow-sm">
+                    <div className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-border shadow-sm">
                       {photoFilename && (
                         <Image
                           src={getUploadedPhotoUrl(photoFilename)}
@@ -1011,7 +1011,7 @@ function TryOnWizard() {
                   </div>
                   <div className="space-y-2">
                     <p className="text-center text-sm font-medium text-muted-foreground">AI-Generated Result</p>
-                    <div className="relative aspect-[3/4] overflow-hidden rounded-xl border border-border shadow-sm">
+                    <div className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-border shadow-sm">
                       {jobResult.result_url && jobId && (
                         <Image
                           src={getResultImageUrl(jobId)}
@@ -1029,7 +1029,7 @@ function TryOnWizard() {
                 </div>
 
                 {/* Garment info */}
-                <div className="mx-auto max-w-md rounded-xl border border-border bg-card p-6 shadow-sm">
+                <div className="mx-auto max-w-md rounded-2xl border border-border bg-card p-6 shadow-sm">
                   <div className="flex items-center gap-4">
                     <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg">
                       <Image

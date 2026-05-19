@@ -434,7 +434,7 @@ export default function MeasurePage() {
           )}
 
           {/* Size recommendation — hero card */}
-          <div className="rounded-xl border-2 border-black dark:border-white p-6">
+          <div className="rounded-2xl border-2 border-black dark:border-white p-6">
             <div className="flex items-baseline gap-3 mb-2">
               <span className="text-4xl font-bold">{result.recommended_size}</span>
               <span

@@ -197,7 +197,7 @@ export default function ClosetPage() {
 
           {/* Body profile inputs */}
           {profileOpen && (
-            <div className="mt-6 rounded-xl border border-border bg-card p-6 shadow-sm">
+            <div className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
               <div className="grid gap-4 sm:grid-cols-3">
                 <div>
                   <label htmlFor="closet-height" className="mb-1.5 block text-sm font-medium">
@@ -284,7 +284,7 @@ export default function ClosetPage() {
             {sortedGarments.map(({ garment, recSize, confidence }) => (
               <div
                 key={garment.id}
-                className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md"
+                className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md"
               >
                 {/* Image */}
                 <div className="relative aspect-[3/4] overflow-hidden bg-muted">
@@ -439,7 +439,7 @@ function ComparisonModal({
             {/* Side by side */}
             <div className="grid gap-3 sm:grid-cols-2">
               {/* Baseline */}
-              <div className="rounded-xl border border-border bg-muted/30 p-4">
+              <div className="rounded-2xl border border-border bg-muted/30 p-4">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   Baseline (US)
                 </p>
@@ -456,7 +456,7 @@ function ComparisonModal({
               {/* EA-VTON */}
               <div
                 className={cn(
-                  "rounded-xl border-2 p-4",
+                  "rounded-2xl border-2 p-4",
                   comparison.comparison.size_changed
                     ? "border-green-500 bg-green-50"
                     : "border-primary bg-primary/5"
@@ -505,14 +505,14 @@ function ComparisonModal({
             <div className="flex gap-2">
               <Link
                 href={`/try-on?garment=${garment.id}`}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90"
               >
                 <Shirt className="h-4 w-4" />
                 Try On ({comparison.eavton.recommended_size})
               </Link>
               <Link
                 href={`/product/${garment.id}`}
-                className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm font-semibold hover:bg-accent"
+                className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card px-4 py-3 text-sm font-semibold hover:bg-accent"
               >
                 Details
               </Link>
