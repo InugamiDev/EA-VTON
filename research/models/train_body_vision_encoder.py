@@ -451,7 +451,10 @@ def main() -> None:
 
     # ── Final eval (best checkpoint reloaded) + size chain ──
     print("\n  reloading best checkpoint + final eval…")
-    ckpt = torch.load(OUT_CKPT, map_location=args.device)
+    # weights_only=False because our checkpoint bundles numpy arrays
+    # (target_mean / target_std) alongside the state_dict.
+    # PyTorch 2.6+ defaults weights_only=True which rejects numpy globals.
+    ckpt = torch.load(OUT_CKPT, map_location=args.device, weights_only=False)
     model.load_state_dict(ckpt["state_dict"])
     evA = evaluate(model, testA_loader, args.device, target_mean, target_std)
     evB = evaluate(model, testB_loader, args.device, target_mean, target_std)
