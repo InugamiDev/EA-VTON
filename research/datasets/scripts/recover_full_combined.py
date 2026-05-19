@@ -70,7 +70,9 @@ def stage_b_merge_bundle() -> None:
     print(f"  basic (freshly rebuilt): {len(basic):,} rows, {len(basic.columns)} cols")
     print(f"  bundle: {len(bundle):,} rows, {len(bundle.columns)} cols")
 
-    # Columns that the bundle has but basic build does NOT
+    # Columns that the bundle has, that we want to keep verbatim from the bundle
+    # (the basic-build initializes some of these with placeholder values like
+    # all-zero clip_embedding — we want the real values from the bundle).
     bundle_only_cols = ["clip_embedding",
                         "suits_g1", "suits_g2", "suits_g3", "suits_g4", "suits_g5",
                         "best_suits_cluster", "best_suits_score",
@@ -80,6 +82,17 @@ def stage_b_merge_bundle() -> None:
     missing = [c for c in bundle_only_cols if c not in bundle.columns]
     if missing:
         print(f"  WARN: bundle missing expected cols {missing}; will leave them out")
+
+    # Drop placeholder columns from basic that conflict with bundle, so the merge
+    # produces a clean single column per name (avoid pandas adding _x/_y suffixes).
+    # For new rows that exist in basic but NOT in bundle (e.g., newly-scraped VN
+    # items), these columns will be NaN after the merge — that's correct; the
+    # labeling pipeline will populate them later.
+    placeholders_to_drop = [c for c in cols_to_merge if c != "garment_id" and c in basic.columns]
+    if placeholders_to_drop:
+        print(f"  dropping {len(placeholders_to_drop)} placeholder cols from basic before merge: {placeholders_to_drop}")
+        basic = basic.drop(columns=placeholders_to_drop)
+
     merged = basic.merge(bundle[cols_to_merge], on="garment_id", how="left")
     new_cols = set(merged.columns) - set(basic.columns)
     n_with_clip = int(merged["clip_embedding"].notna().sum()) if "clip_embedding" in merged.columns else 0
