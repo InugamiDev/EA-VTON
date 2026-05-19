@@ -186,7 +186,13 @@ def build_transforms(image_size: int = 224, train: bool = True):
 def expand_rows_to_photos(measurements: pd.DataFrame, photos: pd.DataFrame) -> pd.DataFrame:
     """Cross-join measurements with photo map → one row per (subject, photo).
     Drops subjects without any photo or without measurements."""
-    measurements = measurements.set_index("subject_id")
+    # BodyM has ~3 subjects appearing across testA + testB with slightly
+    # different measurements. We keep the first row per subject_id so
+    # `.loc[sid]` returns a Series (not a DataFrame) below.
+    measurements = (
+        measurements.drop_duplicates(subset="subject_id", keep="first")
+                    .set_index("subject_id")
+    )
     photos = photos.set_index("subject_id")
     common = list(set(measurements.index) & set(photos.index))
     if len(photos) == 0 or len(measurements) == 0 or len(common) == 0:
@@ -198,6 +204,10 @@ def expand_rows_to_photos(measurements: pd.DataFrame, photos: pd.DataFrame) -> p
     rows = []
     for sid in common:
         meas = measurements.loc[sid]
+        # Defensive: if .loc still returns a DataFrame (shouldn't after dedup),
+        # take the first row.
+        if isinstance(meas, pd.DataFrame):
+            meas = meas.iloc[0]
         ps = photos.loc[[sid]] if sid in photos.index else photos.loc[sid:sid]
         for _, p in ps.iterrows():
             rec = {
