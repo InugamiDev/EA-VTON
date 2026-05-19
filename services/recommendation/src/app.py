@@ -235,6 +235,180 @@ def health():
     }
 
 
+@app.get("/dataset/stats")
+def dataset_stats():
+    """Aggregate catalog statistics for the UI visualizer.
+
+    Reads the DuckDB view live and returns per-source counts, labeling
+    coverage, person-cluster stats, and source citations.
+    """
+    from src.deepfashion2_catalog import DeepFashion2Catalog, is_available
+    if not is_available():
+        raise HTTPException(status_code=503, detail="Catalog DB not built")
+    cat = DeepFashion2Catalog.get_instance()
+    con = cat.con
+
+    total = int(con.execute("SELECT COUNT(*) FROM items").fetchone()[0])
+    by_source = [
+        {"source": r[0], "n": int(r[1])}
+        for r in con.execute(
+            "SELECT source, COUNT(*) FROM items GROUP BY source ORDER BY 2 DESC"
+        ).fetchall()
+    ]
+
+    # Labeling coverage
+    n_clip = int(con.execute(
+        "SELECT COUNT(*) FROM items WHERE clip_embedding IS NOT NULL"
+    ).fetchone()[0])
+    n_redacted = int(con.execute(
+        "SELECT COUNT(*) FROM items WHERE redaction_status = 'face_detected_redacted'"
+    ).fetchone()[0])
+    n_no_face = int(con.execute(
+        "SELECT COUNT(*) FROM items WHERE redaction_status = 'no_face_detected'"
+    ).fetchone()[0])
+    n_not_processed = int(con.execute(
+        "SELECT COUNT(*) FROM items WHERE redaction_status = 'not_processed'"
+    ).fetchone()[0])
+
+    # Person clustering: requires the parquet to have person_id column
+    try:
+        n_person_assigned = int(con.execute(
+            "SELECT COUNT(*) FROM items WHERE person_id IS NOT NULL AND person_id != -1"
+        ).fetchone()[0])
+        cluster_top = [
+            {"person_id": int(r[0]), "size": int(r[1])}
+            for r in con.execute(
+                """SELECT person_id, COUNT(*) AS n FROM items
+                   WHERE person_id IS NOT NULL AND person_id != -1
+                   GROUP BY person_id ORDER BY n DESC LIMIT 10"""
+            ).fetchall()
+        ]
+    except Exception:
+        n_person_assigned = 0
+        cluster_top = []
+
+    # Attribute distributions
+    def dist(col: str, limit: int = 8) -> list[dict]:
+        rows = con.execute(
+            f"SELECT {col}, COUNT(*) FROM items GROUP BY {col} ORDER BY 2 DESC LIMIT {limit}"
+        ).fetchall()
+        return [{"value": r[0], "n": int(r[1])} for r in rows]
+
+    return {
+        "total_rows": total,
+        "by_source": by_source,
+        "labeling": {
+            "with_clip_embedding": n_clip,
+            "redacted_face_detected": n_redacted,
+            "no_face_detected": n_no_face,
+            "not_processed": n_not_processed,
+        },
+        "person_clustering": {
+            "rows_assigned": n_person_assigned,
+            "top_clusters_by_size": cluster_top,
+        },
+        "attributes": {
+            "neckline": dist("neckline"),
+            "silhouette": dist("silhouette"),
+            "color_temperature": dist("color_temperature"),
+            "best_season": dist("best_season"),
+            "style_personality": dist("style_personality"),
+            "best_suits_cluster": dist("best_suits_cluster"),
+        },
+        "sources": [
+            {
+                "id": "deepfashion2",
+                "name": "DeepFashion2",
+                "citation": "Ge, Y., Zhang, R., Wang, X., Tang, X., Luo, P. (2019). DeepFashion2: A Versatile Benchmark for Detection, Pose Estimation, Segmentation and Re-Identification of Clothing Images. CVPR.",
+                "url": "https://github.com/switchablenorms/DeepFashion2",
+                "license": "CUHK research-only (images not redistributable)",
+            },
+            {
+                "id": "fashionpedia",
+                "name": "Fashionpedia",
+                "citation": "Jia, M., Shi, M., Sirotenko, M., Cui, Y., Cardie, C., Hariharan, B., Adam, H., Belongie, S. (2020). Fashionpedia: Ontology, Segmentation, and an Attribute Localization Dataset. ECCV.",
+                "url": "https://fashionpedia.github.io/home/",
+                "license": "CC BY 4.0",
+            },
+            {
+                "id": "deepfashion_with_masks",
+                "name": "DeepFashion (with masks)",
+                "citation": "Liu, Z., Luo, P., Qiu, S., Wang, X., Tang, X. (2016). DeepFashion: Powering Robust Clothes Recognition and Retrieval with Rich Annotations. CVPR.",
+                "url": "https://mmlab.ie.cuhk.edu.hk/projects/DeepFashion.html",
+                "license": "Apache 2.0 (masks); original images per CUHK terms",
+            },
+            {
+                "id": "fashion_products_small",
+                "name": "Fashion Products Small (Myntra)",
+                "citation": "Myntra/Param Aggarwal catalog snapshot, Kaggle 2019.",
+                "url": "https://www.kaggle.com/datasets/paramaggarwal/fashion-product-images-small",
+                "license": "Per Kaggle terms; verify per use",
+            },
+            {
+                "id": "vn_dottie",
+                "name": "Dottie (VN brand)",
+                "citation": "Scraped from dottie.vn 2026-04 with EAVTONResearchBot. Research-fair-use only.",
+                "url": "https://dottie.vn/",
+                "license": "Research-fair-use; not redistributable",
+            },
+            {
+                "id": "vn_ivy_moda",
+                "name": "IvyModa (VN brand)",
+                "citation": "Scraped from ivymoda.com 2026-04 with EAVTONResearchBot. Research-fair-use only.",
+                "url": "https://ivymoda.com/",
+                "license": "Research-fair-use; not redistributable",
+            },
+            {
+                "id": "vn_yody",
+                "name": "Yody (VN brand)",
+                "citation": "Scraped from yody.vn 2026-05-19 via sitemap-image schema with EAVTONResearchBot.",
+                "url": "https://yody.vn/",
+                "license": "Research-fair-use; not redistributable",
+            },
+            {
+                "id": "vn_coupletx",
+                "name": "Couple TX (VN brand)",
+                "citation": "Scraped from coupletx.com 2026-05-19 via sitemap-image schema (Haravan).",
+                "url": "https://coupletx.com/",
+                "license": "Research-fair-use; not redistributable",
+            },
+        ],
+        "anthropometric_sources": [
+            {
+                "id": "vn_trieu_2024",
+                "name": "VN Body Taxonomy (Trieu et al. 2024)",
+                "citation": "Trieu, Tang, Nguyen, Le (2024). Analysis of Vietnamese Women's Body Shape from Anthropometric Data. Vlákna a Textil 2024(1). n=480 3D body scans.",
+                "url": "http://vat.ft.tul.cz/2024/1/VaT_2024_1_1.pdf",
+            },
+            {
+                "id": "us_lee_2007",
+                "name": "US Body Taxonomy (Lee et al. 2007 / FFIT)",
+                "citation": "Lee, Istook, Nam, Park (2007). Comparison of body shape between USA and Korean women. IJCST 19(5). FFIT 5-shape on n=222.",
+                "url": "https://www.emerald.com/insight/content/doi/10.1108/09556220710819492/full/html",
+            },
+            {
+                "id": "kr_size_korea",
+                "name": "KR Body Taxonomy (Size Korea + Lee 2007)",
+                "citation": "Size Korea 8th KATS anthropometric survey, 2020. n=259 KR women FFIT clusters.",
+                "url": "https://sizekorea.kr/page/about/1",
+            },
+            {
+                "id": "polarity_methodology",
+                "name": "Body-rule Polarity Methodology (Hidayati et al. 2018)",
+                "citation": "Hidayati, S. C., Hsu, C.-C., Chang, Y.-T., Hua, K.-L., Fu, J., Cheng, W.-H. (2018). What Dress Fits Me Best? Fashion Recommendation on the Clothing Style for Personal Body Shape. ACM MM 2018.",
+                "url": "https://dl.acm.org/doi/10.1145/3240508.3240546",
+            },
+        ],
+        "size_model": {
+            "primary": "gbm_female_upper_vn",
+            "exact_accuracy": 0.522,
+            "within1_accuracy": 0.707,
+            "training_data": "RTR female upper-body, fit='fit' filter, n_train=8,750",
+            "reweighting": "copula+PSIS, α=0.75 tempering, target=VN_FEMALE prior (Tran 2024: h=156.2±5.5, w=53.9±8.0)",
+        },
+    }
+
+
 @app.post("/recommend-size", response_model=SizeResponse)
 def recommend_size(req: SizeRequest):
     """Predict best size for a garment given body measurements.

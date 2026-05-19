@@ -893,3 +893,60 @@ export async function checkHealth(): Promise<HealthStatus> {
   const res = await fetch(`${API_BASE}/api/health`);
   return res.json();
 }
+
+/* ------------------------------------------------------------------ */
+/*  Dataset visualizer                                                 */
+/* ------------------------------------------------------------------ */
+
+export interface DatasetStats {
+  total_rows: number;
+  by_source: { source: string; n: number }[];
+  labeling: {
+    with_clip_embedding: number;
+    redacted_face_detected: number;
+    no_face_detected: number;
+    not_processed: number;
+  };
+  person_clustering: {
+    rows_assigned: number;
+    top_clusters_by_size: { person_id: number; size: number }[];
+  };
+  attributes: Record<
+    | "neckline"
+    | "silhouette"
+    | "color_temperature"
+    | "best_season"
+    | "style_personality"
+    | "best_suits_cluster",
+    { value: string; n: number }[]
+  >;
+  sources: {
+    id: string;
+    name: string;
+    citation: string;
+    url: string;
+    license: string;
+  }[];
+  anthropometric_sources: {
+    id: string;
+    name: string;
+    citation: string;
+    url: string;
+  }[];
+  size_model: {
+    primary: string;
+    exact_accuracy: number;
+    within1_accuracy: number;
+    training_data: string;
+    reweighting: string;
+  };
+}
+
+export async function getDatasetStats(): Promise<DatasetStats> {
+  const res = await fetch(`${API_BASE}/api/dataset/stats`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || "Failed to fetch dataset stats");
+  }
+  return res.json();
+}

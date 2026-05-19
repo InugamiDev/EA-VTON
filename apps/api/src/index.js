@@ -45,6 +45,7 @@ app.use("/api/features", featureRoutes);
 app.use("/api/pipeline", pipelineRoutes);
 app.use("/api/style", styleRoutes);
 app.use("/api/intake", intakeRoutes);
+app.use("/api/dataset", require("./routes/dataset"));
 app.use("/api", healthRoutes);
 
 // ── Root ──
