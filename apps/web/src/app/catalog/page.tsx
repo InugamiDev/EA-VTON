@@ -51,41 +51,45 @@ export default function CatalogPage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-accent/50 to-background py-16 md:py-20">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="mx-auto max-w-2xl text-center">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm">
-              <Shirt className="h-4 w-4 text-muted-foreground" />
-              Browse &amp; Try On
-            </div>
-            <h1 className="text-balance text-4xl font-bold tracking-tight md:text-5xl">
+      <section className="border-b border-border py-12 md:py-16">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="flex flex-col gap-2">
+            <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               Catalog
+            </span>
+            <h1 className="text-balance text-3xl font-bold tracking-tight md:text-4xl">
+              Browse the catalog
             </h1>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Explore our collection of essentials. Pick any garment to see
-              details or try it on virtually.
+            <p className="max-w-2xl text-sm text-muted-foreground md:text-base">
+              Essentials catalog used by the recommender as the{" "}
+              <Link
+                href="/live-size"
+                className="underline underline-offset-4 hover:text-foreground"
+              >
+                live-size flow
+              </Link>
+              . Pick any garment to see details or try it on virtually.
             </p>
           </div>
         </div>
       </section>
 
       {/* Filters + Grid */}
-      <section className="py-16">
-        <div className="mx-auto max-w-7xl px-6">
+      <section className="py-10 md:py-12">
+        <div className="mx-auto max-w-6xl px-6">
           {/* Filter bar */}
-          <div className="mb-10 flex flex-wrap items-center gap-3">
-            <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+          <div className="mb-8 flex flex-wrap items-center gap-2">
+            <SlidersHorizontal className="mr-1 h-3.5 w-3.5 text-muted-foreground" />
             {GARMENT_TYPES.map((type) => (
               <button
                 key={type.value}
                 onClick={() => setActiveFilter(type.value)}
                 className={cn(
-                  "rounded-full px-6 py-3 text-base font-medium shadow-sm transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none",
+                  "inline-flex h-9 items-center rounded-full px-4 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   activeFilter === type.value
-                    ? "bg-primary text-primary-foreground"
-                    : "border border-border bg-card text-foreground hover:bg-accent"
+                    ? "bg-foreground text-background"
+                    : "border border-border bg-card text-foreground hover:bg-accent",
                 )}
-                style={{ minHeight: "2.625rem" }}
               >
                 {type.label}
               </button>
@@ -129,10 +133,10 @@ function GarmentCard({ garment }: { garment: Garment }) {
   return (
     <Link
       href={`/product/${garment.id}`}
-      className="group rounded-xl border border-border bg-card shadow-sm transition-all duration-200 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
+      className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
       {/* Image */}
-      <div className="relative aspect-[3/4] overflow-hidden rounded-t-xl bg-muted">
+      <div className="relative aspect-[3/4] overflow-hidden bg-muted">
         <Image
           src={imageUrl}
           alt={garment.name}

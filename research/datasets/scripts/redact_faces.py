@@ -138,24 +138,35 @@ def main() -> None:
     # Collect all jobs
     jobs: list[tuple] = []
     for src in args.sources:
+        # vn_brands is special-cased: reads from raw/vn_brands/images/<brand>/
+        # instead of combined/images/<src>/. Don't gate it on combined/images existing.
+        if src == "vn_brands":
+            raw_vn = ROOT / "research/datasets/raw/vn_brands/images"
+            if not raw_vn.exists():
+                print(f"  ! {raw_vn} missing, skipping vn_brands")
+                continue
+            for brand_dir in raw_vn.iterdir():
+                if not brand_dir.is_dir():
+                    continue
+                # VN scrapers preserve source extension (.jpg, .png, .webp).
+                # Output is always .jpg for consistency with the rest of the
+                # downstream pipeline.
+                for ext in ("*.jpg", "*.jpeg", "*.png", "*.webp"):
+                    for src_img in brand_dir.glob(ext):
+                        out = OUT_ROOT / "vn_brands" / brand_dir.name / (src_img.stem + ".jpg")
+                        if args.overwrite or not out.exists():
+                            jobs.append((src_img, out, args.blur_radius))
+            continue
+
+        # Other sources use combined/images/<src>/
         src_dir = IMG_ROOT / src
         if not src_dir.exists():
             print(f"  ! {src_dir} missing, skipping")
             continue
-        if src == "vn_brands":
-            raw_vn = ROOT / "research/datasets/raw/vn_brands/images"
-            if raw_vn.exists():
-                for brand_dir in raw_vn.iterdir():
-                    if not brand_dir.is_dir(): continue
-                    for jpg in brand_dir.glob("*.jpg"):
-                        out = OUT_ROOT / "vn_brands" / brand_dir.name / jpg.name
-                        if args.overwrite or not out.exists():
-                            jobs.append((jpg, out, args.blur_radius))
-        else:
-            for jpg in src_dir.glob("*.jpg"):
-                out = OUT_ROOT / src / jpg.name
-                if args.overwrite or not out.exists():
-                    jobs.append((jpg, out, args.blur_radius))
+        for jpg in src_dir.glob("*.jpg"):
+            out = OUT_ROOT / src / jpg.name
+            if args.overwrite or not out.exists():
+                jobs.append((jpg, out, args.blur_radius))
 
     if args.limit > 0:
         jobs = jobs[: args.limit]

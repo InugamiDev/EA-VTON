@@ -10,146 +10,162 @@ import {
   Eye,
 } from "lucide-react";
 
+// intent: marketing landing — calm monochrome, rounded-full CTAs, DESIGN.md tokens
+// status: done
+// next: A/B with a journey-style "try the demo right here" hero
+// confidence: high
+
 export default function HomePage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative overflow-hidden py-24 md:py-32">
-        <div className="absolute inset-0 bg-gradient-to-b from-accent/50 to-background" />
-        <div className="relative mx-auto max-w-7xl px-6">
+      <section className="relative py-20 md:py-28">
+        <div className="mx-auto max-w-5xl px-6">
           <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm">
-              <Sparkles className="h-4 w-4 text-amber-500" />
-              AI-Powered Virtual Try-On
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium">
+              <Sparkles className="h-3.5 w-3.5" />
+              FitView — size & style recommendations
             </div>
             <h1 className="text-balance text-4xl font-bold tracking-tight md:text-6xl">
-              See how clothes look on you{" "}
-              <span className="text-muted-foreground">before you buy</span>
+              Know your size.{" "}
+              <span className="text-muted-foreground">See your style.</span>
             </h1>
-            <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
-              Upload a photo, pick a garment from our catalog, and get an
-              AI-generated preview with personalized size recommendations.
+            <p className="mx-auto mt-6 max-w-xl text-balance text-base text-muted-foreground md:text-lg">
+              A camera-only size and style recommender for upper-body tops.
+              Photos are processed locally and faces are blurred before any
+              label or embedding is computed.
             </p>
-            <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+            <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Link
-                href="/try-on"
-                className="flex items-center gap-2 rounded-xl bg-primary px-8 py-4 text-base font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
+                href="/live-size"
+                className="inline-flex h-12 items-center gap-2 rounded-full bg-foreground px-6 text-sm font-semibold text-background transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
-                Try It Now
+                <Camera className="h-4 w-4" />
+                Start the guided flow
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/catalog"
-                className="flex items-center gap-2 rounded-xl border border-border bg-card px-8 py-4 text-base font-semibold shadow-sm transition-all duration-200 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
+                className="inline-flex h-12 items-center gap-2 rounded-full border border-border bg-card px-6 text-sm font-semibold transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
-                Browse Catalog
-              </Link>
-              <Link
-                href="/live-size"
-                className="flex items-center gap-2 rounded-xl border border-border bg-card px-8 py-4 text-base font-semibold shadow-sm transition-all duration-200 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
-              >
-                <Camera className="h-4 w-4" />
-                Live Size Test
+                Browse the catalog
               </Link>
             </div>
+            <p className="mt-4 text-[11px] text-muted-foreground">
+              No account required. Want the live camera + diagnostics?{" "}
+              <Link
+                href="/live-size/advanced"
+                className="underline underline-offset-4 hover:text-foreground"
+              >
+                Advanced mode
+              </Link>
+              .
+            </p>
           </div>
         </div>
       </section>
 
       {/* How it works */}
-      <section className="py-20">
-        <div className="mx-auto max-w-7xl px-6">
+      <section className="py-16 md:py-20">
+        <div className="mx-auto max-w-5xl px-6">
           <div className="text-center">
-            <h2 className="text-3xl font-bold tracking-tight">How it works</h2>
-            <p className="mt-3 text-muted-foreground">
-              Three simple steps to your virtual fitting room
-            </p>
+            <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              How it works
+            </span>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight md:text-3xl">
+              Four steps, one journey
+            </h2>
           </div>
-          <div className="mt-16 grid gap-8 md:grid-cols-3">
+          <div className="mt-12 grid gap-6 md:grid-cols-4">
             <StepCard
               step={1}
-              icon={<Camera className="h-6 w-6" />}
-              title="Take or upload a photo"
-              description="Use your camera or upload an existing photo. Our quality checker guides you to get the best result."
+              icon={<Camera className="h-5 w-5" />}
+              title="Capture"
+              description="Upload a full-body photo or use the live camera."
             />
             <StepCard
               step={2}
-              icon={<Shirt className="h-6 w-6" />}
-              title="Pick a garment"
-              description="Browse our catalog of UNIQLO essentials. Select the item you want to try on virtually."
+              icon={<Ruler className="h-5 w-5" />}
+              title="Size"
+              description="We predict a size band from your body proportions + height."
             />
             <StepCard
               step={3}
-              icon={<Eye className="h-6 w-6" />}
-              title="See the result"
-              description="Get an AI-generated preview of how the garment looks on you, with a size recommendation."
+              icon={<Shirt className="h-5 w-5" />}
+              title="Style"
+              description="Body-shape-aware ranking from our 208k-item catalog."
+            />
+            <StepCard
+              step={4}
+              icon={<Sparkles className="h-5 w-5" />}
+              title="Personalize"
+              description="Pick favorites; we re-rank to your taste in seconds."
             />
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="border-t border-border bg-muted/30 py-20">
-        <div className="mx-auto max-w-7xl px-6">
+      {/* Why */}
+      <section className="border-t border-border bg-muted/30 py-16 md:py-20">
+        <div className="mx-auto max-w-5xl px-6">
           <div className="text-center">
-            <h2 className="text-3xl font-bold tracking-tight">
+            <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              Why FitView
+            </span>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight md:text-3xl">
               Built for trust
             </h2>
-            <p className="mt-3 text-muted-foreground">
-              Honest AI that tells you when it&apos;s uncertain
-            </p>
           </div>
-          <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <FeatureCard
-              icon={<Sparkles className="h-5 w-5" />}
-              title="Confidence labels"
-              description="Every result shows a confidence score — we tell you when we're unsure so you can decide."
+              icon={<Shield className="h-4 w-4" />}
+              title="Privacy by default"
+              description="Faces are mesh-blurred before any embedding is computed. No facial biometrics persist."
             />
             <FeatureCard
-              icon={<Ruler className="h-5 w-5" />}
-              title="Smart sizing"
-              description="Size recommendations from your measurements + garment size charts. No magic, just math."
+              icon={<Ruler className="h-4 w-4" />}
+              title="Anthropometry-aware"
+              description="Size model tuned for Vietnamese female body proportions, not just US averages."
             />
             <FeatureCard
-              icon={<Shield className="h-5 w-5" />}
-              title="Privacy first"
-              description="Your photos are processed and deleted. No facial recognition, no data selling."
+              icon={<Sparkles className="h-4 w-4" />}
+              title="Explainable ranking"
+              description="Every recommended item shows its fit / flatter / match score breakdown."
             />
             <FeatureCard
-              icon={<Zap className="h-5 w-5" />}
-              title="Fast results"
-              description="Get your virtual try-on in under 60 seconds, with a before/after comparison view."
+              icon={<Eye className="h-4 w-4" />}
+              title="Honest confidence"
+              description="Every prediction returns a confidence score — we tell you when we're unsure."
             />
             <FeatureCard
-              icon={<Camera className="h-5 w-5" />}
-              title="Photo guidance"
-              description="Client-side quality checks help you take a photo that produces the best results."
+              icon={<Zap className="h-4 w-4" />}
+              title="Cold-start in 3 taps"
+              description="Pick 3 favorites from a stratified seed grid; recommendations re-rank to your taste."
             />
             <FeatureCard
-              icon={<Shirt className="h-5 w-5" />}
-              title="Real brands"
-              description="Demo catalog with UNIQLO garments — realistic products, real size charts."
+              icon={<Camera className="h-4 w-4" />}
+              title="Open dataset"
+              description="208,069 upper-body items across 6 sources, with derived labels under CC BY 4.0."
             />
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="py-20">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="rounded-2xl border border-border bg-card p-12 text-center shadow-sm md:p-16">
-            <h2 className="text-3xl font-bold tracking-tight">
-              Ready to try it?
+      <section className="py-16 md:py-20">
+        <div className="mx-auto max-w-3xl px-6">
+          <div className="rounded-3xl border border-border bg-card p-10 text-center shadow-sm md:p-14">
+            <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
+              Try it now
             </h2>
-            <p className="mx-auto mt-4 max-w-md text-muted-foreground">
-              No account required. Take a photo, pick a garment, and see the
-              result in seconds.
+            <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
+              No account. No upload to cloud. Faces blurred client-side.
             </p>
             <Link
-              href="/try-on"
-              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-4 text-base font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
+              href="/live-size"
+              className="mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-foreground px-6 text-sm font-semibold text-background transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              Start Virtual Try-On
+              Start the guided flow
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -171,17 +187,17 @@ function StepCard({
   description: string;
 }) {
   return (
-    <div className="group relative rounded-2xl border border-border bg-card p-8 shadow-sm transition-all duration-200 hover:shadow-md">
-      <div className="mb-5 flex items-center gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-all duration-200 group-hover:scale-105">
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-background">
           {icon}
         </div>
-        <span className="text-sm font-semibold text-muted-foreground">
+        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           Step {step}
         </span>
       </div>
-      <h3 className="text-lg font-semibold">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+      <h3 className="mt-4 text-base font-semibold">{title}</h3>
+      <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
         {description}
       </p>
     </div>
@@ -198,12 +214,12 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-accent">
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-foreground">
         {icon}
       </div>
-      <h3 className="font-semibold">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+      <h3 className="mt-4 text-sm font-semibold">{title}</h3>
+      <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
         {description}
       </p>
     </div>
