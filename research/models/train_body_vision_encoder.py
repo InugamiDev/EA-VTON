@@ -388,8 +388,9 @@ def main() -> None:
     testA_rows = rows[rows["split"] == "testA"].copy()
     testB_rows = rows[rows["split"] == "testB"].copy()
 
-    target_mean = train_rows[TARGETS].mean().values
-    target_std = train_rows[TARGETS].std().values + 1e-6
+    # MPS doesn't support float64 — keep everything in float32 from the start
+    target_mean = train_rows[TARGETS].mean().values.astype(np.float32)
+    target_std = (train_rows[TARGETS].std().values + 1e-6).astype(np.float32)
     print(f"  target mean: {dict(zip(TARGETS, target_mean.round(1)))}")
     print(f"  target std:  {dict(zip(TARGETS, target_std.round(1)))}")
 
