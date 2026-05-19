@@ -38,6 +38,7 @@ import {
 } from "@/components/shared/StepIndicator";
 import { JourneyStep } from "@/components/shared/JourneyStep";
 import { CalibrationPanel } from "@/components/shared/CalibrationPanel";
+import { BodyGhostOverlay } from "@/components/shared/BodyGhostOverlay";
 
 const STEPS: TStep[] = [
   { id: "capture", label: "Capture" },
@@ -276,17 +277,25 @@ export default function LiveSizeV2Page() {
             ) : null
           }
         >
-          <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border bg-background/50 px-6 py-12 text-center transition-colors hover:border-foreground/30 hover:bg-accent/30">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-              <Upload className="h-5 w-5" />
+          <label className="group relative flex cursor-pointer flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border-2 border-dashed border-border bg-background/50 px-6 py-10 text-center transition-colors hover:border-foreground/30 hover:bg-accent/30">
+            {/* Body-shape ghost overlay — visual framing guide */}
+            <div className="pointer-events-none absolute inset-0 mx-auto flex items-center justify-center opacity-50 transition-opacity group-hover:opacity-70">
+              <BodyGhostOverlay className="h-full max-h-64 w-auto" />
             </div>
-            <div className="space-y-1">
-              <p className="text-sm font-semibold">
-                {busy === "pose" ? "Processing image…" : "Tap to upload"}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                JPG / PNG. Full-body photo. Good lighting.
-              </p>
+
+            {/* Foreground prompt */}
+            <div className="relative z-10 flex flex-col items-center gap-3 rounded-2xl bg-background/85 px-4 py-3 backdrop-blur-sm">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-foreground text-background">
+                <Upload className="h-4 w-4" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-semibold">
+                  {busy === "pose" ? "Processing image…" : "Tap to upload"}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Full body, head → knees in frame. Good lighting.
+                </p>
+              </div>
             </div>
             <input
               type="file"
